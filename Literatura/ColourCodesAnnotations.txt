@@ -1,0 +1,6 @@
+BLUE     - Explanations
+YELLOW   - Hypothesis
+LIGHTPINK- Important Info
+GREEN    - Very important info
+RED      - Errors
+DOUBTS   - Light Brown
