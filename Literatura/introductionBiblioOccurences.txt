@@ -1,0 +1,261 @@
+WidespreadPost:
+
+Beroukhim, R., Mermel, C.H., Porter, D., Wei, G., Raychaudhuri, S., Donovan
+J., Barretina, J., Boehm, J.S., Dobson, J., Urashima, M., et al. (2010). The land
+scape of somatic copy-number alteration across human cancers. Nature 463
+899–905.
+
+Santarius, T., Shipley, J., Brewer, D., Stratton, M.R., and Cooper, C.S. (2010).
+A census of ampliﬁed and overexpressed human cancer genes. Nat. Rev.
+Cancer 10, 59–64.
+
+Itsara, A., Cooper, G.M., Baker, C., Girirajan, S., Li, J., Absher, D., Krauss,
+R.M., Myers, R.M., Ridker, P.M., Chasman, D.I., et al. (2009). Population anal-
+ysis of large copy number variants and hotspots of human genetic disease.
+Am. J. Hum. Genet. 84, 148–161
+
+Dephoure, N., Hwang, S., O’Sullivan, C., Dodgson, S.E., Gygi, S.P., Amon, A.,  - 3 
+and Torres, E.M. (2014). Quantitative proteomic analysis reveals posttransla-
+tional responses to aneuploidy in yeast. Elife 3, e03023.
+
+Stingele, S., Stoehr, G., Peplowska, K., Cox, J., Mann, M., and Storchova, Z.  - 3
+(2012). Global analysis of genome, transcriptome and proteome reveals the
+response to aneuploidy in human cells. Mol. Syst. Biol. 8, 608.
+
+Tang, Y.-C., and Amon, A. (2013). Gene copy-number alterations: a cost-
+beneﬁt analysis. Cell 152, 394–405.
+
+Mertins, P., Mani, D.R., Ruggles, K.V., Gillette, M.A., Clauser, K.R., Wang, P., - 3
+Wang, X., Qiao, J.W., Cao, S., Petralia, F., et al. (2016). Proteogenomics con-
+nects somatic mutations to signalling in breast cancer. Nature 534, 55–62.
+
+Zhang, H., Liu, T., Zhang, Z., Payne, S.H., Zhang, B., McDermott, J.E., Zhou,    - 3
+J.-Y., Petyuk, V.A., Chen, L., Ray, D., et al. (2016). Integrated proteogenomic
+characterization of human high-grade serous ovarian cancer. Cell 166,
+755–765.
+
+Zhang, B., Wang, J., Wang, X., Zhu, J., Liu, Q., Shi, Z., Chambers, M.C.,        - 2
+Zimmerman, L.J., Shaddox, K.F., Kim, S., et al. (2014). Proteogenomic charac-
+terization of human colon and rectal cancer. Nature 513, 382–387.
+
+ Genomic Determinants:
+
+
+Stefely, J.A., Kwiecien, N.W., Freiberger, E.C., Richards, A.L., Jochem, A.,
+Rush, M.J.P., Ulbrich, A., Robinson, K.P., Hutchins, P.D., Veling, M.T., et al.
+(2016). Mitochondrial protein functions elucidated by multi-omic mass
+spectrometry proﬁling. Nat. Biotechnol. 34, 1191–1197.
+
+
+Wang, J., Ma, Z., Carr, S.A., Mertins, P., Zhang, H., Zhang, Z., Chan, D.W.,     - 2 
+Ellis, M.J., Townsend, R.R., Smith, R.D., et al. (2017). Proteome proﬁling out-
+performs transcriptome proﬁling for coexpression based gene function predic-
+tion. Mol. Cell. Proteomics 16, 121–134.
+cancer. Cell 166, 755–765.
+
+Compendium_Of_Co-regulated:
+
+Hartwell, L.H., Hopﬁeld, J.J., Leibler, S., and Murray, A.W. (1999). From molec- 
+ular to modular cell biology. Nature 402, C47–C52.
+
+Alberts, B. (1998). The cell as a collection of protein machines: preparing the
+next generation of molecular biologists. Cell 92, 291–294.
+
+Hsu, T.Y., Simon, L.M., Neill, N.J., Marcotte, R., Sayad, A., Bland, C.S.,
+Echeverria, G.V., Sun, T., Kurley, S.J., Tyagi, S., et al. (2015). The spliceo-
+some is a therapeutic vulnerability in MYC-driven cancer. Nature 525,
+384–388.
+
+Pozniak, Y., Balint-Lahat, N., Rudolph, J.D., Lindskog, C., Katzir, R., Avivi, C.,
+Ponten, F., Ruppin, E., Barshack, I., and Geiger, T. (2016). System-wide clin-
+ical proteomics of breast cancer reveals global remodeling of tissue homeo-
+stasis. Cell Syst. 2, 172–184.
+
+Liu, Y., Beyer, A., and Aebersold, R. (2016). On the dependency of cellular pro-
+tein levels on mRNA abundance. Cell 165, 535–550.
+
+Vogel, C., and Marcotte, E.M. (2012). Insights into the regulation of protein
+abundance from proteomic and transcriptomic analyses. Nat. Rev. Genet.
+13, 227–232.
+
+Tyanova, S., Albrechtsen, R., Kronqvist, P., Cox, J., Mann, M., and Geiger, T.
+(2016). Proteomic maps of breast cancer subtypes. Nat. Commun. 7, 10259.
+
+Post-translational Dosage Compensation:
+
+1. Kitano H, Oda K, Kimura T, Matsuoka Y, Csete M, Doyle J, et al. Metabolic syndrome and robustness
+tradeoffs. Diabetes. 2004; 53(S3): S6–15.
+
+2. Stelling J, Sauer U, Szallasi Z, Doyle FJ, Doyle J. Robustness of cellular functions. Cell. 2004; 118:
+675–685. doi: 10.1016/j.cell.2004.09.008 PMID: 15369668
+
+3. Kitano H. Towards a theory of biological robustness. Mol Syst Biol. 2007; 3: 137. doi: 10.1038/
+msb4100179 PMID: 17882156
+
+4. Masel J, Siegal ML. Robustness: mechanisms and consequences. Trends Genet. 2009; 25: 395–403.
+doi: 10.1016/j.tig.2009.07.005 PMID: 19717203
+
+5. Raj A, van Oudenaarden A. Nature, Nurture, or Chance: Stochastic Gene Expression and Its Conse-
+quences. Cell. 2008; 135: 216–226. doi: 10.1016/j.cell.2008.09.050 PMID: 18957198
+
+6. Bala´zsi G, van Oudenaarden A, Collins JJ. Cellular decision making and biological noise: From
+microbes to mammals. Cell. 2011; 144: 910–925. doi: 10.1016/j.cell.2011.01.030 PMID: 21414483
+
+7. Raser JM, O’Shea EK. Noise in gene expression: origins, consequences, and control. Science. 2005;
+309: 2010–3. doi: 10.1126/science.1105891 PMID: 16179466
+
+8. Raj A, Rifkin SA, Andersen E, van Oudenaarden A. Variability in gene expression underlies incomplete
+penetrance. Nature. 2010; 463: 913–8. doi: 10.1038/nature08781 PMID: 20164922
+
+9. Crick F. Central Dogma of Molecular Biology. Nature. 1970; 227: 561–563. PMID: 4913914                - !!!
+
+10. Torres EM, Sokolsky T, Tucker CM, Chan LY, Boselli M, Dunham MJ, et al. Effects of aneuploidy on cel-
+lular physiology and cell division in haploid yeast. Science. 2007; 317: 916–24. doi: 10.1126/science.
+1142210 PMID: 17702937
+
+11. Chino A, Makanae K, Moriya H. Relationships between Cell Cycle Regulator Gene Copy Numbers and
+Protein Expression Levels in Schizosaccharomyces pombe. PLoS One. 2013; 8(9): e73319. doi: 10.
+1371/journal.pone.0073319 PMID: 24019917
+
+
+13. Torres EM, Williams BR, Amon A. Aneuploidy: Cells losing their balance. Genetics. 2008; 179: 737–
+746. doi: 10.1534/genetics.108.090878 PMID: 18558649
+
+14. Gordon DJ, Resio B, Pellman D. Causes and consequences of aneuploidy in cancer. Nat Rev Genet.
+2012; 13: 189–203. doi: 10.1038/nrg3123 PMID: 22269907
+
+15. Donnelly N, Storchova´ Z. Dynamic karyotype, dynamic proteome: Buffering the effects of aneuploidy.
+Biochim Biophys Acta—Mol Cell Res. 2014; 1843: 473–481.
+
+16. Springer M, Weissman JS, Kirschner MW. A general lack of compensation for gene dosage in yeast.     - 2
+Mol Syst Biol. 2010; 6: 368. doi: 10.1038/msb.2010.19 PMID: 20461075
+
+17. Makanae K, Kintaka R, Makino T, Kitano H, Moriya H. Identification of dosage-sensitive genes in Sac-
+charomyces cerevisiae using the genetic tug-of-war method. Genome Res. 2013; 23: 300–311. doi: 10.
+1101/gr.146662.112 PMID: 23275495
+
+19. Moriya H, Shimizu-Yoshida Y, Kitano H. In vivo robustness analysis of cell division cycle genes in Sac-
+charomyces cerevisiae. PLoS Genet. 2006; 2(7): e111. doi: 10.1371/journal.pgen.0020111 PMID:
+16839182
+
+20. Kaizu K, Moriya H, Kitano H. Fragilities caused by dosage imbalance in regulation of the budding yeast
+cell cycle. PLoS Genet. 2010; 6(4): e1000919. doi: 10.1371/journal.pgen.1000919 PMID: 20421994
+
+21. Ingolia NT, Ghaemmaghami S, Newman JRS, Weissman JS. Genome-wide analysis in vivo of transla-
+tion with nucleotide resolution using ribosome profiling. Science. 2009; 324: 218–23. doi: 10.1126/
+science.1168978 PMID: 19213877
+
+ProductionOfProtein
+
+Li, G.W., Burkhardt, D., Gross, C., and Weissman, J.S. (2014). Quantifying ab-
+solute protein synthesis rates reveals principles underlying allocation of
+cellular resources. Cell 157, 624–635.
+
+Juszkiewicz, S., and Hegde, R.S. (2018). Quality control of orphaned proteins.
+Mol. Cell 71, 443–457
+
+Kafri, M., Metzl-Raz, E., Jona, G., and Barkai, N. (2016). The cost of protein
+production. Cell Rep. 14, 22–31.
+
+Lynch, M., and Marinov, G.K. (2015). The bioenergetic costs of a gene. Proc.
+Natl. Acad. Sci. USA 112, 15690–15695
+
+Freedman, L.P., Zengel, J.M., Archer, R.H., and Lindahl, L. (1987). Autogenous
+control of the S10 ribosomal protein operon of Escherichia coli: genetic dissec-
+tion of transcriptional and posttranscriptional regulation. Proc. Natl. Acad. Sci.
+USA 84, 6516–6520.
+
+Mattheakis, L.C., and Nomura, M. (1988). Feedback regulation of the spc
+operon in Escherichia coli: translational coupling and and mRNA processing.
+J. Bacteriol. 170, 4484–4492.
+
+Shen-Orr, S.S., Milo, R., Mangan, S., and Alon, U. (2002). Network motifs in the
+transcriptional regulation network of Escherichia coli. Nat. Genet. 31, 64–68.
+
+Warner, J.R., and McIntosh, K.B. (2009). How common are extraribosomal
+functions of ribosomal proteins? Mol. Cell 34, 3–11
+
+Ishikawa, K., Makanae, K., Iwasaki, S., Ingolia, N.T., and Moriya, H. (2017).       - 2
+Post-translational dosage compensation buffers genetic perturbations to stoi-
+chiometry of protein complexes. PLoS Genet. 13, e1006554.
+
+
+Cleveland, D.W., Lopata, M.A., Sherline, P., and Kirschner, M.W. (1981).
+Unpolymerized tubulin modulates the level of tubulin mRNAs. Cell 25,
+537–546.
+
+Lehnert, M.E., and Lodish, H.F. (1988). Unequal synthesis and differential
+degradation of a and b spectrin during murine erythroid differentiation.
+J. Cell Biol. 107, 413–426.
+
+Lodish, H.F. (1974). Model for the regulation of mRNA translation applied to
+haemoglobin synthesis. Nature 251, 385–388.
+MultiOmics
+
+
+3. Pavelka, N., Rancati, G., Zhu, J., Bradford, W. D., Saraf, A., Florens, L.,
+Sanderson, B. W., Hattem, G. L., and Li, R. (2010) Aneuploidy confers
+quantitative proteome changes and phenotypic variation in budding
+yeast. Nature 468, 321–325
+
+4. Gonc¸alves, E., Fragoulis, A., Garcia-Alonso, L., Cramer, T., Saez-Rodri-
+guez, J., and Beltrao, P. (2017) Widespread post-transcriptional attenu-
+ation of genomic copy-number variation in cancer. Cell Syst. 5,
+386–398.e4
+
+
+6. McShane, E., Sin, C., Zauber, H., Wells, J. N., Donnelly, N., Wang, X., Hou,
+J., Chen, W., Storchova, Z., Marsh, J. A., Valleriani, A., and Selbach, M.
+(2016) Kinetic analysis of protein stability reveals age-dependent degra-
+dation. Cell 167, 803–815.e21
+
+7. Ryan, C. J., Kennedy, S., Bajrami, I., Matallanas, D., and Lord, C. J. (2017)
+A compendium of co-regulated protein complexes in breast cancer
+reveals collateral loss events. Cell Syst. 5, 399–409.e5
+
+
+9. Lapek, J. D., Jr., Greninger, P., Morris, R., Amzallag, A., Pruteanu-Malinici,
+I., Benes, C. H., and Haas, W. (2017) Detection of dysregulated protein-
+association networks by high-throughput proteomics predicts cancer
+vulnerabilities. Nat. Biotechnol. 35, 983–989
+
+10. Roumeliotis, T. I., Williams, S. P., Gonc¸alves, E., Alsinet, C., Del Castillo
+Velasco-Herrera, M., Aben, N., Ghavidel, F. Z., Michaut, M., Schubert,
+M., Price, S., Wright, J. C., Yu, L., Yang, M., Dienstmann, R., Guinney, J.,
+Beltrao, P., Brazma, A., Pardo, M., Stegle, O., Adams, D. J., Wessels, L.,
+Saez-Rodriguez, J., McDermott, U., and Choudhary, J. S. (2017)
+Genomic determinants of protein abundance variation in colorectal can-
+cer cells. Cell Rep. 20, 2201–2214
+
+11. Abovich, N., Gritz, L., Tung, L., and Rosbash, M. (1985) Effect of RP51 gene
+dosage alterations on ribosome synthesis in Saccharomyces cerevisiae.
+Mol. Cell. Biol. 5, 3429–3435
+
+12. Young, L., Jernigan, R. L., and Covell, D. G. (1994) A role for surface
+hydrophobicity in protein–protein recognition. Protein Sci. 3, 717–729
+
+13. Mushegian, A. R., and Koonin, E. V. (1996) Gene order is not conserved in
+bacterial evolution. Trends Genet. 12, 289–290
+
+14. Wells, J. N., Bergendahl, L. T., and Marsh, J. A. (2016) Operon gene order i
+
+NeedBasedUpRegulation
+
+1. Ohno S (1970) Evolution by gene duplication. London, UK: Allen & Unwin.160 p.
+
+2. Zhang JZ (2003) Evolution by gene duplication: an update. Trends Ecol Evol 18:
+292–298.
+
+3. Conant GC, Wagner A (2003) Asymmetric sequence divergence of duplicate
+genes. Genome Res 13: 2052–2058.
+
+4. Taylor JS, Raes J (2004) Duplication and divergence: the evolution of new genes
+and old ideas. Annu Rev Genet 38: 615–643.
+
+5. Guan Y, Dunham MJ, Troyanskaya OG 
+(2007) Functional analysis of gene
+duplications in Saccharomyces cerevisiae. Genetics 175: 933–943.
+
+6. Ihmels J, Collins SR, Schuldiner M, Krogan NJ, Weissman JS (2007) Backup
+without redundancy: genetic interactions reveal the cost of duplicate gene loss.
+Mol Syst Biol 3: 86.
