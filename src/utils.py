@@ -30,15 +30,16 @@ def getPairwiseCorrData(data: pd.DataFrame) -> pd.Series:
     return pairwiseCorrsSeries
 
 
-def fetchGeneEntrezID(proteinName: str, geneIDsData: pd.DataFrame = pd.read_table('../externalDatasets/geneIDsNCBI.tsv')) -> int:
+# def fetchGeneEntrezID(proteinName: str, geneIDsData: pd.DataFrame = pd.read_table('../externalDatasets/geneIDsNCBI.tsv')) -> int:
 
-    geneID = geneIDsData.where(geneIDsData['Symbol'] == proteinName)[
-        'NCBI GeneID']
-    # Clean all the nan values and get the first value which is the desired ID
-    geneID = geneID.dropna()[0]
+#     geneID = geneIDsData.where(geneIDsData['Symbol'] == proteinName)[
+#         'NCBI GeneID']
+#     # Clean all the nan values and get the first value which is the desired ID
+#     geneID = geneID.dropna()[0]
 
-    return geneID
+#     return geneID
 
+# No conversion needed we are working with gene Symbols
 
 def getGeneIDsCol(data: pd.DataFrame) -> pd.DataFrame:
 
@@ -49,8 +50,11 @@ def getGeneIDsCol(data: pd.DataFrame) -> pd.DataFrame:
     
     for proteinSubunits in proteinSubunitsList:
 
-        proteinA = fetchGeneEntrezID(proteinSubunits[0]) # Convert string to Entrez Gene ID
-        proteinB = fetchGeneEntrezID(proteinSubunits[1])
+        # proteinA = fetchGeneEntrezID(proteinSubunits[0]) # Convert string to Entrez Gene ID
+        # proteinB = fetchGeneEntrezID(proteinSubunits[1])
+        # No conversion need as of now we are working with gene symbols
+
+        proteinA = proteinSubunits[0]; proteinB = proteinSubunits[1]
 
         proteinAList.append(proteinA)
         proteinBList.append(proteinB)
@@ -61,5 +65,8 @@ def getGeneIDsCol(data: pd.DataFrame) -> pd.DataFrame:
 
     return data 
 
+
+    
+def trimDatasets(internalData, internalDataCol, externalData, externalDataCol):
 
     

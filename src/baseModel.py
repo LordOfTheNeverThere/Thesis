@@ -10,11 +10,15 @@ import utils
 
 proteinsData = pd.read_csv('proteomicData.csv', index_col='modelId')
 
+
+# %% Trim External Dataset and our dataset afterwards (watches out for deprecated id's)
+
+trimmedProteinsData, trimmedExternalData = utils.trimDatasets() 
 # %% Calculate Pearson Coorelation Value
 
 # pearsonCorrRaw = proteinsData.corr(method='pearson')
 # pearsonCorrRaw.to_csv('pearsonCorrRaw.csv', index=False)
-pearsonCorrRaw = pd.read_csv('pearsonCorrRaw.csv')
+pearsonCorrRaw = pd.read_csv('../data/datasetsTese/pearsonCorrRaw.csv')
 # %% Get upwards triangular matrix data
 
 pairwiseCorrRawSeries = utils.getPairwiseCorrData(data=pearsonCorrRaw)
