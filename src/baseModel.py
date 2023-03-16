@@ -1,7 +1,8 @@
 # %% Imports
 import pandas as pd
 import seaborn as sb
-# import numpy as np
+import numpy as np
+import sklearn
 # import matplotlib.pyplot as plt
 import utils
 
@@ -46,5 +47,16 @@ utils.addGroundTruth(listOfSets, pairwiseCorrRawData, 'Corum')
 
 
 # %% Create Recall Curves
+corrCumSum = np.cumsum(
+    pairwiseCorrRawData['Corum']) / np.sum(pairwiseCorrRawData['Corum'])
+indexes = np.array(pairwiseCorrRawData.index) / pairwiseCorrRawData.shape[0]
+AUC = sklearn.metrics.auc(indexes, corrCumSum)
+
+ax.plot(
+    rc_dict[db][ds]["x"],
+    rc_dict[db][ds]["y"],
+    label=f"{db} {ds} (AUC {rc_dict[db][ds]['auc']:.2f})",
+    c=rc_pal[db][i],
+)
 
 # %%
