@@ -1,3 +1,4 @@
+#%%
 import pandas as pd
 import seaborn as sb
 import numpy as np
@@ -17,10 +18,10 @@ def getPairwiseCorrData(data: pd.DataFrame, columnName='correlation') -> pd.Seri
 
         proteinA = columns[row]
         proteinB = columns[col]  # identifier for each interaction
-        proteinId = proteinA + '-+-' + proteinB
+        proteinId = proteinA + ';' + proteinB
         proteinIds.append(proteinId)
         correlation = data.iat[row, col]
-        pairwiseCorrs.append(correlation)
+        pairwiseCorrs.append(round(correlation,4))
 
         row += 1
         if row == col:  # And then every row, only going to the next col when the number of rows catches up to the col number, so we would be in the diagonal of the corr matric
@@ -43,32 +44,32 @@ def getPairwiseCorrData(data: pd.DataFrame, columnName='correlation') -> pd.Seri
 
 # No conversion needed we are working with gene Symbols
 
-def getGeneIDsCol(data: pd.DataFrame) -> pd.DataFrame:
+# def getGeneIDsCol(data: pd.DataFrame) -> pd.DataFrame:
 
-    data = data.copy()
-    proteinSubunitsList = [proteinComplex.split('-+-')
-                           for proteinComplex in list(data.index)]
+#     data = data.copy()
+#     proteinSubunitsList = [proteinComplex.split(';')
+#                            for proteinComplex in list(data.index)]
 
-    proteinAList = []
-    proteinBList = []
+#     proteinAList = []
+#     proteinBList = []
 
-    for proteinSubunits in proteinSubunitsList:
+#     for proteinSubunits in proteinSubunitsList:
 
-        # proteinA = fetchGeneEntrezID(proteinSubunits[0]) # Convert string to Entrez Gene ID
-        # proteinB = fetchGeneEntrezID(proteinSubunits[1])
-        # No conversion need as of now we are working with gene symbols
+#         # proteinA = fetchGeneEntrezID(proteinSubunits[0]) # Convert string to Entrez Gene ID
+#         # proteinB = fetchGeneEntrezID(proteinSubunits[1])
+#         # No conversion need as of now we are working with gene symbols
 
-        proteinA = proteinSubunits[0]
-        proteinB = proteinSubunits[1]
+#         proteinA = proteinSubunits[0]
+#         proteinB = proteinSubunits[1]
 
-        proteinAList.append(proteinA)
-        proteinBList.append(proteinB)
+#         proteinAList.append(proteinA)
+#         proteinBList.append(proteinB)
 
-    # Assigning new cols with the subunit information
-    data['proteinA'] = proteinAList
-    data['proteinB'] = proteinBList
+#     # Assigning new cols with the subunit information
+#     data['proteinA'] = proteinAList
+#     data['proteinB'] = proteinBList
 
-    return data
+#     return data
 
 
 def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -> tuple:
@@ -87,12 +88,12 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -
     pairwiseCorrData = getPairwiseCorrData(
         data=pearsonCorrMatrix, columnName=columnName)
     pairwiseCorrData.sort_values(ascending=False, inplace=True)
-    proteinIDCorrData = getGeneIDsCol(data=pairwiseCorrData)
+    # proteinIDCorrData = getGeneIDsCol(data=pairwiseCorrData)
 
-    proteinIDCorrData.to_csv(
+    pairwiseCorrData.to_csv(
         '../data/datasetsTese/' + fileName + '.csv')
 
-    return proteinIDCorrData, pairwiseCorrData
+    return pairwiseCorrData, pairwiseCorrData
 
 
 def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: str):
@@ -104,11 +105,15 @@ def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: st
 
         found = 0
         index = 0
+        [proteinA, proteinB] = model.name.split(';')
+        
 
         while not found and index < len(listOfsets):
 
             subset = listOfsets[index]
-            if (model['proteinA'] in subset) and (model['proteinB'] in subset):
+            if (proteinA in subset) and (proteinB in subset):
+                if found:
+                    print('Incorrect Code!')
                 found = 1
                 
                 # outputList = outputList.append(1)  # There is interaction
@@ -148,3 +153,5 @@ def getCorumListOfInteractions():
     listOfSets = corumPPI.apply(axis=1, func=lambda interaction: joinGeneNames(interaction))
 
     return listOfSets
+
+# %%

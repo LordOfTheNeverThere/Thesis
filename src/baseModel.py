@@ -35,15 +35,17 @@ pairwiseCorrRawData = pd.read_csv(
 
 # %% Load external Datasets
 
-# corumPPI = pd.read_json('../data/externalDatasets/corumPPI.json')
+corumPPI = pd.read_json('../data/externalDatasets/corumPPI.json')
 # stringPPI = pd.read_table('../data/externalDatasets/stringPPI.txt', sep=' ')
 
 # %% Dummy Test Pipeline function
-_, _ = utils.getPairwiseCorrelation(fileName='Dummy', data=proteinsData.head(3), columnName='Test')
+_, _ = utils.getPairwiseCorrelation(
+    fileName='BaseModelPairwise', data=proteinsData, columnName='Correlation')
 
 # %% Get get true or false on pairwise correlation
-listOfSets = utils.getCorumListOfInteractions()
-utils.addGroundTruth(listOfSets, pairwiseCorrRawData, 'Corum')
+listOfSets = [set(subset.split(';'))
+              for subset in corumPPI['subunits(Gene name)']]
+groundedPairwiseCorr = utils.addGroundTruth(listOfSets, pairwiseCorrRawData, 'Corum')
 
 
 # %% Create Recall Curves
