@@ -96,7 +96,7 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -
     return pairwiseCorrData, pairwiseCorrData
 
 
-def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: str):
+def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: str, filename:str):
     
     data = data.copy()
     data[externalDatasetName] = None
@@ -126,6 +126,9 @@ def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: st
 
     data[externalDatasetName] = data.apply(
         axis=1, func= lambda model: addExternalTrueY(model))
+    
+    data.to_csv(
+        '../data/datasetsTese/' + filename + '.csv')
     
     return data
 
