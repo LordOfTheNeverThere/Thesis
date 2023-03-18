@@ -93,7 +93,7 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -
     pairwiseCorrData.to_csv(
         '../data/datasetsTese/' + fileName + '.csv')
 
-    return pairwiseCorrData, pairwiseCorrData
+    return pairwiseCorrData
 
 
 def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: str, filename:str):

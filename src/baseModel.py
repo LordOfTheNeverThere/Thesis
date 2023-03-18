@@ -2,8 +2,8 @@
 import pandas as pd
 import seaborn as sb
 import numpy as np
-import sklearn
-# import matplotlib.pyplot as plt
+from sklearn.metrics import auc
+import matplotlib.pyplot as plt
 import utils
 
 
@@ -29,8 +29,8 @@ proteinsData = pd.read_csv(
 #%% Create columns for better integration with other external Databases by using the entrez ID of the subunits
 
 # pairwiseCorrRawData = utils.getGeneIDsCol(pairwiseCorrRawSeries)
-pairwiseCorrRawData = pd.read_csv(
-    '../data/datasetsTese/BaseModelPairwise.csv', index_col='Unnamed: 0')
+# pairwiseCorrRawData = pd.read_csv(
+#     '../data/datasetsTese/BaseModelPairwise.csv', index_col='Unnamed: 0')
 
 
 # %% Load external Datasets
@@ -38,28 +38,46 @@ pairwiseCorrRawData = pd.read_csv(
 corumPPI = pd.read_json('../data/externalDatasets/corumPPI.json')
 # stringPPI = pd.read_table('../data/externalDatasets/stringPPI.txt', sep=' ')
 
-# %% Dummy Test Pipeline function
-_, _ = utils.getPairwiseCorrelation(
-    fileName='BaseModelPairwise', data=proteinsData, columnName='Correlation')
+# %% Pipeline function
+# pairwiseCorrRawData = utils.getPairwiseCorrelation(
+#     fileName='BaseModelPairwise', data=proteinsData, columnName='Correlation')
+pairwiseCorrData = pd.read_csv(
+    '../data/datasetsTese/BaseModelPairwise.csv', index_col='Unnamed: 0')
 
 # %% Get get true or false on pairwise correlation
-listOfSets = [set(subset.split(';'))
-              for subset in corumPPI['subunits(Gene name)']]
-groundedPairwiseCorr = utils.addGroundTruth(
-    listOfSets, pairwiseCorrRawData, 'Corum', filename='BaseModelPairwise')
+# listOfSets = [set(subset.split(';'))
+#               for subset in corumPPI['subunits(Gene name)']]
+# groundedPairwiseCorr = utils.addGroundTruth(
+#     listOfSets, pairwiseCorrData, 'Corum', filename='BaseModelPairwise')
 
 
 # %% Create Recall Curves
 corrCumSum = np.cumsum(
-    pairwiseCorrRawData['Corum']) / np.sum(pairwiseCorrRawData['Corum'])
-indexes = np.array(pairwiseCorrRawData.index) / pairwiseCorrRawData.shape[0]
-AUC = sklearn.metrics.auc(indexes, corrCumSum)
+    pairwiseCorrData['Corum']) / np.sum(pairwiseCorrData['Corum'])
+indexes = np.array(pairwiseCorrData.reset_index().index) / \
+    pairwiseCorrData.shape[0]
+AUC = auc(indexes, corrCumSum)
 
+
+_, ax = plt.subplots(1, 1, figsize=(4, 3), dpi=600)
 ax.plot(
-    rc_dict[db][ds]["x"],
-    rc_dict[db][ds]["y"],
-    label=f"{db} {ds} (AUC {rc_dict[db][ds]['auc']:.2f})",
-    c=rc_pal[db][i],
+    indexes,
+    corrCumSum,
+    label=f"(AUC {AUC:.2f})",
+    c='blue',
 )
+
+ax.plot([0, 1], [0, 1], "k--", lw=0.3)
+ax.legend(loc="lower right", frameon=False)
+
+ax.set_ylabel("Cumulative sum")
+ax.set_xlabel("Ranked correlation")
+ax.grid(True, axis="both", ls="-", lw=0.1, alpha=1.0, zorder=0)
+
+# plt.savefig(f"{RPATH}/PPInteractions_roc_curves_overlap.pdf",
+#             bbox_inches="tight")
+plt.savefig("dummy.png",
+            bbox_inches="tight")
+plt.close("all")
 
 # %%
