@@ -45,7 +45,8 @@ _, _ = utils.getPairwiseCorrelation(
 # %% Get get true or false on pairwise correlation
 listOfSets = [set(subset.split(';'))
               for subset in corumPPI['subunits(Gene name)']]
-groundedPairwiseCorr = utils.addGroundTruth(listOfSets, pairwiseCorrRawData, 'Corum')
+groundedPairwiseCorr = utils.addGroundTruth(
+    listOfSets, pairwiseCorrRawData, 'Corum', filename='BaseModelPairwise')
 
 
 # %% Create Recall Curves
