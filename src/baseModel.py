@@ -82,3 +82,22 @@ plt.savefig("dummy.png",
 plt.close("all")
 
 # %% Chose Tissues To calculate correlation for presentation
+
+valuesSet, valuesDict = utils.getUniqueSetValues(
+    filepath=PATH + "/datasetsTese/samplesheet.csv", feature='tissue')
+
+finalTissueSet = set()
+dataframesList = list()
+for (key, value) in valuesDict.items():
+    if (value >= 50):
+        finalTissueSet.add(key)
+
+for tissue in finalTissueSet:
+    modelsSet = utils.getModelsByQuery('samplesheet', 'tissue', tissue)
+    specificProteinsData = proteinsData.query('modelID in @modelsSet') # Query that retreives the df with only the models belonging to the modelsSet local var
+    tissueSpecificDF = utils.getPairwiseCorrelation(
+        specificProteinsData, None, tissue + " Specific Correlation")
+    print(type(tissueSpecificDF))
+    dataframesList.append(tissueSpecificDF)
+premergeddf = dataframesList[0].merge(dataframesList[1], on='PPI', how='outer')
+# %%

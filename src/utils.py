@@ -7,42 +7,43 @@ import matplotlib.pyplot as plt
 PATH = "../data"
 
 
-def getPairwiseCorrData(data: pd.DataFrame, columnName :str ='correlation') -> pd.Series:
-    """Gets a series of a pairwise correlations from all pairs of proteins
+# def getPairwiseCorrData(data: pd.DataFrame, columnName :str ='correlation') -> pd.Series:
+#     """ DEPRECATED
+#     Gets a series of a pairwise correlations from all pairs of proteins
 
-    Args:
-        data (pd.DataFrame): Correlation matrix of proteins x proteins
-        columnName (str, optional): The name to give to the column of the series bearing the correlation
-         pairwise. Defaults to 'correlation'.
+#     Args:
+#         data (pd.DataFrame): Correlation matrix of proteins x proteins
+#         columnName (str, optional): The name to give to the column of the series bearing the correlation
+#          pairwise. Defaults to 'correlation'.
 
-    Returns:
-        pd.Series: Series with all pairwise correlations
-    """
+#     Returns:
+#         pd.Series: Series with all pairwise correlations
+#     """
 
-    data = data.copy()
-    row = 0
-    col = 1
-    columns = data.columns  # list of Columns/Proteins
-    proteinIds = []
-    pairwiseCorrs = []
+#     data = data.copy()
+#     row = 0
+#     col = 1
+#     columns = data.columns  # list of Columns/Proteins
+#     proteinIds = []
+#     pairwiseCorrs = []
 
-    while (col < len(columns)):  # We go every col
+#     while (col < len(columns)):  # We go every col
 
-        proteinA = columns[row]
-        proteinB = columns[col]  # identifier for each interaction
-        proteinId = proteinA + ';' + proteinB
-        proteinIds.append(proteinId)
-        correlation = data.iat[row, col]
-        pairwiseCorrs.append(round(correlation,4))
+#         proteinA = columns[row]
+#         proteinB = columns[col]  # identifier for each interaction
+#         proteinId = proteinA + ';' + proteinB
+#         proteinIds.append(proteinId)
+#         correlation = data.iat[row, col]
+#         pairwiseCorrs.append(round(correlation,4))
 
-        row += 1
-        if row == col:  # And then every row, only going to the next col when the number of rows catches up to the col number, so we would be in the diagonal of the corr matric
-            col += 1
-            row = 0
+#         row += 1
+#         if row == col:  # And then every row, only going to the next col when the number of rows catches up to the col number, so we would be in the diagonal of the corr matric
+#             col += 1
+#             row = 0
 
-    pairwiseCorrsSeries = pd.Series(
-        data=pairwiseCorrs, index=proteinIds, name=columnName)
-    return pairwiseCorrsSeries
+#     pairwiseCorrsSeries = pd.Series(
+#         data=pairwiseCorrs, index=proteinIds, name=columnName)
+#     return pairwiseCorrsSeries
 
 
 # def fetchGeneEntrezID(proteinName: str, geneIDsData: pd.DataFrame = pd.read_table('../externalDatasets/geneIDsNCBI.tsv')) -> int:
@@ -84,7 +85,7 @@ def getPairwiseCorrData(data: pd.DataFrame, columnName :str ='correlation') -> p
 #     return data
 
 
-def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -> tuple:
+def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -> pd.DataFrame:
     """_summary_
 
     Args:
@@ -92,16 +93,22 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -
         fileName (str): Name of the csv file created with the pairwise correlation
 
     Returns:
-        tuple: Tuple with Dataframes with the pairwise correlation, the first one with subuints of the protein protein complex
+        Dataframe: Dataframe with the pairwise correlation
     """
     data = data.copy()
 
-    pearsonCorrMatrix = data.corr(method='pearson')
-    pairwiseCorrData = getPairwiseCorrData(
-        data=pearsonCorrMatrix, columnName=columnName)
-    pairwiseCorrData.sort_values(ascending=False, inplace=True)
-
-    pairwiseCorrData.to_csv(PATH + '/datasetsTese/' + fileName + '.csv')
+    pearsonCorrMatrix = data.corr(method='pearson').round(decimals=4)
+    
+    pairwiseCorrData = pearsonCorrMatrix.where(np.triu(np.ones(pearsonCorrMatrix.shape), k=1).astype(bool)).stack().reset_index()
+    pairwiseCorrData['PPI'] = pairwiseCorrData['level_0'] +";" + pairwiseCorrData['level_1']
+    pairwiseCorrData.drop(columns=['level_0', 'level_1'], inplace=True)
+    pairwiseCorrData = pairwiseCorrData.set_index('PPI')
+    pairwiseCorrData.columns=[columnName]
+    
+    pairwiseCorrData.sort_values(by=columnName,ascending=False, inplace=True)
+    
+    if fileName:
+        pairwiseCorrData.to_csv(PATH + '/datasetsTese/' + fileName + '.csv')
 
     return pairwiseCorrData
 
