@@ -4,8 +4,20 @@ import seaborn as sb
 import numpy as np
 import matplotlib.pyplot as plt
 
+PATH = "../data"
 
-def getPairwiseCorrData(data: pd.DataFrame, columnName='correlation') -> pd.Series:
+
+def getPairwiseCorrData(data: pd.DataFrame, columnName :str ='correlation') -> pd.Series:
+    """Gets a series of a pairwise correlations from all pairs of proteins
+
+    Args:
+        data (pd.DataFrame): Correlation matrix of proteins x proteins
+        columnName (str, optional): The name to give to the column of the series bearing the correlation
+         pairwise. Defaults to 'correlation'.
+
+    Returns:
+        pd.Series: Series with all pairwise correlations
+    """
 
     data = data.copy()
     row = 0
@@ -88,16 +100,24 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -
     pairwiseCorrData = getPairwiseCorrData(
         data=pearsonCorrMatrix, columnName=columnName)
     pairwiseCorrData.sort_values(ascending=False, inplace=True)
-    # proteinIDCorrData = getGeneIDsCol(data=pairwiseCorrData)
 
-    pairwiseCorrData.to_csv(
-        '../data/datasetsTese/' + fileName + '.csv')
+    pairwiseCorrData.to_csv(PATH + '/datasetsTese/' + fileName + '.csv')
 
     return pairwiseCorrData
 
 
 def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: str, filename:str):
-    
+    """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
+
+    Args:
+        listOfsets (list): List of sets of protein protein interactions[{a,b,c},{b,c,d}]
+        data (pd.DataFrame): Pairwise correlation dataframe
+        externalDatasetName (str): Name to give to the binary column holding the truth value of an PPI is seen in that external Dataset
+        filename (str): The name to give to the final file, with the added binary column
+
+    Returns:
+        _type_: Data with added column
+    """
     data = data.copy()
     data[externalDatasetName] = None
 
@@ -127,12 +147,12 @@ def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: st
     data[externalDatasetName] = data.apply(
         axis=1, func= lambda model: addExternalTrueY(model))
     
-    data.to_csv(
-        '../data/datasetsTese/' + filename + '.csv')
+    data.to_csv(PATH + '/datasetsTese/' + filename + '.csv')
     
     return data
 
 def getCorumListOfInteractions():
+    """DEPRECATED"""
     def joinGeneNames(interaction):
         subset1 = interaction['subunits(Gene name)']
         subset2 = interaction['subunits(Gene name syn)']
@@ -152,9 +172,67 @@ def getCorumListOfInteractions():
         return subset1
 
 
-    corumPPI = pd.read_json('../data/externalDatasets/corumPPI.json')
+    corumPPI = pd.read_json(PATH + '/externalDatasets/corumPPI.json')
     listOfSets = corumPPI.apply(axis=1, func=lambda interaction: joinGeneNames(interaction))
 
     return listOfSets
 
+
+
+
+def getModelsByQuery(datasetToQuery: str, featureToQuery:str, valueToQuery)->set:
+    """This func does a query on 3 of possible datasets (samplesheet, drugresponse, CRISPR) and returns a list of the models that
+    abide by this query
+
+    Args:
+        datasetToQuery (str): name of the dataset to query (samplesheet, drugresponse, CRISPR)
+        featureToQuery (str): the column name to query in the dataset
+        valueToQuery (_type_):the value to query in the feature/column of the dataset
+
+    Returns:
+        set: Returns a set composed of all models abiding by the query
+    """
+
+    if datasetToQuery == 'samplesheet': # In the case we are querying the samplesheet.csv for model specific features
+        datasetToQuery: pd.DataFrame = pd.read_csv(PATH + "/datasetsTese/" + datasetToQuery + ".csv", index_col='model_id')
+    elif datasetToQuery == 'drugresponse':
+        datasetToQuery: pd.DataFrame = pd.read_csv(
+            PATH + "/datasetsTese/" + datasetToQuery + ".csv", index_col='model_id')
+    elif datasetToQuery == 'CRISPR':
+        datasetToQuery: pd.DataFrame = pd.read_csv(
+            PATH + "/datasetsTese/crisprcas9_22Q2.csv", index_col='model_id')
+    else:
+        try:
+            datasetToQuery: pd.DataFrame = pd.read_csv(
+                PATH + "/datasetsTese/" + datasetToQuery + ".csv", index_col='model_id')
+        except:
+            print("The only values accepted for datasetToQuery are: samplesheet, drugresponse, CRISPR. You inserted \n" + datasetToQuery)
+        
+
+    queriedDataset = datasetToQuery.query(f"{featureToQuery} == @valueToQuery")
+
+    return set(queriedDataset.index)
+
+def getUniqueSetValues(filepath: str, feature: str):
+    """Returns a set of unique values from a feature of a dataframe
+
+    Args:
+        filepath (str): Filepath to load the dataframe
+        feature (str): The column name to extract the unique set of values
+
+    Returns:
+        set: The uniqye set of values in a column of a Dataframe
+        dict: Dictionary with the keys are the unique values in a column and the values(of the dict) as the number of
+        occurances in of each value(of the feature)
+    """
+
+    
+    data = pd.read_csv(index_col='model_id', filepath_or_buffer=filepath)
+    setOfValues = data[feature].unique()
+    setOfValues = set(setOfValues)
+    occurancesDict = data.groupby(
+        feature).count().to_dict()['model_name']
+
+
+    return setOfValues, occurancesDict
 # %%
