@@ -40,10 +40,10 @@ corumPPI = pd.read_json(PATH + '/externalDatasets/corumPPI.json')
 # stringPPI = pd.read_table(PATH + '/externalDatasets/stringPPI.txt', sep=' ')
 
 # %% Pipeline function
-# pairwiseCorrRawData = utils.getPairwiseCorrelation(
+# pairwiseCorrData = utils.getPairwiseCorrelation(
 #     fileName='BaseModelPairwise', data=proteinsData, columnName='Correlation')
 pairwiseCorrData = pd.read_csv(
-    PATH + '/datasetsTese/BaseModelPairwise.csv', index_col='Unnamed: 0')
+    PATH + '/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
 
 # %% Get get true or false on pairwise correlation
 # listOfSets = [set(subset.split(';'))
@@ -77,7 +77,7 @@ ax.grid(True, axis="both", ls="-", lw=0.1, alpha=1.0, zorder=0)
 
 # plt.savefig(f"{RPATH}/PPInteractions_roc_curves_overlap.pdf",
 #             bbox_inches="tight")
-plt.savefig("dummy.png",
+plt.savefig("baselineRecallCurve.png",
             bbox_inches="tight")
 plt.close("all")
 
@@ -87,17 +87,20 @@ valuesSet, valuesDict = utils.getUniqueSetValues(
     filepath=PATH + "/datasetsTese/samplesheet.csv", feature='tissue')
 
 finalTissueSet = set()
-dataframesList = list()
 for (key, value) in valuesDict.items():
     if (value >= 50):
         finalTissueSet.add(key)
 
+mergedDf = pairwiseCorrData
+
 for tissue in finalTissueSet:
+
     modelsSet = utils.getModelsByQuery('samplesheet', 'tissue', tissue)
     specificProteinsData = proteinsData.query('modelID in @modelsSet') # Query that retreives the df with only the models belonging to the modelsSet local var
     tissueSpecificDF = utils.getPairwiseCorrelation(
         specificProteinsData, None, tissue + " Specific Correlation")
-    print(type(tissueSpecificDF))
-    dataframesList.append(tissueSpecificDF)
-premergeddf = dataframesList[0].merge(dataframesList[1], on='PPI', how='outer')
-# %%
+    mergedDf = mergedDf.merge(right=tissueSpecificDF, on='PPI', how='outer')
+    
+# %% Debug
+dropedNaNsMergedDf.query('`Lung Specific Correlation` > 0.5 +`Ovary Specific Correlation` & Corum == 1')
+#01 %%

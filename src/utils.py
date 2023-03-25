@@ -85,7 +85,7 @@ PATH = "../data"
 #     return data
 
 
-def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -> pd.DataFrame:
+def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str, counting:bool = True) -> pd.DataFrame:
     """_summary_
 
     Args:
@@ -96,7 +96,7 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -
         Dataframe: Dataframe with the pairwise correlation
     """
     data = data.copy()
-
+    # Correlation Matrix
     pearsonCorrMatrix = data.corr(method='pearson').round(decimals=4)
     
     pairwiseCorrData = pearsonCorrMatrix.where(np.triu(np.ones(pearsonCorrMatrix.shape), k=1).astype(bool)).stack().reset_index()
@@ -104,6 +104,22 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str) -
     pairwiseCorrData.drop(columns=['level_0', 'level_1'], inplace=True)
     pairwiseCorrData = pairwiseCorrData.set_index('PPI')
     pairwiseCorrData.columns=[columnName]
+    
+    if counting:
+        
+        # Co-occorance Matrix
+        coOccuranceMatrix = (data/data).fillna(0).astype(int) #Get 1 and 0 depending on if there is a value or not in a specific spot
+        coOccuranceMatrix = coOccuranceMatrix.T.dot(coOccuranceMatrix)  #Simple linear algebra to get the co-occurance values
+        coOccuranceData = coOccuranceMatrix.where(np.triu( np.ones(coOccuranceMatrix.shape), k=1).astype(bool)).stack().reset_index()
+        coOccuranceData['PPI'] = coOccuranceData['level_0'] +";" + coOccuranceData['level_1']
+        coOccuranceData.drop(columns=['level_0', 'level_1'], inplace=True)
+        coOccuranceData = coOccuranceData.set_index('PPI')
+        coOccuranceData.columns = ['counts']
+        pairwiseCorrData = pairwiseCorrData.merge(
+            coOccuranceData, on='PPI', how='left')
+
+
+    
     
     pairwiseCorrData.sort_values(by=columnName,ascending=False, inplace=True)
     
@@ -242,4 +258,3 @@ def getUniqueSetValues(filepath: str, feature: str):
 
 
     return setOfValues, occurancesDict
-# %%
