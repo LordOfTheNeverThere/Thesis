@@ -9,12 +9,13 @@ import matplotlib.pyplot as plt
 import utils
 from sklearn.metrics import auc
 from classes import TreeNode
+import pickle
 
 PATH = "../data"
 # %%
 
-pairwiseCorrData = pd.read_csv(
-    PATH + '/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
+# pairwiseCorrData = pd.read_csv(
+#     PATH + '/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
 
 # # %%
 
@@ -55,10 +56,10 @@ for PPI in biogridPPI.to_numpy():
     else:
         PPIs.addChild(TreeNode(PPI[0],{TreeNode(PPI[1])}))
 
-
-
-    
-print([[str(child1.value) + str(child.value)  for child1 in child.children] for child in PPIs.children])
+# Storing ppi Tree object in file
+ppiBiogridFile = open('ppiBiogridTreeNode', 'ab')
+pickle.dump(PPIs, ppiBiogridFile)
+ppiBiogridFile.close()
 
 # start = t.time()
 # test = utils.addGroundTruth(listOfsets=listOfSets, data=pairwiseCorrData.head(2000), externalDatasetName='biogrid')
