@@ -129,7 +129,7 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str, c
     return pairwiseCorrData
 
 
-def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: str, filename:str):
+def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: str, filename:str = None):
     """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
 
     Args:
@@ -170,9 +170,14 @@ def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: st
     data[externalDatasetName] = data.apply(
         axis=1, func= lambda model: addExternalTrueY(model))
     
-    data.to_csv(PATH + '/datasetsTese/' + filename + '.csv')
+    if filename:
+
+        data.to_csv(PATH + '/datasetsTese/' + filename + '.csv')
     
     return data
+
+
+
 
 def getCorumListOfInteractions():
     """DEPRECATED"""
