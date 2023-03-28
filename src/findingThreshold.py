@@ -66,7 +66,7 @@ ax.plot(
     c='green',
 )
 
-ax.plot([0, 1], [0, 1], "k--", lw=0.3)
+ax.plot([2, 100], [0, 1], "k--", lw=0.3)
 ax.legend(loc="lower right", frameon=False)
 
 ax.set_ylabel("Area Under the Curve")
