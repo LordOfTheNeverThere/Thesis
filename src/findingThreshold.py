@@ -73,3 +73,6 @@ ax.set_ylabel("Area Under the Curve")
 ax.set_xlabel("Minimum interaction threshold")
 ax.grid(True, axis="both", ls="-", lw=0.1, alpha=1.0, zorder=0)
 
+plt.savefig("thresholdVSAUC.png",
+            bbox_inches="tight")
+
