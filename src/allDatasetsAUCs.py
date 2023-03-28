@@ -1,5 +1,3 @@
-
-# %%
 import time as t
 import pandas as pd
 import seaborn as sb
@@ -12,22 +10,20 @@ from classes import TreeNode
 import pickle
 
 PATH = "../data"
-# %%
 
 pairwiseCorrData = pd.read_csv(
     PATH + '/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
 
-# # %%
 
 # #Corum
 # corumPPI = pd.read_json(PATH + '/externalDatasets/corumPPI.json')
 # #String
-# stringPPI = pd.read_json(path_or_buf=PATH + 'stringPPI.json.gz', compression='gzip', index='String')
+# stringPPI = pd.read_json(path_or_buf=PATH + '/externalDatasets/stringPPI.json.gz', compression='gzip')
 #biogrid
 ppiBiogridFile = open('ppiBiogridTreeNode', 'rb')
 biogridPPI = pickle.load(ppiBiogridFile)
 ppiBiogridFile.close()
-import time as t
+
 
 
 
@@ -58,10 +54,8 @@ import time as t
 #         PPIs.addChild(TreeNode(PPI[0],{TreeNode(PPI[1])}))
 
 
+test = utils.addGroundTruthTreeNode(ppiTree=biogridPPI, data=pairwiseCorrData.head(1000), externalDatasetName="biogrid") ## 150 sec
 
-start = t.time()
-test = utils.addGroundTruthTreeNode(biogridPPI, pairwiseCorrData.head(4000), 'biogrid')
-end = t.time()
-print(end-start)
+
 print(test.query('biogrid==1'))            
 
