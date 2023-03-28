@@ -203,7 +203,7 @@ def addGroundTruthTreeNode(ppiTree: TreeNode, data: pd.DataFrame, externalDatase
 
         proteinANode :TreeNode  = ppiTree.getNodeFirstLayer(proteinA)
         
-        if proteinB in proteinANode.children:
+        if proteinANode and proteinB in proteinANode.getChildrenValue():
             found = 1
             
         model[externalDatasetName] = found

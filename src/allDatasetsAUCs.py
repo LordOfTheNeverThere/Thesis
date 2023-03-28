@@ -14,8 +14,8 @@ import pickle
 PATH = "../data"
 # %%
 
-# pairwiseCorrData = pd.read_csv(
-#     PATH + '/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
+pairwiseCorrData = pd.read_csv(
+    PATH + '/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
 
 # # %%
 
@@ -24,46 +24,44 @@ PATH = "../data"
 # #String
 # stringPPI = pd.read_json(path_or_buf=PATH + 'stringPPI.json.gz', compression='gzip', index='String')
 #biogrid
-biogridPPI = pd.read_csv(PATH + '/externalDatasets/biogridPPIReduced.csv.gz', compression='gzip')
-
-# import time as t
+ppiBiogridFile = open('ppiBiogridTreeNode', 'rb')
+biogridPPI = pickle.load(ppiBiogridFile)
+ppiBiogridFile.close()
+import time as t
 
 
 
 
 # listOfSets = list(map(set, biogridPPI.to_numpy()))
 
-PPIs = TreeNode('root')
-for PPI in biogridPPI.to_numpy():
-    childrenValues = PPIs.getChildrenValue()
+# PPIs = TreeNode('root')
+# for PPI in biogridPPI.to_numpy():
+#     childrenValues = PPIs.getChildrenValue()
 
-    if (PPI[0] in childrenValues) or (PPI[1] in childrenValues):
+#     if (PPI[0] in childrenValues) or (PPI[1] in childrenValues):
 
-        if PPI[0] in childrenValues and PPI[1] not in childrenValues:
-            proteinA = PPIs.getNodeFirstLayer(PPI[0])
+#         if PPI[0] in childrenValues and PPI[1] not in childrenValues:
+#             proteinA = PPIs.getNodeFirstLayer(PPI[0])
 
-            if PPI[1] not in proteinA.getChildrenValue():
-                proteinA.addChild(TreeNode(PPI[1]))
+#             if PPI[1] not in proteinA.getChildrenValue():
+#                 proteinA.addChild(TreeNode(PPI[1]))
 
-        elif PPI[1] in childrenValues and PPI[0] not in childrenValues:
+#         elif PPI[1] in childrenValues and PPI[0] not in childrenValues:
 
-            proteinA = PPIs.getNodeFirstLayer(PPI[1])
+#             proteinA = PPIs.getNodeFirstLayer(PPI[1])
 
-            if PPI[0] not in proteinA.getChildrenValue():
+#             if PPI[0] not in proteinA.getChildrenValue():
 
-                proteinA.addChild(TreeNode(PPI[0]))
+#                 proteinA.addChild(TreeNode(PPI[0]))
 
-    else:
-        PPIs.addChild(TreeNode(PPI[0],{TreeNode(PPI[1])}))
+#     else:
+#         PPIs.addChild(TreeNode(PPI[0],{TreeNode(PPI[1])}))
 
-# Storing ppi Tree object in file
-ppiBiogridFile = open('ppiBiogridTreeNode', 'ab')
-pickle.dump(PPIs, ppiBiogridFile)
-ppiBiogridFile.close()
 
-# start = t.time()
-# test = utils.addGroundTruth(listOfsets=listOfSets, data=pairwiseCorrData.head(2000), externalDatasetName='biogrid')
-# end = t.time()
-# print(end-start)
-# print(test)            
+
+start = t.time()
+test = utils.addGroundTruthTreeNode(biogridPPI, pairwiseCorrData.head(4000), 'biogrid')
+end = t.time()
+print(end-start)
+print(test.query('biogrid==1'))            
 
