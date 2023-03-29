@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sb
 import numpy as np
 import matplotlib.pyplot as plt
+from classes import TreeNode
 
 PATH = "../data"
 
@@ -177,6 +178,46 @@ def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: st
     return data
 
 
+
+def addGroundTruthTreeNode(ppiTree: TreeNode, data: pd.DataFrame, externalDatasetName: str, filename:str = None):
+    """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
+
+    Args:
+        listOfsets (list): List of sets of protein protein interactions[{a,b,c},{b,c,d}]
+        data (pd.DataFrame): Pairwise correlation dataframe
+        externalDatasetName (str): Name to give to the binary column holding the truth value of an PPI is seen in that external Dataset
+        filename (str): The name to give to the final file, with the added binary column
+
+    Returns:
+        _type_: Data with added column
+    """
+    data = data.copy()
+    data[externalDatasetName] = None
+
+    def addExternalTrueY(model):
+
+        found = 0
+        index = 0
+        [proteinA, proteinB] = model.name.split(';')
+        
+
+        proteinANode :TreeNode  = ppiTree.getNodeFirstLayer(proteinA)
+        
+        if proteinANode and proteinB in proteinANode.getChildrenValue():
+            found = 1
+            
+        model[externalDatasetName] = found
+
+        return model[externalDatasetName]
+
+    data[externalDatasetName] = data.apply(
+        axis=1, func= lambda model: addExternalTrueY(model))
+    
+    if filename:
+
+        data.to_csv(PATH + '/datasetsTese/' + filename + '.csv')
+    
+    return data
 
 
 def getCorumListOfInteractions():
