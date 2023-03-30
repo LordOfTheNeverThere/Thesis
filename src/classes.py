@@ -1,3 +1,23 @@
+import pandas as pd
+class ppiDataset:
+
+    def __init__(self, filename,proteinLabels:list=[] ,**readerKwargs):
+
+        self.data: pd.DataFrame = pd.read_csv(filename, compression='gzip', **readerKwargs)
+        self.proteinLabels = proteinLabels
+        self.ppis = set()
+    
+    def getPPIs(self) -> set:
+
+        data = self.data.copy()
+        data['proteinTuple'] = list(zip(data[self.proteinLabels[0]], data[self.proteinLabels[1]])) 
+        ppiSet = set(data['proteinTuple'])
+        self.ppis = ppiSet
+
+        return ppiSet
+
+
+#Deprecated
 class TreeNode:
 
     def __init__(self, value, children:set=set()):
