@@ -62,3 +62,46 @@ ppiStringFile.close()
 
 pairwiseCorrData = utils.addGroundTruthTreeNode(
     ppiTree=PPIs, data=pairwiseCorrData, externalDatasetName="string", filename='BaseModelPairwise')  # 150 sec
+
+
+
+
+
+# Calculating Recall Curves
+
+recallDict = dict()
+indexes = np.array(pairwiseCorrData.reset_index().index) /  pairwiseCorrData.shape[0]
+
+for dbName in ['Corum', 'biogrid', 'string']:
+
+    filterCorr = pairwiseCorrData[dbName]
+
+    corrCumSum = np.cumsum(filterCorr) / np.sum(filterCorr)
+    AUC = auc(indexes, corrCumSum)
+
+    recallDict[dbName] = dict(x=list(indexes), y=list(corrCumSum), auc=AUC)
+
+
+
+
+_, ax = plt.subplots(1, 1, figsize=(4, 3), dpi=600)
+
+for ppiDB in recallDict:
+    ax.plot(
+    ppiDB['x'],
+    ppiDB['y'],
+    label=f"(AUC {ppiDB['auc']:.2f})",
+    c=sb.color_palette("tab20c").as_hex())
+
+
+
+ax.plot([0, 1], [0, 1], "k--", lw=0.3)
+ax.legend(loc="lower right", frameon=False)
+
+ax.set_ylabel("Cumulative sum")
+ax.set_xlabel("Ranked correlation")
+ax.grid(True, axis="both", ls="-", lw=0.1, alpha=1.0, zorder=0)
+
+plt.savefig("combinedAllDatasetsRecallCurve.png",
+            bbox_inches="tight")
+plt.close("all")
