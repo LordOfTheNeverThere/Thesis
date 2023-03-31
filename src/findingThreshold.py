@@ -13,7 +13,8 @@ RANDOMSTATE = 42
 
 proteinsData = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTrans.csv', index_col='modelID')
 
-pairwiseCorrData = pd.read_csv(PATH+'/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
+# pairwiseCorrData = pd.read_csv(PATH+'/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
+
 
 # What Professor Pedro did not ask For :( 
 
@@ -67,16 +68,19 @@ def getAUCvsThresholdPlot(pairwiseCorrData:pd.DataFrame) -> None:
                 bbox_inches="tight")
     
 
-getAUCvsThresholdPlot(pairwiseCorrData)
+# getAUCvsThresholdPlot(pairwiseCorrData)
 
     # What Professor Pedro Asked For :)
 def randomSubSamplingAUC(proteinsData: pd.DataFrame):
-    proteinsData :pd.DataFrame = proteinsData.copy()
+    proteinsData:pd.DataFrame = proteinsData.copy()
+    corum = ppiDataset(filename=PATH + '/externalDatasets/corumPPI.csv.gz')
+    corum.getPPIs(True)
 
-    for sampleNum in [5]:
-        proteinsData = proteinsData.sample(n = sampleNum, axis=0, random_state=RANDOMSTATE)
-    print(proteinsData)
-    proteinsData = utils.getPairwiseCorrelation(proteinsData,None,'correlation',False)
-    print(proteinsData)
+
+    # for sampleNum in [5]:
+    #     proteinsData = proteinsData.sample(n = sampleNum, axis=0, random_state=RANDOMSTATE)
+    # print(proteinsData)
+    # proteinsData = utils.getPairwiseCorrelation(proteinsData,None,'correlation',False)
+    # print(proteinsData)
     
-# randomSubSamplingAUC(proteinsData)
+randomSubSamplingAUC(proteinsData)

@@ -1,4 +1,5 @@
 import pandas as pd
+from itertools import combinations
 class ppiDataset:
 
     def __init__(self, filename,proteinLabels:list=[] ,**readerKwargs):
@@ -7,14 +8,31 @@ class ppiDataset:
         self.proteinLabels = proteinLabels
         self.ppis = set()
     
-    def getPPIs(self) -> set:
-
+    def getPPIs(self, isCorum: bool = False) -> set:
         data = self.data.copy()
-        data['proteinTuple'] = list(zip(data[self.proteinLabels[0]], data[self.proteinLabels[1]])) 
+
+        if isCorum:
+            
+            def combinationsOfProteins(complx):
+                
+                if ';' in list(complx['subunits(Gene name)']) :
+                    complx['proteinTuple'] = list(combinations(
+                        complx['subunits(Gene name)'].split(';'), 2))
+                    
+                    return complx
+
+            data  = data.apply(lambda complx: combinationsOfProteins(complx), axis=1)
+            ppiList = list(data.dropna()['proteinTuple'])
+            ppiSet = {item for sublist in ppiList for item in sublist}
+            
+
+        else:
+            data['proteinTuple'] = list(zip(data[self.proteinLabels[0]], data[self.proteinLabels[1]])) 
+        
         ppiSet = set(data['proteinTuple'])
         self.ppis = ppiSet
 
-        return ppiSet
+        # return ppiSet
 
 
 #Deprecated
