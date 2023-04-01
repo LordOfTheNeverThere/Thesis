@@ -149,9 +149,9 @@ def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, file
         found = 0
         [proteinA, proteinB] = model.name.split(';')
         ppiAB: tuple = (proteinA, proteinB) #In my implementation the ppis have (A,B) but not (B,A), they are combinations
-        # ppiBA: tuple = (proteinB, proteinA)
+        ppiBA: tuple = (proteinB, proteinA)
         
-        if ppiAB in ppis:
+        if ppiAB in ppis or ppiBA in ppis:
             found = 1
             
         model[externalDatasetName] = found

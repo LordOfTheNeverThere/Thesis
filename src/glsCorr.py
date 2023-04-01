@@ -1,27 +1,35 @@
 import numpy as np
 import pandas as pd
 from scipy.special import stdtr
+import matplotlib.pyplot as plt
+import utils
+
 PATH = "../data"
 
 proteinData = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTrans.csv',index_col='modelID')
-proteinDataMedian = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTransMedian.csv.gz', compression='gzip')
-proteinDataMean = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTransMean.csv.gz', compression='gzip')
+
+proteinData.dropna(axis=1, thresh=round(proteinData.shape[0] * 0.2), inplace=True) #We require that a protein has about 20% missingness for it to be considered a dropable column
+
+proteinDataMedian = proteinData.fillna(proteinData.median())
+proteinDataMean = proteinData.fillna(proteinData.mean())
 
 
-proteinDataMean = proteinDataMean.drop(columns='modelID').to_numpy()
-proteinDataMedian = proteinDataMedian.drop(columns='modelID').to_numpy()
-proteinData.dropna(axis=1, inplace=True)
+# proteinDataMean = proteinDataMean.drop(columns='modelID').to_numpy()
+# proteinDataMedian = proteinDataMedian.drop(columns='modelID').to_numpy()
 
-print(np.linalg.inv(np.cov(proteinData.T)))
+
 # Warp screen data and intercept based on covariance of screens
 
-cholsigmainvMean = np.linalg.cholesky(np.linalg.inv(np.cov(proteinDataMean.T)))
-warpedProteinsMean = proteinDataMean.values @ cholsigmainvMean
-warpedIntereceptMean = cholsigmainvMean.sum(axis=0)
+cholsigmainvMean = np.linalg.cholesky(np.linalg.inv(np.cov(proteinDataMean)))
 
-cholsigmainvMedian = np.linalg.cholesky(np.linalg.inv(np.cov(proteinDataMedian.T)))
-warpedProteinsMedian = proteinDataMedian.values @ cholsigmainvMedian
-warpedIntereceptMedian = cholsigmainvMedian.sum(axis=0)
+
+warpedProteinsMean = proteinDataMean.T.values @ cholsigmainvMean
+warpedIntereceptMean = cholsigmainvMean.T.sum(axis=0)
+
+
+cholsigmainvMedian = np.linalg.cholesky(np.linalg.inv(np.cov(proteinDataMedian)))
+warpedProteinsMedian = proteinDataMedian.T.values @ cholsigmainvMedian
+warpedIntereceptMedian = cholsigmainvMedian.T.sum(axis=0)
 
 
 def linear_regression(warped_screens, warped_intercept):
@@ -44,8 +52,16 @@ GLS_p = 2 * stdtr(df, -np.abs(GLS_coef / GLS_se))
 np.fill_diagonal(GLS_p, 1)
 
 # # Save everything
-print(GLS_p)
-print(GLS_coef)
+# print(GLS_p)
+# print(GLS_coef)
+
+glsCorr = pd.DataFrame(GLS_coef)
+pairwiseCorrData = glsCorr.where(np.triu(np.ones(glsCorr.shape), k=1).astype(bool)).stack().reset_index()
+pairwiseCorrData.columns = ['index1', 'index2','glsBeta']
+print(pairwiseCorrData)
+pairwiseCorrData['glsBeta'].plot(kind='hist')
+
+plt.savefig("testVariousAUC's.png", bbox_inches="tight")
 np.save('GLS_p.npy', GLS_p)
 np.save('GLS_sign.npy', np.sign(GLS_coef))
 # screens.index.to_series().to_csv('genes.txt', index=False, header=False)

@@ -105,7 +105,8 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
         
         print(aucList)
         allAUC[str(sampleNum)] = aucList
-    
+
+    # Plot each AUC in the various boxplot chart
     ax = allAUC.plot(kind='box')
     ax.set_ylabel("AUC")
     ax.set_xlabel("Sumbsampling Number") 
@@ -115,8 +116,4 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
         
 
 
-    # Plot each AUC in the various boxplot chart
-
-
-    
 randomSubSamplingAUC(proteinsData, [5], 3)
