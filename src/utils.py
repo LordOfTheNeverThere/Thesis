@@ -130,11 +130,11 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str, c
     return pairwiseCorrData
 
 
-def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: str, filename:str = None):
+def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, filename:str = None):
     """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
 
     Args:
-        listOfsets (list): List of sets of protein protein interactions[{a,b,c},{b,c,d}]
+        ppis (set): sets of tuples of protein protein interactions{(a,b),(c,b),(c,d)}
         data (pd.DataFrame): Pairwise correlation dataframe
         externalDatasetName (str): Name to give to the binary column holding the truth value of an PPI is seen in that external Dataset
         filename (str): The name to give to the final file, with the added binary column
@@ -143,67 +143,15 @@ def addGroundTruth(listOfsets: list, data: pd.DataFrame, externalDatasetName: st
         _type_: Data with added column
     """
     data = data.copy()
-    data[externalDatasetName] = None
 
     def addExternalTrueY(model):
 
         found = 0
-        index = 0
         [proteinA, proteinB] = model.name.split(';')
+        ppiAB: tuple = (proteinA, proteinB) #In my implementation the ppis have (A,B) but not (B,A), they are combinations
+        # ppiBA: tuple = (proteinB, proteinA)
         
-
-        while not found and index < len(listOfsets):
-
-            subset = listOfsets[index]
-            if (proteinA in subset) and (proteinB in subset):
-                if found:
-                    print('Incorrect Code!')
-                found = 1
-                
-                # outputList = outputList.append(1)  # There is interaction
-
-            index += 1
-            
-        model[externalDatasetName] = found
-
-        return model[externalDatasetName]
-
-    data[externalDatasetName] = data.apply(
-        axis=1, func= lambda model: addExternalTrueY(model))
-    
-    if filename:
-
-        data.to_csv(PATH + '/datasetsTese/' + filename + '.csv')
-    
-    return data
-
-
-
-def addGroundTruthTreeNode(ppiTree: TreeNode, data: pd.DataFrame, externalDatasetName: str, filename:str = None):
-    """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
-
-    Args:
-        listOfsets (list): List of sets of protein protein interactions[{a,b,c},{b,c,d}]
-        data (pd.DataFrame): Pairwise correlation dataframe
-        externalDatasetName (str): Name to give to the binary column holding the truth value of an PPI is seen in that external Dataset
-        filename (str): The name to give to the final file, with the added binary column
-
-    Returns:
-        _type_: Data with added column
-    """
-    data = data.copy()
-    data[externalDatasetName] = None
-
-    def addExternalTrueY(model):
-
-        found = 0
-        index = 0
-        [proteinA, proteinB] = model.name.split(';')
-        
-
-        proteinANode :TreeNode  = ppiTree.getNodeFirstLayer(proteinA)
-        
-        if proteinANode and proteinB in proteinANode.getChildrenValue():
+        if ppiAB in ppis:
             found = 1
             
         model[externalDatasetName] = found
@@ -218,6 +166,48 @@ def addGroundTruthTreeNode(ppiTree: TreeNode, data: pd.DataFrame, externalDatase
         data.to_csv(PATH + '/datasetsTese/' + filename + '.csv')
     
     return data
+
+
+# DEPRECATED
+# def addGroundTruthTreeNode(ppiTree: TreeNode, data: pd.DataFrame, externalDatasetName: str, filename:str = None):
+#     """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
+
+#     Args:
+#         listOfsets (list): List of sets of protein protein interactions[{a,b,c},{b,c,d}]
+#         data (pd.DataFrame): Pairwise correlation dataframe
+#         externalDatasetName (str): Name to give to the binary column holding the truth value of an PPI is seen in that external Dataset
+#         filename (str): The name to give to the final file, with the added binary column
+
+#     Returns:
+#         _type_: Data with added column
+#     """
+#     data = data.copy()
+#     data[externalDatasetName] = None
+
+#     def addExternalTrueY(model):
+
+#         found = 0
+#         index = 0
+#         [proteinA, proteinB] = model.name.split(';')
+        
+
+#         proteinANode :TreeNode  = ppiTree.getNodeFirstLayer(proteinA)
+        
+#         if proteinANode and proteinB in proteinANode.getChildrenValue():
+#             found = 1
+            
+#         model[externalDatasetName] = found
+
+#         return model[externalDatasetName]
+
+#     data[externalDatasetName] = data.apply(
+#         axis=1, func= lambda model: addExternalTrueY(model))
+    
+#     if filename:
+
+#         data.to_csv(PATH + '/datasetsTese/' + filename + '.csv')
+    
+#     return data
 
 
 def getCorumListOfInteractions():

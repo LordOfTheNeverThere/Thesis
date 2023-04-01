@@ -1,5 +1,5 @@
 import pandas as pd
-from itertools import combinations
+from itertools import combinations, permutations
 class ppiDataset:
 
     def __init__(self, filename,proteinLabels:list=[] ,**readerKwargs):
@@ -16,7 +16,7 @@ class ppiDataset:
             def combinationsOfProteins(complx):
                 
                 if ';' in list(complx['subunits(Gene name)']) :
-                    complx['proteinTuple'] = list(combinations(
+                    complx['proteinTuple'] = list(permutations(
                         complx['subunits(Gene name)'].split(';'), 2))
                     
                     return complx
@@ -28,11 +28,11 @@ class ppiDataset:
 
         else:
             data['proteinTuple'] = list(zip(data[self.proteinLabels[0]], data[self.proteinLabels[1]])) 
-        
-        ppiSet = set(data['proteinTuple'])
+            ppiSet = set(data['proteinTuple'])
+
         self.ppis = ppiSet
 
-        # return ppiSet
+        return ppiSet
 
 
 #Deprecated

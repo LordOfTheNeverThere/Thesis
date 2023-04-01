@@ -71,16 +71,52 @@ def getAUCvsThresholdPlot(pairwiseCorrData:pd.DataFrame) -> None:
 # getAUCvsThresholdPlot(pairwiseCorrData)
 
     # What Professor Pedro Asked For :)
-def randomSubSamplingAUC(proteinsData: pd.DataFrame):
+def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], repeats: int):
+    import time
+
     proteinsData:pd.DataFrame = proteinsData.copy()
     corum = ppiDataset(filename=PATH + '/externalDatasets/corumPPI.csv.gz')
-    corum.getPPIs(True)
-
-
-    # for sampleNum in [5]:
-    #     proteinsData = proteinsData.sample(n = sampleNum, axis=0, random_state=RANDOMSTATE)
-    # print(proteinsData)
-    # proteinsData = utils.getPairwiseCorrelation(proteinsData,None,'correlation',False)
-    # print(proteinsData)
+    corum = corum.getPPIs(True)
+    allAUC = pd.DataFrame()
     
-randomSubSamplingAUC(proteinsData)
+    
+    # Random Sampling
+    for sampleNum in subsampleSizes:
+
+        iteration = 0
+        aucList = list()
+        while iteration < repeats:
+
+            proteinsDatSample = proteinsData.sample(n = sampleNum, axis=0, random_state=RANDOMSTATE)
+            pairwiseCorr = utils.getPairwiseCorrelation(
+                proteinsDatSample, None, str(sampleNum) + ' samples', False)
+            del proteinsDatSample
+            start =time.time()
+            pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr, 'corum', None)
+            end = time.time()
+            print(end-start)
+            iteration =+1
+
+            corrCumSum = np.cumsum(pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
+            indexes = np.array(pairwiseCorr.reset_index().index) / pairwiseCorr.shape[0]
+            AUC = auc(indexes, corrCumSum)
+            aucList.append(AUC)
+            del pairwiseCorr
+        
+        print(aucList)
+        allAUC[str(sampleNum)] = aucList
+    
+    ax = allAUC.plot(kind='box')
+    ax.set_ylabel("AUC")
+    ax.set_xlabel("Sumbsampling Number") 
+        
+    plt.savefig("testVariousAUC's.png",
+                bbox_inches="tight")
+        
+
+
+    # Plot each AUC in the various boxplot chart
+
+
+    
+randomSubSamplingAUC(proteinsData, [5], 3)
