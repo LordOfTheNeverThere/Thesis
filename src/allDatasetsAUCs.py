@@ -8,8 +8,7 @@ import utils
 from sklearn.metrics import auc
 from classes import TreeNode
 import pickle
-
-PATH = "../data"
+from env import PATH
 
 pairwiseCorrData = pd.read_csv(PATH + '/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
 pairwiseCorrData = pairwiseCorrData.query('counts > 4') #Removing unmeaningful interactions

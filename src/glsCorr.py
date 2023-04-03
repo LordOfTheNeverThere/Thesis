@@ -4,7 +4,7 @@ from scipy.special import stdtr
 import matplotlib.pyplot as plt
 import utils
 
-PATH = "../data"
+from env import PATH
 
 proteinData = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTrans.csv',index_col='modelID')
 

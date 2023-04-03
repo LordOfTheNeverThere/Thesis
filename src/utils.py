@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from classes import TreeNode
 
-PATH = "../data"
+from env import PATH
 
 
 # def getPairwiseCorrData(data: pd.DataFrame, columnName :str ='correlation') -> pd.Series:

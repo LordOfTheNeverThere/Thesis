@@ -8,7 +8,7 @@ from sklearn.metrics import auc
 from classes import ppiDataset
 
 
-PATH = "../data"
+from env import PATH
 RANDOMSTATE = 42
 
 proteinsData = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTrans.csv', index_col='modelID')

@@ -6,7 +6,7 @@ from sklearn.metrics import auc
 import matplotlib.pyplot as plt
 import utils
 
-PATH = "../data"
+from env import PATH
 
 # %% Load Dataset
 
