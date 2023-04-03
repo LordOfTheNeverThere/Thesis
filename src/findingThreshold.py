@@ -86,34 +86,39 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
         iteration = 0
         aucList = list()
         while iteration < repeats:
+            print(str(iteration) + ' - Iteration')
+            print(str(repeats) + ' - repeats')
 
             proteinsDatSample = proteinsData.sample(n = sampleNum, axis=0, random_state=RANDOMSTATE)
             pairwiseCorr = utils.getPairwiseCorrelation(
                 proteinsDatSample, None, str(sampleNum) + ' samples', False)
             del proteinsDatSample
             start =time.time()
-            pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr, 'corum', None)
+            pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr.iloc[100000:120000], 'corum', None)
             end = time.time()
             print(end-start)
-            iteration =+1
+            
 
             corrCumSum = np.cumsum(pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
             indexes = np.array(pairwiseCorr.reset_index().index) / pairwiseCorr.shape[0]
             AUC = auc(indexes, corrCumSum)
             aucList.append(AUC)
             del pairwiseCorr
+            iteration += 1
         
         print(aucList)
         allAUC[str(sampleNum)] = aucList
 
     # Plot each AUC in the various boxplot chart
     ax = allAUC.plot(kind='box')
+    ax.plot([0, 100], [0.70, 0.70], label= 'AUC == 0.7')
+    ax.plot([0, 100], [0.76, 0.76], label='Baseline Model, 0.76')
     ax.set_ylabel("AUC")
-    ax.set_xlabel("Sumbsampling Number") 
+    ax.set_xlabel("Sampling Number") 
         
-    plt.savefig("testVariousAUC's.png",
+    plt.savefig("aucPerSamplingNumber.png",
                 bbox_inches="tight")
         
 
 
-randomSubSamplingAUC(proteinsData, [5], 3)
+randomSubSamplingAUC(proteinsData, [5], 5)
