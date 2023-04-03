@@ -133,3 +133,7 @@ datasetsTese.zip
 
 /data
 /Literatura
+src/GLS_p.npy
+.gitignore
+src/GLS_sign.npy
+src/env.py
