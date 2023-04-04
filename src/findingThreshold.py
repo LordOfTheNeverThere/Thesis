@@ -6,9 +6,13 @@ import matplotlib.pyplot as plt
 import utils
 from sklearn.metrics import auc
 from classes import ppiDataset
+import time
+from itertools import repeat
 from env import PATH
+import multiprocessing as mp
 
 RANDOMSTATE = 42
+
 
 proteinsData = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTrans.csv', index_col='modelID')
 
@@ -70,43 +74,81 @@ def getAUCvsThresholdPlot(pairwiseCorrData:pd.DataFrame) -> None:
 # getAUCvsThresholdPlot(pairwiseCorrData)
 
     # What Professor Pedro Asked For :)
+
+def variousRepeatsWrapper(iteration: int, proteinsData: pd.DataFrame, corum: pd.DataFrame, sampleNum: int):
+
+    proteinsDatSample = proteinsData.sample( n=sampleNum, axis=0, random_state=RANDOMSTATE)
+    pairwiseCorr = utils.getPairwiseCorrelation( proteinsDatSample, None, str(sampleNum) + ' samples', False)
+    pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr.head(2000), 'corum', None)
+    corrCumSum = np.cumsum(pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
+    indexes = np.array(pairwiseCorr.reset_index().index) / pairwiseCorr.shape[0]
+    AUC = auc(indexes, corrCumSum)
+
+
+
+    return AUC
+
+
+def wrapperCheckPPIs(sampleNum: int, proteinsData: pd.DataFrame, repeats: int, corum: pd.DataFrame):
+
+    start = time.time()
+
+
+    with mp.Pool(1) as process:    
+        checkPPIGen = process.starmap(variousRepeatsWrapper, zip(range(0, repeats),  repeat(proteinsData), repeat(corum), repeat(sampleNum)))  # While Cycle
+    result = list(checkPPIGen)
+
+    end = time.time()
+    sumOfTime = end-start
+    print(sumOfTime)
+
+
+    return sampleNum, result
+
+
+
 def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], repeats: int):
-    import time
+
 
     proteinsData:pd.DataFrame = proteinsData.copy()
     corum = ppiDataset(filename=PATH + '/externalDatasets/corumPPI.csv.gz')
     corum = corum.getPPIs(True)
-    allAUC = pd.DataFrame()
-    
-    
-    # Random Sampling
-    for sampleNum in subsampleSizes:
 
-        iteration = 0
-        aucList = list()
-        sumOfTime = 0
-        while iteration < repeats:
 
-            proteinsDatSample = proteinsData.sample(n = sampleNum, axis=0, random_state=RANDOMSTATE)
-            pairwiseCorr = utils.getPairwiseCorrelation(
-                proteinsDatSample, None, str(sampleNum) + ' samples', False)
-            del proteinsDatSample
-            start =time.time()
-            pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr, 'corum', None)
-            end = time.time()
-            sumOfTime += end-start
+    checkPPIGen = map(wrapperCheckPPIs, subsampleSizes, repeat(proteinsData), repeat(repeats), repeat(corum))  # First For Cycle
+
+    allAUC = pd.DataFrame(dict(checkPPIGen))
+
+    
+    # DEPRECATED UNPARARELIZED CODE
+    # # Random Sampling
+    # for sampleNum in subsampleSizes:
+
+    #     iteration = 0
+    #     aucList = list()
+    #     sumOfTime = 0
+    #     while iteration < repeats:
+
+    #         proteinsDatSample = proteinsData.sample(n = sampleNum, axis=0, random_state=RANDOMSTATE)
+    #         pairwiseCorr = utils.getPairwiseCorrelation(
+    #             proteinsDatSample, None, str(sampleNum) + ' samples', False)
+    #         del proteinsDatSample
+            
+    #         pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr, 'corum', None)
+    #         end = time.time()
+    #         sumOfTime += end-start
             
 
-            corrCumSum = np.cumsum(pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
-            indexes = np.array(pairwiseCorr.reset_index().index) / pairwiseCorr.shape[0]
-            AUC = auc(indexes, corrCumSum)
-            aucList.append(AUC)
-            del pairwiseCorr
-            iteration += 1
+    #         corrCumSum = np.cumsum(pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
+    #         indexes = np.array(pairwiseCorr.reset_index().index) / pairwiseCorr.shape[0]
+    #         AUC = auc(indexes, corrCumSum)
+    #         aucList.append(AUC)
+    #         del pairwiseCorr
+    #         iteration += 1
         
-        print(aucList)
-        print(sumOfTime/repeats)
-        allAUC[str(sampleNum)] = aucList
+    #     print(aucList)
+    #     print(sumOfTime/repeats)
+    #     allAUC[str(sampleNum)] = aucList
 
     # Plot each AUC in the various boxplot chart
     ax = allAUC.plot(kind='box')
@@ -119,5 +161,5 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
                 bbox_inches="tight")
         
 
-
-randomSubSamplingAUC(proteinsData, [5], 5)
+if __name__ == '__main__':
+    randomSubSamplingAUC(proteinsData, [5], 2)
