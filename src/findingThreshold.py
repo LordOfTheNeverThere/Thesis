@@ -6,9 +6,8 @@ import matplotlib.pyplot as plt
 import utils
 from sklearn.metrics import auc
 from classes import ppiDataset
-
-
 from env import PATH
+
 RANDOMSTATE = 42
 
 proteinsData = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTrans.csv', index_col='modelID')
@@ -85,18 +84,17 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
 
         iteration = 0
         aucList = list()
+        sumOfTime = 0
         while iteration < repeats:
-            print(str(iteration) + ' - Iteration')
-            print(str(repeats) + ' - repeats')
 
             proteinsDatSample = proteinsData.sample(n = sampleNum, axis=0, random_state=RANDOMSTATE)
             pairwiseCorr = utils.getPairwiseCorrelation(
                 proteinsDatSample, None, str(sampleNum) + ' samples', False)
             del proteinsDatSample
             start =time.time()
-            pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr.iloc[100000:120000], 'corum', None)
+            pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr, 'corum', None)
             end = time.time()
-            print(end-start)
+            sumOfTime += end-start
             
 
             corrCumSum = np.cumsum(pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
@@ -107,6 +105,7 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
             iteration += 1
         
         print(aucList)
+        print(sumOfTime/repeats)
         allAUC[str(sampleNum)] = aucList
 
     # Plot each AUC in the various boxplot chart
