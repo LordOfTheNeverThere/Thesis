@@ -81,26 +81,26 @@ plt.savefig("baselineRecallCurve.png",
             bbox_inches="tight")
 plt.close("all")
 
-# %% Chose Tissues To calculate correlation for presentation
+# # %% Chose Tissues To calculate correlation for presentation
 
-valuesSet, valuesDict = utils.getUniqueSetValues(
-    filepath=PATH + "/datasetsTese/samplesheet.csv", feature='tissue')
+# valuesSet, valuesDict = utils.getUniqueSetValues(
+#     filepath=PATH + "/datasetsTese/samplesheet.csv", feature='tissue')
 
-finalTissueSet = set()
-for (key, value) in valuesDict.items():
-    if (value >= 50):
-        finalTissueSet.add(key)
+# finalTissueSet = set()
+# for (key, value) in valuesDict.items():
+#     if (value >= 50):
+#         finalTissueSet.add(key)
 
-mergedDf = pairwiseCorrData
+# mergedDf = pairwiseCorrData
 
-for tissue in finalTissueSet:
+# for tissue in finalTissueSet:
 
-    modelsSet = utils.getModelsByQuery('samplesheet', 'tissue', tissue)
-    specificProteinsData = proteinsData.query('modelID in @modelsSet') # Query that retreives the df with only the models belonging to the modelsSet local var
-    tissueSpecificDF = utils.getPairwiseCorrelation(
-        specificProteinsData, None, tissue + " Specific Correlation")
-    mergedDf = mergedDf.merge(right=tissueSpecificDF, on='PPI', how='outer')
+#     modelsSet = utils.getModelsByQuery('samplesheet', 'tissue', tissue)
+#     specificProteinsData = proteinsData.query('modelID in @modelsSet') # Query that retreives the df with only the models belonging to the modelsSet local var
+#     tissueSpecificDF = utils.getPairwiseCorrelation(
+#         specificProteinsData, None, tissue + " Specific Correlation")
+#     mergedDf = mergedDf.merge(right=tissueSpecificDF, on='PPI', how='outer')
     
-# %% Debug
-dropedNaNsMergedDf.query('`Lung Specific Correlation` > 0.5 +`Ovary Specific Correlation` & Corum == 1')
-#01 %%
+# # %% Debug
+# dropedNaNsMergedDf.query('`Lung Specific Correlation` > 0.5 +`Ovary Specific Correlation` & Corum == 1')
+# #01 %%

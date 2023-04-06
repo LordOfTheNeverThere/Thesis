@@ -11,45 +11,49 @@ from itertools import repeat
 from env import PATH
 import multiprocessing as mp
 
-RANDOMSTATE = 42
-CPUS = 16
+RANDOMSTATE = None
+CPUS = 20
 assert CPUS < mp.cpu_count() - 1
 
 
-proteinsData = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTrans.csv', index_col='modelID')
+proteinsData = pd.read_csv(
+    PATH+'/datasetsTese/proteomicsDataTrans.csv', index_col='modelID')
 
-# pairwiseCorrData = pd.read_csv(PATH+'/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
+globalPairwiseCorr = pd.read_csv(
+    PATH+'/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
+globalPairwiseCorr = globalPairwiseCorr['Corum']
 
 
-# What Professor Pedro did not ask For :( 
+# What Professor Pedro did not ask For :(
 
-def getAUCvsThresholdPlot(pairwiseCorrData:pd.DataFrame) -> None:
+def getAUCvsThresholdPlot(pairwiseCorrData: pd.DataFrame) -> None:
 
     # find the best count threshold n
     best = True
     previousAUC = 0
     threshold = 2
-    aucList=[]
-    thresholdList =[]
+    aucList = []
+    thresholdList = []
     while threshold < 101:
-        
+
         queriedPairCorrData = pairwiseCorrData.query('counts > @threshold')
-        corrCumSum = np.cumsum(queriedPairCorrData['Corum']) / np.sum(queriedPairCorrData['Corum'])
-        indexes = np.array(queriedPairCorrData.reset_index().index) / queriedPairCorrData.shape[0]
+        corrCumSum = np.cumsum(
+            queriedPairCorrData['Corum']) / np.sum(queriedPairCorrData['Corum'])
+        indexes = np.array(queriedPairCorrData.reset_index(
+        ).index) / queriedPairCorrData.shape[0]
         currentAUC = auc(indexes, corrCumSum)
-        #Update Lists for Curve plot
+        # Update Lists for Curve plot
         aucList.append(currentAUC)
         thresholdList.append(threshold)
-        
-        
+
         if best and currentAUC < previousAUC:
             bestPairwuiseFrequency = threshold-1
             best = False
-            print('The limit threshold of interactions were we start to lose information after increasing it is: ' + str(threshold-1) + '\n with an auc of ' + str(previousAUC))
+            print('The limit threshold of interactions were we start to lose information after increasing it is: ' +
+                  str(threshold-1) + '\n with an auc of ' + str(previousAUC))
         # print(str(currentAUC) + '>=' + str(previousAUC) + '\n' + str(best))
         threshold += 1
         previousAUC = currentAUC
-
 
     # make chart with auc per n threshold
 
@@ -59,8 +63,9 @@ def getAUCvsThresholdPlot(pairwiseCorrData:pd.DataFrame) -> None:
         aucList,
         c='green',
     )
-    ax.plot([0,100],[0.78,0.78], "r--", label='AUC == 0.78',lw=0.7)
-    ax.plot([bestPairwuiseFrequency,bestPairwuiseFrequency],[0,1], "b--", label='max n==' + str(bestPairwuiseFrequency),lw=0.6)
+    ax.plot([0, 100], [0.78, 0.78], "r--", label='AUC == 0.78', lw=0.7)
+    ax.plot([bestPairwuiseFrequency, bestPairwuiseFrequency], [0, 1],
+            "b--", label='max n==' + str(bestPairwuiseFrequency), lw=0.6)
 
     ax.legend(loc="lower right", frameon=False)
     ax.set_ybound(lower=0.6, upper=0.9)
@@ -71,20 +76,26 @@ def getAUCvsThresholdPlot(pairwiseCorrData:pd.DataFrame) -> None:
 
     plt.savefig("thresholdVSAUC.png",
                 bbox_inches="tight")
-    
+
 
 # getAUCvsThresholdPlot(pairwiseCorrData)
 
     # What Professor Pedro Asked For :)
 
 def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: pd.DataFrame, corum: pd.DataFrame):
+    
 
-    proteinsDatSample = proteinsData.sample(n=sampleNum, axis=0, random_state=RANDOMSTATE)
-    pairwiseCorr = utils.getPairwiseCorrelation( proteinsDatSample, None, str(sampleNum) + ' samples', False)
+    proteinsDatSample = proteinsData.sample(
+        n=sampleNum, axis=0, random_state=iteration * sampleNum)
+    pairwiseCorr = utils.getPairwiseCorrelation(
+        proteinsDatSample, None, str(sampleNum) + ' samples', False)
     del proteinsDatSample
-    pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr, 'corum', None)
-    corrCumSum = np.cumsum(pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
-    indexes = np.array(pairwiseCorr.reset_index().index) / pairwiseCorr.shape[0]
+    pairwiseCorr = pairwiseCorr.merge(globalPairwiseCorr, on='PPI', how='left')
+    # pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr.head(2000), 'Corum', None) DEPRECATED
+    corrCumSum = np.cumsum(
+        pairwiseCorr['Corum']) / np.sum(pairwiseCorr['Corum'])
+    indexes = np.array(pairwiseCorr.reset_index().index) / \
+        pairwiseCorr.shape[0]
     del pairwiseCorr
     AUC = auc(indexes, corrCumSum)
 
@@ -94,17 +105,13 @@ def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: pd.DataF
 
 def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: pd.DataFrame, corum: pd.DataFrame):
 
-    
-
-
-    with mp.Pool(CPUS) as process:    
-        checkPPIGen = process.starmap(variousRepeatsWrapper, zip(range(0, repeats), repeat(sampleNum), repeat(proteinsData), repeat(corum)))  # While Cycle
+    with mp.Pool(CPUS) as process:
+        checkPPIGen = process.starmap(variousRepeatsWrapper, zip(range(0, repeats), repeat(
+            sampleNum), repeat(proteinsData), repeat(corum)))  # While Cycle
     result = list(checkPPIGen)
     print(result)
 
-
     return sampleNum, result
-
 
 
 def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], repeats: int):
@@ -112,12 +119,11 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
     corum = ppiDataset(filename=PATH + '/externalDatasets/corumPPI.csv.gz')
     corum = corum.getPPIs(True)
 
-
-    checkPPIGen = map(wrapperCheckPPIs, subsampleSizes,  repeat(repeats), repeat(proteinsData), repeat(corum))  # First For Cycle
+    checkPPIGen = map(wrapperCheckPPIs, subsampleSizes,  repeat(
+        repeats), repeat(proteinsData), repeat(corum))  # First For Cycle
 
     allAUC = pd.DataFrame(dict(checkPPIGen))
 
-    
     # DEPRECATED UNPARARELIZED CODE
     # # Random Sampling
     # for sampleNum in subsampleSizes:
@@ -131,11 +137,10 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
     #         pairwiseCorr = utils.getPairwiseCorrelation(
     #             proteinsDatSample, None, str(sampleNum) + ' samples', False)
     #         del proteinsDatSample
-            
+
     #         pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr, 'corum', None)
     #         end = time.time()
     #         sumOfTime += end-start
-            
 
     #         corrCumSum = np.cumsum(pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
     #         indexes = np.array(pairwiseCorr.reset_index().index) / pairwiseCorr.shape[0]
@@ -143,29 +148,27 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
     #         aucList.append(AUC)
     #         del pairwiseCorr
     #         iteration += 1
-        
+
     #     print(aucList)
     #     print(sumOfTime/repeats)
     #     allAUC[str(sampleNum)] = aucList
 
     # Plot each AUC in the various boxplot chart
-    print(allAUC)
-    ax = allAUC.plot(kind='box')
-    ax.plot([0, 100], [0.70, 0.70], label= 'AUC == 0.7')
-    ax.plot([0, 100], [0.76, 0.76], label='Baseline Model, 0.76')
-    ax.set_xbound(lower=0, upper=30)
+    ax = allAUC.plot(kind='box', figsize=(8,6))
     ax.set_ybound(lower=0.2, upper=1)
+    ax.set_x
     ax.set_ylabel("AUC")
-    ax.set_xlabel("Sampling Number") 
-        
-    plt.savefig("aucPerSamplingNumber.png",
+    ax.set_xlabel("Sampling Number")
+    ax.xticks(rotation=90)
+
+    plt.savefig("aucPerSamplingNumberv2.0.png",
                 bbox_inches="tight")
-        
+
 
 if __name__ == '__main__':
-    subsamplingList = [5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 40, 60, 80, 100]
+    subsamplingList = list(range(5,27,2)) + list(range(40, 120, 20)) + list(range(150, 900, 50))
     start = time.time()
-    randomSubSamplingAUC(proteinsData, subsamplingList[0:11], 10)
+    randomSubSamplingAUC(proteinsData, subsamplingList, 10)
     end = time.time()
     sumOfTime = end-start
     print(sumOfTime)
