@@ -1,5 +1,6 @@
 import pandas as pd
 from itertools import combinations
+import multiprocessing as mp
 class ppiDataset:
 
     def __init__(self, filename,proteinLabels:list=[] ,**readerKwargs):
@@ -9,6 +10,7 @@ class ppiDataset:
         self.ppis = set()
     
     def getPPIs(self, isCorum: bool = False) -> set:
+        
         data = self.data.copy()
 
         if isCorum:

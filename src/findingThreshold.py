@@ -12,7 +12,7 @@ from env import PATH
 import multiprocessing as mp
 
 RANDOMSTATE = None
-CPUS = 20
+CPUS = 30
 assert CPUS < mp.cpu_count() - 1
 
 
@@ -85,10 +85,8 @@ def getAUCvsThresholdPlot(pairwiseCorrData: pd.DataFrame) -> None:
 def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: pd.DataFrame, corum: pd.DataFrame):
     
 
-    proteinsDatSample = proteinsData.sample(
-        n=sampleNum, axis=0, random_state=iteration * sampleNum)
-    pairwiseCorr = utils.getPairwiseCorrelation(
-        proteinsDatSample, None, str(sampleNum) + ' samples', False)
+    proteinsDatSample = proteinsData.sample(n=sampleNum, axis=0, random_state=iteration * sampleNum)
+    pairwiseCorr = utils.getPairwiseCorrelation(proteinsDatSample, None, str(sampleNum) + ' samples', False)
     del proteinsDatSample
     pairwiseCorr = pairwiseCorr.merge(globalPairwiseCorr, on='PPI', how='left')
     # pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr.head(2000), 'Corum', None) DEPRECATED
@@ -109,7 +107,9 @@ def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: pd.DataFrame, c
         checkPPIGen = process.starmap(variousRepeatsWrapper, zip(range(0, repeats), repeat(
             sampleNum), repeat(proteinsData), repeat(corum)))  # While Cycle
     result = list(checkPPIGen)
-    print(result)
+    if sampleNum == 450:
+        print('50% Done')
+        
 
     return sampleNum, result
 
@@ -154,21 +154,24 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
     #     allAUC[str(sampleNum)] = aucList
 
     # Plot each AUC in the various boxplot chart
-    ax = allAUC.plot(kind='box', figsize=(8,6))
+    corumAUC = 0.76
+    ax = allAUC.plot(kind='box', figsize=(40, 8))
     ax.set_ybound(lower=0.2, upper=1)
-    ax.set_x
-    ax.set_ylabel("AUC")
-    ax.set_xlabel("Sampling Number")
-    ax.xticks(rotation=90)
+    ax.set_ylabel("AUC", fontsize=14)
+    ax.set_xlabel("Sampling Number", fontsize=14)
+    ax.axhline(y=corumAUC, color='red', linestyle='-', label='BaseModel AUC')
+    ax.axhline(y=0.9*corumAUC, color='blue', linestyle=':', label='90% of BaseModel AUC')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+
 
     plt.savefig("aucPerSamplingNumberv2.0.png",
                 bbox_inches="tight")
 
 
 if __name__ == '__main__':
-    subsamplingList = list(range(5,27,2)) + list(range(40, 120, 20)) + list(range(150, 900, 50))
+    subsamplingList = list(range(5,15,5))
     start = time.time()
-    randomSubSamplingAUC(proteinsData, subsamplingList, 10)
+    randomSubSamplingAUC(proteinsData.head(100), subsamplingList, 30)
     end = time.time()
     sumOfTime = end-start
     print(sumOfTime)
