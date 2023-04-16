@@ -99,6 +99,7 @@ class PairwiseCorrMatrix:
         self.corrCumSum = None
         self.indexes = None
         self.auc = None
+        self.label = 
 
     def __init__(self, data: pd.DataFrame):
 
@@ -106,6 +107,7 @@ class PairwiseCorrMatrix:
         self.corrCumSum = None
         self.indexes = None
         self.auc = None
+        self.label = f"(AUC {self.auc:.2f})" 
 
     def addGroundTruth(self, ppis: set, externalDatasetName: str, fileName: str = None):
         """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
@@ -147,7 +149,7 @@ class PairwiseCorrMatrix:
 
         return data
     
-    def aucCalculator(self, yColumnName:str):
+    def aucCalculator(self, yColumnName:str, label:str):
 
         pairwiseCorr = self.data 
 
@@ -157,6 +159,11 @@ class PairwiseCorrMatrix:
         self.indexes = np.array(pairwiseCorr.reset_index().index) / \
             pairwiseCorr.shape[0]
         self.auc = auc(self.indexes, self.corrCumSum)
+
+        if not label:
+            self.label = f"(AUC {self.auc:.2f})"
+        
+        self.label = label
 
         
 

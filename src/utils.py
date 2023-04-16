@@ -303,7 +303,7 @@ def drawRecallCurves(paiwiseMatrices : list[PairwiseCorrMatrix], colours: list, 
         ax.plot(
             pairwiseCorr.indexes,
             pairwiseCorr.corrCumSum,
-            label=f"(AUC {pairwiseCorr.auc:.2f})",
+            label=pairwiseCorr.label,
             c=colours[index],
         )
 
