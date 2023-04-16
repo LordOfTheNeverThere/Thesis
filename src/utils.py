@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sb
 import numpy as np
 import matplotlib.pyplot as plt
-from classes import TreeNode
+from classes import PairwiseCorrMatrix
 
 from env import PATH
 
@@ -294,3 +294,27 @@ def getUniqueSetValues(filepath: str, feature: str):
 
 
     return setOfValues, occurancesDict
+
+def drawRecallCurves(paiwiseMatrices : list[PairwiseCorrMatrix], colours: list, filename: str):
+
+    _, ax = plt.subplots(1, 1, figsize=(4, 3), dpi=600)
+
+    for index, pairwiseCorr in enumerate(paiwiseMatrices):
+        ax.plot(
+            pairwiseCorr.indexes,
+            pairwiseCorr.corrCumSum,
+            label=f"(AUC {pairwiseCorr.auc:.2f})",
+            c=colours[index],
+        )
+
+    ax.plot([0, 1], [0, 1], "k--", lw=0.3)
+    ax.legend(loc="lower right", frameon=False)
+
+    ax.set_ylabel("Cumulative sum")
+    ax.set_xlabel("Ranked correlation")
+    ax.grid(True, axis="both", ls="-", lw=0.1, alpha=1.0, zorder=0)
+
+    plt.savefig(filename,
+                bbox_inches="tight")
+    plt.close("all")
+

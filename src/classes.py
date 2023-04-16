@@ -2,6 +2,7 @@ import pandas as pd
 from itertools import combinations
 # import multiprocessing as mp
 import numpy as np
+from sklearn.metrics import auc
 
 
 class ppiDataset:
@@ -95,10 +96,16 @@ class PairwiseCorrMatrix:
 
         self.data: pd.DataFrame = pd.read_csv(
             filename, compression='gzip', **readerKwargs)
+        self.corrCumSum = None
+        self.indexes = None
+        self.auc = None
 
     def __init__(self, data: pd.DataFrame):
 
         self.data: data.copy()
+        self.corrCumSum = None
+        self.indexes = None
+        self.auc = None
 
     def addGroundTruth(self, ppis: set, externalDatasetName: str, fileName: str = None):
         """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
@@ -139,11 +146,21 @@ class PairwiseCorrMatrix:
         self.data = data
 
         return data
+    
+    def aucCalculator(self, yColumnName:str):
+
+        pairwiseCorr = self.data 
+
+        self.corrCumSum = np.cumsum(
+            pairwiseCorr[yColumnName]) / np.sum(pairwiseCorr[yColumnName])
+        
+        self.indexes = np.array(pairwiseCorr.reset_index().index) / \
+            pairwiseCorr.shape[0]
+        self.auc = auc(self.indexes, self.corrCumSum)
+
         
 
 # Deprecated
-
-
 class TreeNode:
 
     def __init__(self, value, children: set = set()):
