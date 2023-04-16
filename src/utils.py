@@ -210,31 +210,31 @@ def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, file
 #     return data
 
 
-def getCorumListOfInteractions():
-    """DEPRECATED"""
-    def joinGeneNames(interaction):
-        subset1 = interaction['subunits(Gene name)']
-        subset2 = interaction['subunits(Gene name syn)']
-        subset1 = subset1.split(';')
-        subset2 = subset2.split(';')
-        lenghtSubset1 = len(subset1)
+# def getCorumListOfInteractions():
+#     """DEPRECATED"""
+#     def joinGeneNames(interaction):
+#         subset1 = interaction['subunits(Gene name)']
+#         subset2 = interaction['subunits(Gene name syn)']
+#         subset1 = subset1.split(';')
+#         subset2 = subset2.split(';')
+#         lenghtSubset1 = len(subset1)
 
-        for index in range(0, lenghtSubset1):
-            proteinAliases = subset2[index]
-            proteinAliases = proteinAliases.split(' ')
-            subset1 = subset1 + proteinAliases
+#         for index in range(0, lenghtSubset1):
+#             proteinAliases = subset2[index]
+#             proteinAliases = proteinAliases.split(' ')
+#             subset1 = subset1 + proteinAliases
 
-        subset1 = set(subset1)
-        subset1.discard('None')
-        subset1.discard('')
+#         subset1 = set(subset1)
+#         subset1.discard('None')
+#         subset1.discard('')
 
-        return subset1
+#         return subset1
 
 
-    corumPPI = pd.read_json(PATH + '/externalDatasets/corumPPI.json')
-    listOfSets = corumPPI.apply(axis=1, func=lambda interaction: joinGeneNames(interaction))
+#     corumPPI = pd.read_json(PATH + '/externalDatasets/corumPPI.json')
+#     listOfSets = corumPPI.apply(axis=1, func=lambda interaction: joinGeneNames(interaction))
 
-    return listOfSets
+#     return listOfSets
 
 
 
