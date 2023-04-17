@@ -170,7 +170,7 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
 
-    plt.savefig("aucPerSamplingNumberv2.0.png",
+    plt.savefig(PATH  +  "/images/aucPerSamplingNumberv2.0.png",
                 bbox_inches="tight")
 
 
