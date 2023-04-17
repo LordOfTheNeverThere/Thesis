@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sb
 import numpy as np
 import matplotlib.pyplot as plt
-from classes import TreeNode
+from classes import PairwiseCorrMatrix
 
 from env import PATH
 
@@ -210,31 +210,31 @@ def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, file
 #     return data
 
 
-def getCorumListOfInteractions():
-    """DEPRECATED"""
-    def joinGeneNames(interaction):
-        subset1 = interaction['subunits(Gene name)']
-        subset2 = interaction['subunits(Gene name syn)']
-        subset1 = subset1.split(';')
-        subset2 = subset2.split(';')
-        lenghtSubset1 = len(subset1)
+# def getCorumListOfInteractions():
+#     """DEPRECATED"""
+#     def joinGeneNames(interaction):
+#         subset1 = interaction['subunits(Gene name)']
+#         subset2 = interaction['subunits(Gene name syn)']
+#         subset1 = subset1.split(';')
+#         subset2 = subset2.split(';')
+#         lenghtSubset1 = len(subset1)
 
-        for index in range(0, lenghtSubset1):
-            proteinAliases = subset2[index]
-            proteinAliases = proteinAliases.split(' ')
-            subset1 = subset1 + proteinAliases
+#         for index in range(0, lenghtSubset1):
+#             proteinAliases = subset2[index]
+#             proteinAliases = proteinAliases.split(' ')
+#             subset1 = subset1 + proteinAliases
 
-        subset1 = set(subset1)
-        subset1.discard('None')
-        subset1.discard('')
+#         subset1 = set(subset1)
+#         subset1.discard('None')
+#         subset1.discard('')
 
-        return subset1
+#         return subset1
 
 
-    corumPPI = pd.read_json(PATH + '/externalDatasets/corumPPI.json')
-    listOfSets = corumPPI.apply(axis=1, func=lambda interaction: joinGeneNames(interaction))
+#     corumPPI = pd.read_json(PATH + '/externalDatasets/corumPPI.json')
+#     listOfSets = corumPPI.apply(axis=1, func=lambda interaction: joinGeneNames(interaction))
 
-    return listOfSets
+#     return listOfSets
 
 
 
@@ -294,3 +294,27 @@ def getUniqueSetValues(filepath: str, feature: str):
 
 
     return setOfValues, occurancesDict
+
+def drawRecallCurves(paiwiseMatrices : list[PairwiseCorrMatrix], colours: list, filename: str):
+
+    _, ax = plt.subplots(1, 1, figsize=(4, 3), dpi=600)
+
+    for index, pairwiseCorr in enumerate(paiwiseMatrices):
+        ax.plot(
+            pairwiseCorr.indexes,
+            pairwiseCorr.corrCumSum,
+            label=pairwiseCorr.label,
+            c=colours[index],
+        )
+
+    ax.plot([0, 1], [0, 1], "k--", lw=0.3)
+    ax.legend(loc="lower right", frameon=False)
+
+    ax.set_ylabel("Cumulative sum")
+    ax.set_xlabel("Ranked correlation")
+    ax.grid(True, axis="both", ls="-", lw=0.1, alpha=1.0, zorder=0)
+
+    plt.savefig(filename,
+                bbox_inches="tight")
+    plt.close("all")
+
