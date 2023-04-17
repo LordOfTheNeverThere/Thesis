@@ -11,6 +11,7 @@ from itertools import repeat
 from env import PATH
 import multiprocessing as mp
 
+
 RANDOMSTATE = None
 CPUS = 30
 assert CPUS < mp.cpu_count() - 1
@@ -22,6 +23,8 @@ proteinsData = pd.read_csv(
 globalPairwiseCorr = pd.read_csv(
     PATH+'/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
 globalPairwiseCorr = globalPairwiseCorr['Corum']
+
+
 
 
 # What Professor Pedro did not ask For :(
@@ -96,12 +99,13 @@ def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: pd.DataF
         pairwiseCorr.shape[0]
     del pairwiseCorr
     AUC = auc(indexes, corrCumSum)
-
-
     return AUC
 
 
 def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: pd.DataFrame, corum: pd.DataFrame):
+
+    print(repeats, sampleNum)
+    start = time.time()
 
     with mp.Pool(CPUS) as process:
         checkPPIGen = process.starmap(variousRepeatsWrapper, zip(range(0, repeats), repeat(
@@ -110,19 +114,20 @@ def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: pd.DataFrame, c
     if sampleNum == 450:
         print('50% Done')
         
+    print(time.time() - start)
 
     return sampleNum, result
 
 
-def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], repeats: int):
+def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], repeats: list[int]):
 
     corum = ppiDataset(filename=PATH + '/externalDatasets/corumPPI.csv.gz')
     corum = corum.getPPIs(True)
 
-    checkPPIGen = map(wrapperCheckPPIs, subsampleSizes,  repeat(
-        repeats), repeat(proteinsData), repeat(corum))  # First For Cycle
+    checkPPIGen = map(wrapperCheckPPIs, subsampleSizes,  
+        repeats, repeat(proteinsData), repeat(corum))  # First For Cycle
 
-    allAUC = pd.DataFrame(dict(checkPPIGen))
+    allAUC = dict(checkPPIGen)
 
     # DEPRECATED UNPARARELIZED CODE
     # # Random Sampling
@@ -155,7 +160,8 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
 
     # Plot each AUC in the various boxplot chart
     corumAUC = 0.76
-    ax = allAUC.plot(kind='box', figsize=(40, 8))
+    fig, ax = plt.subplots(figsize=(40, 8))
+    ax.boxplot(allAUC.values(), labels=allAUC.keys())
     ax.set_ybound(lower=0.2, upper=1)
     ax.set_ylabel("AUC", fontsize=14)
     ax.set_xlabel("Sampling Number", fontsize=14)
@@ -169,9 +175,10 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
 
 
 if __name__ == '__main__':
-    subsamplingList = list(range(5,15,5))
+    subsamplingList = list(range(5,950,5))
+    repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
     start = time.time()
-    randomSubSamplingAUC(proteinsData.head(100), subsamplingList, 30)
+    randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList)
     end = time.time()
     sumOfTime = end-start
     print(sumOfTime)
