@@ -43,7 +43,7 @@ def mofaBaseModel():
 #     filteredMofaProteins = mofaProteins[mofaProteins.columns.intersection(ogProteins.columns)]
 #     #The matrix suffers now change soo this is rather usless, keep it if however you wish to do some future tweaking
     
-def mofa3(threshold: float or list[float]):
+def mofa3(threshold: float | list[float]):
 
     """Similarly to the above function, we will filter proteins of the mofa matrix with those of the og matrix which have at least a threshold of presistence
     Args:

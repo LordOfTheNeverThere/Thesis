@@ -1,6 +1,6 @@
+from __future__ import annotations #  postpone evaluation of annotations
 import pandas as pd
 from itertools import combinations
-# import multiprocessing as mp
 import numpy as np
 from sklearn.metrics import auc
 
@@ -99,7 +99,7 @@ class PairwiseCorrMatrix:
         self.corrCumSum = None
         self.indexes = None
         self.auc = None
-        self.label = 
+        self.label = f"(AUC {self.auc:.2f})" 
 
     def __init__(self, data: pd.DataFrame):
 
@@ -165,58 +165,77 @@ class PairwiseCorrMatrix:
         
         self.label = label
 
+    def query(self, query: str, inplace : bool = False) -> pd.DataFrame|None:
+
+        if not inplace:
+            return self.data.query(query)
+        else:
+            self.data = self.data.query(query)
+
+    def compare(self, otherMatrix: PairwiseCorrMatrix, query: str, key: str = 'PPI') -> pd.DataFrame:
+
+        left: pd.DataFrame = self.query(query)
+        right: pd.DataFrame = otherMatrix.query(query)
+
+        return left.merge(right, on=key)
+
+        
+
+
+
+
         
 
 # Deprecated
-class TreeNode:
+# class TreeNode:
 
-    def __init__(self, value, children: set = set()):
+#     def __init__(self, value, children: set = set()):
 
-        self.value = value
-        self.children = children
+#         self.value = value
+#         self.children = children
 
-    def addChild(self, childNode):
+#     def addChild(self, childNode):
 
-        self.children.add(childNode)
+#         self.children.add(childNode)
 
-    def removeChild(self, childNode):
+#     def removeChild(self, childNode):
 
-        self.children = [
-            child for child in self.children if child is not childNode]
+#         self.children = [
+#             child for child in self.children if child is not childNode]
 
-    def transverse(self):
+#     def transverse(self):
 
-        nodesToVisit = [self]
+#         nodesToVisit = [self]
 
-        while len(nodesToVisit) > 0:
+#         while len(nodesToVisit) > 0:
 
-            currentNode = nodesToVisit.pop()
-            print(currentNode.value)
-            # convert the set into a list so that the trasnverse works
-            nodesToVisit += list(currentNode.children)
+#             currentNode = nodesToVisit.pop()
+#             print(currentNode.value)
+#             # convert the set into a list so that the trasnverse works
+#             nodesToVisit += list(currentNode.children)
 
-    def getNode(self, nodeValue):
+#     def getNode(self, nodeValue):
 
-        if self.value == nodeValue:
-            return self
+#         if self.value == nodeValue:
+#             return self
 
-        elif (len(self.children)):
+#         elif (len(self.children)):
 
-            for node in self.children:
+#             for node in self.children:
 
-                hasNode = node.getNode(nodeValue)
-                if hasNode:
-                    return hasNode
+#                 hasNode = node.getNode(nodeValue)
+#                 if hasNode:
+#                     return hasNode
 
-        return None
+#         return None
 
-    def getChildrenValue(self):
-        return {child.value for child in self.children}
+#     def getChildrenValue(self):
+#         return {child.value for child in self.children}
 
-    def getNodeFirstLayer(self, nodeValue):
+#     def getNodeFirstLayer(self, nodeValue):
 
-        for child in self.children:
+#         for child in self.children:
 
-            if child.value == nodeValue:
+#             if child.value == nodeValue:
 
-                return child
+#                 return child

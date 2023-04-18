@@ -129,36 +129,6 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
 
     allAUC = dict(checkPPIGen)
 
-    # DEPRECATED UNPARARELIZED CODE
-    # # Random Sampling
-    # for sampleNum in subsampleSizes:
-
-    #     iteration = 0
-    #     aucList = list()
-    #     sumOfTime = 0
-    #     while iteration < repeats:
-
-    #         proteinsDatSample = proteinsData.sample(n = sampleNum, axis=0, random_state=RANDOMSTATE)
-    #         pairwiseCorr = utils.getPairwiseCorrelation(
-    #             proteinsDatSample, None, str(sampleNum) + ' samples', False)
-    #         del proteinsDatSample
-
-    #         pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr, 'corum', None)
-    #         end = time.time()
-    #         sumOfTime += end-start
-
-    #         corrCumSum = np.cumsum(pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
-    #         indexes = np.array(pairwiseCorr.reset_index().index) / pairwiseCorr.shape[0]
-    #         AUC = auc(indexes, corrCumSum)
-    #         aucList.append(AUC)
-    #         del pairwiseCorr
-    #         iteration += 1
-
-    #     print(aucList)
-    #     print(sumOfTime/repeats)
-    #     allAUC[str(sampleNum)] = aucList
-
-    # Plot each AUC in the various boxplot chart
     corumAUC = 0.76
     fig, ax = plt.subplots(figsize=(40, 8))
     ax.boxplot(allAUC.values(), labels=allAUC.keys())
