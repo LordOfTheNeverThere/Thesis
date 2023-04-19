@@ -92,18 +92,19 @@ class ProteinsMatrix:
 
 class PairwiseCorrMatrix:
 
-    def __init__(self, filename, **readerKwargs):
+    def __init__(self, filename, data, **readerKwargs):
 
-        self.data: pd.DataFrame = pd.read_csv(
-            filename, compression='gzip', **readerKwargs)
-        self.corrCumSum = None
-        self.indexes = None
-        self.auc = None
-        self.label = f"(AUC {self.auc:.2f})" 
+        if filename:
+            self.data: pd.DataFrame = pd.read_csv(
+                filename, compression='gzip', **readerKwargs)
+            
+        elif data:
+            self.data: data.copy()
 
-    def __init__(self, data: pd.DataFrame):
-
-        self.data: data.copy()
+        else:
+            print('There should be either a filename or data')
+            return
+        
         self.corrCumSum = None
         self.indexes = None
         self.auc = None

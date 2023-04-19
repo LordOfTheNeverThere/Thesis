@@ -87,6 +87,12 @@ def mofa3(threshold: float | list[float]):
     else:
         print('Wrong Type for prop threshold')
 
+
+
+def opposingIntensities():
+    mofa = PairwiseCorrMatrix(filename=)
+ 
+
 if __name__ == '__main__':
     # mofa3([0.45, 0.46, 0.47, 0.48, 0.49, 0.5])
     mofaBaseModel()
