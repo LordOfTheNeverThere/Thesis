@@ -11,22 +11,21 @@ from env import PATH
 
 # %% Load Dataset
 def mofaBaseModel():
-    proteinsData = pd.read_csv(PATH + '/datasetsTese/proteomicsMOFA.csv.gz', compression='gzip', index_col='Unnamed: 0')
-    proteinsData = ProteinsMatrix(PATH + '/datasetsTese/proteomicsMOFA.csv.gz', {'index_col':'Unnamed: 0'})
+    proteinsData = ProteinsMatrix(PATH + '/datasetsTese/proteomicsMOFA.csv.gz', index_col='Unnamed: 0')
 
     #  Load external Datasets
 
-    corum = ppiDataset(filename=PATH + '/externalDatasets/corumPPI.csv.gz')
+    corum = ppiDataset(filepath=PATH + '/externalDatasets/corumPPI.csv.gz')
     corum = corum.getPPIs(True)
 
     pairwiseCorr = proteinsData.pearsonCorrelations(
-        fileName=None, columnName='mofaCorrelation', counting=False)
+        filepath=None, columnName='mofaCorrelation', counting=False)
     
-    pairwiseCorr = PairwiseCorrMatrix(pairwiseCorr)
+    pairwiseCorr = PairwiseCorrMatrix(data = pairwiseCorr)
 
     pairwiseCorrData = pairwiseCorr.addGroundTruth(corum, 'Corum', None)
 
-    pairwiseCorrData.to_csv(PATH + '/datasetsTese/baseMOFACorr.csv.gz', compression='gzip', index= False)
+    pairwiseCorrData.to_csv(PATH + '/datasetsTese/baseMOFACorr.csv.gz', compression='gzip')
 
     # pairwiseCorr.aucCalculator('Corum')
 
@@ -66,10 +65,10 @@ def mofa3(threshold: float | list[float]):
             mofaProteins.data = mofaProteins.data[mofaProteins.columns.intersection(ogProteins.columns)]
             #  Load external Datasets
 
-            corum = ppiDataset(filename=PATH + '/externalDatasets/corumPPI.csv.gz')
+            corum = ppiDataset(filepath=PATH + '/externalDatasets/corumPPI.csv.gz')
             corum = corum.getPPIs(True)
 
-            pairwiseCorr = mofaProteins.pearsonCorrelations(fileName=None, columnName='mofaCorrelation', counting=False)
+            pairwiseCorr = mofaProteins.pearsonCorrelations(filepath=None, columnName='mofaCorrelation', counting=False)
             pairwiseCorr = PairwiseCorrMatrix(data=pairwiseCorr)
             pairwiseCorr.addGroundTruth(corum, 'Corum', None)
             pairwiseCorr.aucCalculator('Corum')
@@ -90,9 +89,15 @@ def mofa3(threshold: float | list[float]):
 
 
 def opposingIntensities():
-    mofa = PairwiseCorrMatrix(filename=)
+    mofa = PairwiseCorrMatrix(PATH + '/datasetsTese/baseMOFACorr.csv.gz')
+    baseModel = PairwiseCorrMatrix(PATH + '/datasetsTese/BaseModelPairwise.csv', gziped=False)
+
+    queriedFrame = baseModel.compare(mofa, 'Corum == 1 & globalCorrelation  > 0.8','Corum == 1 & mofaCorrelation  < 0.4')
+
+    print(queriedFrame)
  
 
 if __name__ == '__main__':
     # mofa3([0.45, 0.46, 0.47, 0.48, 0.49, 0.5])
     mofaBaseModel()
+    # opposingIntensities()

@@ -7,10 +7,10 @@ from sklearn.metrics import auc
 
 class ppiDataset:
 
-    def __init__(self, filename, proteinLabels: list = [], **readerKwargs):
+    def __init__(self, filepath, proteinLabels: list = [], **readerKwargs):
 
         self.data: pd.DataFrame = pd.read_csv(
-            filename, compression='gzip', **readerKwargs)
+            filepath, compression='gzip', **readerKwargs)
         self.proteinLabels = proteinLabels
         self.ppis = set()
 
@@ -45,12 +45,12 @@ class ppiDataset:
 
 class ProteinsMatrix:
 
-    def __init__(self, filename, **readerKwargs):
+    def __init__(self, filepath: str, **readerKwargs):
 
         self.data: pd.DataFrame = pd.read_csv(
-            filename, compression='gzip', **readerKwargs)
+            filepath, compression='gzip', **readerKwargs)
 
-    def pearsonCorrelations(self, fileName: str, columnName: str, counting: bool = True) -> pd.DataFrame:
+    def pearsonCorrelations(self, filepath: str, columnName: str, counting: bool = True) -> pd.DataFrame:
 
         data = self.data.copy()
         # Correlation Matrix
@@ -84,40 +84,44 @@ class ProteinsMatrix:
         pairwiseCorrData.sort_values(
             by=columnName, ascending=False, inplace=True)
 
-        if fileName:
-            pairwiseCorrData.to_csv(fileName + '.csv.gz', compression='gzip')
+        if filepath:
+            pairwiseCorrData.to_csv(filepath + '.csv.gz', compression='gzip')
 
         return pairwiseCorrData
 
 
 class PairwiseCorrMatrix:
 
-    def __init__(self, filename, data, **readerKwargs):
+    def __init__(self, filepath: str = None, data: pd.DataFrame = None, gziped: bool = True , ** readerKwargs):
 
-        if filename:
-            self.data: pd.DataFrame = pd.read_csv(
-                filename, compression='gzip', **readerKwargs)
+
+        self.data = None
+        if filepath:
+            if gziped:
+                self.data: pd.DataFrame = pd.read_csv(filepath, compression='gzip', **readerKwargs)
+            else:
+                self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
             
-        elif data:
+        elif not data.empty:
             self.data: data.copy()
 
         else:
-            print('There should be either a filename or data')
+            print('There should be either a filepath or data')
             return
         
         self.corrCumSum = None
         self.indexes = None
         self.auc = None
-        self.label = f"(AUC {self.auc:.2f})" 
+        self.label = None
 
-    def addGroundTruth(self, ppis: set, externalDatasetName: str, fileName: str = None):
+    def addGroundTruth(self, ppis: set, externalDatasetName: str, filepath: str = None):
         """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
 
         Args:
             ppis (ppiDataset): ppiDataset of the external ppi dataset used
             data (pd.DataFrame): Pairwise correlation dataframe
             externalDatasetName (str): Name to give to the binary column holding the truth value of an PPI is seen in that external Dataset
-            filename (str): The name to give to the final file, with the added binary column
+            filepath (str): The name to give to the final file, with the added binary column
 
         Returns:
             _type_: Data with added column
@@ -142,9 +146,9 @@ class PairwiseCorrMatrix:
         data[externalDatasetName] = data.apply(
             axis=1, func=lambda model: addExternalTrueY(model))
 
-        if fileName:
+        if filepath:
 
-            data.to_csv(fileName + '.csv.gz', compression='gzip')
+            data.to_csv(filepath + '.csv.gz', compression='gzip')
 
         self.data = data
 
@@ -173,10 +177,10 @@ class PairwiseCorrMatrix:
         else:
             self.data = self.data.query(query)
 
-    def compare(self, otherMatrix: PairwiseCorrMatrix, query: str, key: str = 'PPI') -> pd.DataFrame:
+    def compare(self, other: PairwiseCorrMatrix, querySelf: str, queryOther: str, key: str = 'PPI') -> pd.DataFrame:
 
-        left: pd.DataFrame = self.query(query)
-        right: pd.DataFrame = otherMatrix.query(query)
+        left: pd.DataFrame = self.query(querySelf)
+        right: pd.DataFrame = other.query(queryOther)
 
         return left.merge(right, on=key)
 
