@@ -73,12 +73,13 @@ if __name__ == '__main__':
     print(glsPValues)
     # Create a bar plot
     fig, ax = plt.subplots()
-    ax.hist(glsPValues, bins=100)
+    ax.hist(glsPValues)
 
     # Set axis labels and title
-    ax.set_xlabel('PPI index')
-    ax.set_ylabel('p-value')
-    ax.set_title('p-values of the GLS model')
+    ax.set_xlabel('p-value')
+    ax.set_ylabel('Number of PPIs')
+    ax.set_title('Histogram of pValues of GLS')
+    ax.set_ybound(0, 3100)
 
     # Set font size for x and y axis labels
     ax.tick_params(axis='x', labelsize=16)
