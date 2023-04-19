@@ -115,17 +115,16 @@ class PairwiseCorrMatrix:
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, ** readerKwargs):
 
 
-        # if filepath:
-        #     self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
+        if filepath:
+            self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
             
-        # elif data is not None:
-        #     print('I am gooood!')
-        #     self.data: data.copy()
+        elif data is not None:
+            print('I am gooood!')
+            self.data: data.copy()
 
-        # else:
-        #     print('There should be either a filepath or data')
-        #     return
-        self.data = data.copy()
+        else:
+            print('There should be either a filepath or data')
+            return
         self.corrCumSum = None
         self.indexes = None
         self.auc = None
@@ -143,7 +142,7 @@ class PairwiseCorrMatrix:
         Returns:
             _type_: Data with added column
         """
-        data = self.data
+        data = self.data.copy()
         def addExternalTrueY(model):
 
 
