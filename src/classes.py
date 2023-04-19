@@ -95,20 +95,20 @@ class PairwiseCorrMatrix:
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, gziped: bool = True , ** readerKwargs):
 
 
-        self.data = None
-        if filepath:
-            if gziped:
-                self.data: pd.DataFrame = pd.read_csv(filepath, compression='gzip', **readerKwargs)
-            else:
-                self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
+        # if filepath:
+        #     if gziped:
+        #         self.data: pd.DataFrame = pd.read_csv(filepath, compression='gzip', **readerKwargs)
+        #     else:
+        #         self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
             
-        elif not data.empty:
-            self.data: data.copy()
+        # elif data is not None:
+        #     print('I am gooood!')
+        #     self.data: data.copy()
 
-        else:
-            print('There should be either a filepath or data')
-            return
-        
+        # else:
+        #     print('There should be either a filepath or data')
+        #     return
+        self.data = data.copy()
         self.corrCumSum = None
         self.indexes = None
         self.auc = None
