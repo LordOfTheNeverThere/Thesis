@@ -3,6 +3,7 @@ import pandas as pd
 from itertools import combinations
 import numpy as np
 from sklearn.metrics import auc
+from scipy.stats import pearsonr
 
 
 class ppiDataset:
@@ -10,7 +11,7 @@ class ppiDataset:
     def __init__(self, filepath, proteinLabels: list = [], **readerKwargs):
 
         self.data: pd.DataFrame = pd.read_csv(
-            filepath, compression='gzip', **readerKwargs)
+            filepath, **readerKwargs)
         self.proteinLabels = proteinLabels
         self.ppis = set()
 
@@ -48,9 +49,25 @@ class ProteinsMatrix:
     def __init__(self, filepath: str, **readerKwargs):
 
         self.data: pd.DataFrame = pd.read_csv(
-            filepath, compression='gzip', **readerKwargs)
+            filepath, **readerKwargs)
+    
+    def personPValues(self, data:pd.DataFrame = None)-> pd.DataFrame|None:
 
-    def pearsonCorrelations(self, filepath: str, columnName: str, counting: bool = True) -> pd.DataFrame:
+        if data is None:
+            data = self.data.copy()
+
+        pValuesMatrix = data.corr(method=lambda x, y: pearsonr(x, y)[1]).round(decimals=3)
+        pValuesMatrix = pValuesMatrix.where(np.triu(np.ones(pValuesMatrix.shape), k=1).astype(bool)).stack().reset_index()
+        pairwisePValues = pValuesMatrix.drop(columns=['level_0', 'level_1'])
+
+        if data is None:
+            self.data = pairwisePValues
+
+        return pairwisePValues
+
+        
+
+    def pearsonCorrelations(self, fileName: str, columnName: str, counting: bool = True, pValue: bool = True) -> pd.DataFrame:
 
         data = self.data.copy()
         # Correlation Matrix
@@ -63,6 +80,9 @@ class ProteinsMatrix:
         pairwiseCorrData.drop(columns=['level_0', 'level_1'], inplace=True)
         pairwiseCorrData = pairwiseCorrData.set_index('PPI')
         pairwiseCorrData.columns = [columnName]
+
+        if pValue:
+            self.personPValues(pairwiseCorrData)
 
         if counting:
 
@@ -84,22 +104,19 @@ class ProteinsMatrix:
         pairwiseCorrData.sort_values(
             by=columnName, ascending=False, inplace=True)
 
-        if filepath:
-            pairwiseCorrData.to_csv(filepath + '.csv.gz', compression='gzip')
+        if fileName:
+            pairwiseCorrData.to_csv(fileName + '.csv.gz', compression='gzip')
 
         return pairwiseCorrData
 
 
 class PairwiseCorrMatrix:
 
-    def __init__(self, filepath: str = None, data: pd.DataFrame = None, gziped: bool = True , ** readerKwargs):
+    def __init__(self, filepath: str = None, data: pd.DataFrame = None, ** readerKwargs):
 
 
         # if filepath:
-        #     if gziped:
-        #         self.data: pd.DataFrame = pd.read_csv(filepath, compression='gzip', **readerKwargs)
-        #     else:
-        #         self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
+        #     self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
             
         # elif data is not None:
         #     print('I am gooood!')
