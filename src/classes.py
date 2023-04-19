@@ -50,20 +50,7 @@ class ProteinsMatrix:
 
         self.data: pd.DataFrame = pd.read_csv(
             filepath, **readerKwargs)
-    
-    def personPValues(self, data:pd.DataFrame = None)-> pd.DataFrame|None:
 
-        if data is None:
-            data = self.data.copy()
-
-        pValuesMatrix = data.corr(method=lambda x, y: pearsonr(x, y)[1]).round(decimals=3)
-        pValuesMatrix = pValuesMatrix.where(np.triu(np.ones(pValuesMatrix.shape), k=1).astype(bool)).stack().reset_index()
-        pairwisePValues = pValuesMatrix.drop(columns=['level_0', 'level_1'])
-
-        if data is None:
-            self.data = pairwisePValues
-
-        return pairwisePValues
 
         
 
@@ -81,9 +68,6 @@ class ProteinsMatrix:
         pairwiseCorrData = pairwiseCorrData.set_index('PPI')
         pairwiseCorrData.columns = [columnName]
 
-        if pValue:
-            self.personPValues(pairwiseCorrData)
-
         if counting:
 
             # Co-occorance Matrix
@@ -100,6 +84,21 @@ class ProteinsMatrix:
             coOccuranceData.columns = ['counts']
             pairwiseCorrData = pairwiseCorrData.merge(
                 coOccuranceData, on='PPI', how='left')
+            
+        if pValue:
+
+            def pearsonPValues(data:pd.DataFrame = None)-> pd.DataFrame|None:
+
+                pValuesMatrix = data.corr(method=lambda x, y: pearsonr(x, y)[1]).round(decimals=3)
+                pValuesMatrix = pValuesMatrix.where(np.triu(np.ones(pValuesMatrix.shape), k=1).astype(bool)).stack().reset_index()
+                pairwisePValues = pValuesMatrix.drop(columns=['level_0', 'level_1'])
+                pairwisePValues.columns = ['pValue']
+
+                return pairwisePValues['pValue']
+            
+            pairwiseCorrData['pValue'] = pearsonPValues(pairwiseCorrData)
+            print(pairwiseCorrData)
+            
 
         pairwiseCorrData.sort_values(
             by=columnName, ascending=False, inplace=True)
@@ -107,6 +106,7 @@ class ProteinsMatrix:
         if fileName:
             pairwiseCorrData.to_csv(fileName + '.csv.gz', compression='gzip')
 
+        self.data = pairwiseCorrData
         return pairwiseCorrData
 
 
