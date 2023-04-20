@@ -59,13 +59,18 @@ class ProteinsMatrix:
         data = self.data.copy()
         # Correlation Matrix
         pearsonCorrMatrix = data.corr(method='pearson').round(decimals=4)
+        print(pearsonCorrMatrix)
 
         pairwiseCorrData = pearsonCorrMatrix.where(np.triu(
             np.ones(pearsonCorrMatrix.shape), k=1).astype(bool)).stack().reset_index()
+        print(pairwiseCorrData)
         pairwiseCorrData['PPI'] = pairwiseCorrData['level_0'] + \
             ";" + pairwiseCorrData['level_1']
+        print(pairwiseCorrData)
         pairwiseCorrData.drop(columns=['level_0', 'level_1'], inplace=True)
+        print(pairwiseCorrData)
         pairwiseCorrData = pairwiseCorrData.set_index('PPI')
+        print(pairwiseCorrData)
         pairwiseCorrData.columns = [columnName]
 
         if counting:
