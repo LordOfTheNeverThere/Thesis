@@ -4,6 +4,7 @@ from itertools import combinations
 import numpy as np
 from sklearn.metrics import auc
 from scipy.stats import pearsonr
+from env import PATH
 
 
 class ppiDataset:
@@ -57,21 +58,16 @@ class ProteinsMatrix:
     def pearsonCorrelations(self, fileName: str, columnName: str, counting: bool = True, pValue: bool = True) -> pd.DataFrame:
 
         data = self.data.copy()
+        # Get list with the names of every PPI
+        proteinNames = data.columns.str.split(' ').str.get(0).to_numpy()
+        ppiNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
         # Correlation Matrix
         pearsonCorrMatrix = data.corr(method='pearson').round(decimals=4)
-        print(pearsonCorrMatrix)
 
-        pairwiseCorrData = pearsonCorrMatrix.where(np.triu(
-            np.ones(pearsonCorrMatrix.shape), k=1).astype(bool)).stack().reset_index()
-        print(pairwiseCorrData)
-        pairwiseCorrData['PPI'] = pairwiseCorrData['level_0'] + \
-            ";" + pairwiseCorrData['level_1']
-        print(pairwiseCorrData)
-        pairwiseCorrData.drop(columns=['level_0', 'level_1'], inplace=True)
-        print(pairwiseCorrData)
-        pairwiseCorrData = pairwiseCorrData.set_index('PPI')
-        print(pairwiseCorrData)
-        pairwiseCorrData.columns = [columnName]
+        pairwiseCorrData = pearsonCorrMatrix.to_numpy()[np.triu_indices(pearsonCorrMatrix.shape[0], k=1)]
+
+        pairwiseCorrData = pd.DataFrame({columnName: pairwiseCorrData}, index=ppiNames)
+        pairwiseCorrData.index.names=['PPI']
 
         if counting:
 
@@ -80,13 +76,10 @@ class ProteinsMatrix:
             coOccuranceMatrix = (data/data).fillna(0).astype(int)
             # Simple linear algebra to get the co-occurance values
             coOccuranceMatrix = coOccuranceMatrix.T.dot(coOccuranceMatrix)
-            coOccuranceData = coOccuranceMatrix.where(np.triu(
-                np.ones(coOccuranceMatrix.shape), k=1).astype(bool)).stack().reset_index()
-            coOccuranceData['PPI'] = coOccuranceData['level_0'] + \
-                ";" + coOccuranceData['level_1']
-            coOccuranceData.drop(columns=['level_0', 'level_1'], inplace=True)
-            coOccuranceData = coOccuranceData.set_index('PPI')
-            coOccuranceData.columns = ['counts']
+            coOccuranceMatrix = coOccuranceMatrix.to_numpy()[np.triu_indices(coOccuranceMatrix.shape[0], k=1)]
+            coOccuranceData = pd.DataFrame({'counts': coOccuranceMatrix}, index=ppiNames)
+            coOccuranceData.index.names = ['PPI']
+
             pairwiseCorrData = pairwiseCorrData.merge(
                 coOccuranceData, on='PPI', how='left')
             
@@ -94,22 +87,21 @@ class ProteinsMatrix:
 
             def pearsonPValues(data:pd.DataFrame = None)-> pd.DataFrame|None:
 
-                pValuesMatrix = data.corr(method=lambda x, y: pearsonr(x, y)[1]).round(decimals=3)
-                pValuesMatrix = pValuesMatrix.where(np.triu(np.ones(pValuesMatrix.shape), k=1).astype(bool)).stack().reset_index()
-                pairwisePValues = pValuesMatrix.drop(columns=['level_0', 'level_1'])
-                pairwisePValues.columns = ['pValue']
+                pValuesMatrix = data.corr(method=lambda x, y: pearsonr(x, y)[1])
+                pairwisePValues =pValuesMatrix.to_numpy()[np.triu_indices(pValuesMatrix.shape[0], k=1)]
+                pairwisePValues = pd.DataFrame({'pValue': pairwisePValues}, index=ppiNames)
+                pairwisePValues.index.names = ['PPI']
 
                 return pairwisePValues['pValue']
             
-            pairwiseCorrData['pValue'] = pearsonPValues(pairwiseCorrData)
-            print(pairwiseCorrData)
+            pairwiseCorrData['pValue'] = pearsonPValues(pearsonCorrMatrix)
             
 
         pairwiseCorrData.sort_values(
             by=columnName, ascending=False, inplace=True)
 
         if fileName:
-            pairwiseCorrData.to_csv(fileName + '.csv.gz', compression='gzip')
+            pairwiseCorrData.to_csv(PATH + fileName + '.csv.gz', compression='gzip')
 
         self.data = pairwiseCorrData
         return pairwiseCorrData

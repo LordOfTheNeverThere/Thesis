@@ -10,7 +10,6 @@ from env import PATH
 if __name__ == '__main__':
 
     proteinsData = ProteinsMatrix(PATH + '/datasetsTese/proteomicsDataTrans.csv', index_col = 'modelID')
-    print(proteinsData.data)
     proteinsData.pearsonCorrelations('baseModePairwiseWithpValues', 'globalCorrelation')
     # print(proteinsData.data)
     # pairwiseCorrPValues = PairwiseCorrMatrix(PATH + '/datasetsTese/baseModePairwiseWithpValues.csv.gz', compression = 'gzip')
