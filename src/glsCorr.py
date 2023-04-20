@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.special import stdtr
 import matplotlib.pyplot as plt
-import utils
+from classes import PairwiseCorrMatrix
 
 from env import PATH
 def getGLSCorr():
@@ -11,26 +11,14 @@ def getGLSCorr():
 
     proteinData.dropna(axis=1, thresh=round(proteinData.shape[0] * 0.2), inplace=True) #We require that a protein has about 20% missingness for it to be considered a dropable column
 
-    proteinDataMedian = proteinData.fillna(proteinData.median())
+    proteinNames = proteinData.columns.str.split(' ').str.get(0).to_numpy()
+    proteinNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
     proteinDataMean = proteinData.fillna(proteinData.mean())
 
-
-    # proteinDataMean = proteinDataMean.drop(columns='modelID').to_numpy()
-    # proteinDataMedian = proteinDataMedian.drop(columns='modelID').to_numpy()
-
-
-    # Warp screen data and intercept based on covariance of screens
-
     cholsigmainvMean = np.linalg.cholesky(np.linalg.inv(np.cov(proteinDataMean)))
-
-
     warpedProteinsMean = proteinDataMean.T.values @ cholsigmainvMean
     warpedIntereceptMean = cholsigmainvMean.T.sum(axis=0)
 
-
-    cholsigmainvMedian = np.linalg.cholesky(np.linalg.inv(np.cov(proteinDataMedian)))
-    warpedProteinsMedian = proteinDataMedian.T.values @ cholsigmainvMedian
-    warpedIntereceptMedian = cholsigmainvMedian.T.sum(axis=0)
 
 
     def linear_regression(warped_screens, warped_intercept):
@@ -52,38 +40,15 @@ def getGLSCorr():
     GLS_p = 2 * stdtr(df, -np.abs(GLS_coef / GLS_se))
     np.fill_diagonal(GLS_p, 1)
 
-    # # Save everything
-    # print(GLS_p)
-    # print(GLS_coef)
+    # Save everything
+    glsPValues = GLS_p[np.triu_indices(GLS_p.shape[0], k=1)]
+    glsCoefs = GLS_coef[np.triu_indices(GLS_coef.shape[0], k=1)]
+    pairwiseCorrData = pd.DataFrame(columns=[glsCoefs, glsPValues], index=  proteinNames)
+    print(pairwiseCorrData)
+    pairwiseCorrData.to_csv(PATH + '/datasetsTese/baseMOFACorr.csv.gz', compression='gzip')
 
-    # glsCorr = pd.DataFrame(GLS_coef)
-    # pairwiseCorrData = glsCorr.where(np.triu(np.ones(glsCorr.shape), k=1).astype(bool)).stack().reset_index()
-    # pairwiseCorrData.columns = ['index1', 'index2','glsBeta']
-    # print(pairwiseCorrData)
-    # pairwiseCorrData['glsBeta'].plot(kind='hist')
-
-    # plt.savefig("testVariousAUC's.png", bbox_inches="tight")
-    np.save('GLS_p.npy', GLS_p)
-    np.save('GLS_sign.npy', np.sign(GLS_coef))
-    # screens.index.to_series().to_csv('genes.txt', index=False, header=False)
 
 if __name__ == '__main__':
 
-    glsPValues = np.load('GLS_p.npy')
-    print(glsPValues)
-    # Create a bar plot
-    fig, ax = plt.subplots()
-    ax.hist(glsPValues)
-
-    # Set axis labels and title
-    ax.set_xlabel('p-value')
-    ax.set_ylabel('Number of PPIs')
-    ax.set_title('Histogram of pValues of GLS')
-    ax.set_ybound(0, 3100)
-
-    # Set font size for x and y axis labels
-    ax.tick_params(axis='x', labelsize=16)
-    ax.tick_params(axis='y', labelsize=16)
-    plt.savefig("../images/glsPValues's.png", bbox_inches="tight")
-
+    getGLSCorr()
 
