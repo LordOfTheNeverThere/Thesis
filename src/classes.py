@@ -16,11 +16,12 @@ class ppiDataset:
         self.proteinLabels = proteinLabels
         self.ppis = set()
 
-    def getPPIs(self, isCorum: bool = False) -> set:
+    def getPPIs(self, dataset:str) -> set:
 
         data = self.data.copy()
+        ppiSet = None
 
-        if isCorum:
+        if dataset == 'corum':
 
             def combinationsOfProteins(complx):
 
@@ -35,12 +36,31 @@ class ppiDataset:
             ppiList = list(data.dropna()['proteinTuple'])
             ppiSet = {item for sublist in ppiList for item in sublist}
 
-        else:
-            data['proteinTuple'] = list(
-                zip(data[self.proteinLabels[0]], data[self.proteinLabels[1]]))
+        elif(dataset == 'biogrid'):
+
+            # Filter Biogrid for certain parameters
+
+            # Only allow ppis documented by physical interaction
+            data = data.query('Experimental System Type == physical')
+            
+            # Filter out Homedymers which are not object of our study
+
+            data = data.query('Official Symbol Interactor A != Official Symbol Interactor B')
+
+            data['proteinTuple'] = list(zip(data['Official Symbol Interactor A'], data['Official Symbol Interactor B']))
             ppiSet = set(data['proteinTuple'])
 
-        self.ppis = ppiSet
+            self.ppis = ppiSet
+
+        elif (dataset == 'string'):
+            data['proteinTuple'] = list(zip(data[self.proteinLabels[0]], data[self.proteinLabels[1]]))
+            ppiSet = set(data['proteinTuple'])
+
+            self.ppis = ppiSet
+
+        else:
+            print('Wrong Dataset parameter. Pick either corum, biogrid or string')
+
 
         return ppiSet
 
