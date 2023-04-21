@@ -62,7 +62,7 @@ class ProteinsMatrix:
         proteinNames = data.columns.str.split(' ').str.get(0).to_numpy()
         ppiNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
         # Correlation Matrix
-        pearsonCorrMatrix = data.corr(method='pearson').round(decimals=4)
+        pearsonCorrMatrix = data.corr(method='pearson')
 
         pairwiseCorrData = pearsonCorrMatrix.to_numpy()[np.triu_indices(pearsonCorrMatrix.shape[0], k=1)]
 
@@ -88,7 +88,7 @@ class ProteinsMatrix:
             def pearsonPValues(data:pd.DataFrame = None)-> pd.DataFrame|None:
 
                 pValuesMatrix = data.corr(method=lambda x, y: pearsonr(x, y)[1])
-                pairwisePValues =pValuesMatrix.to_numpy()[np.triu_indices(pValuesMatrix.shape[0], k=1)]
+                pairwisePValues =pValuesMatrix.to_numpy()[np.triu_indices(pValuesMatrix.shape[0], k=1)].round(3)
                 pairwisePValues = pd.DataFrame({'pValue': pairwisePValues}, index=ppiNames)
                 pairwisePValues.index.names = ['PPI']
 
@@ -103,8 +103,7 @@ class ProteinsMatrix:
         if fileName:
             pairwiseCorrData.to_csv(PATH + fileName + '.csv.gz', compression='gzip')
 
-        self.data = pairwiseCorrData
-        return pairwiseCorrData
+        return PairwiseCorrMatrix(None,pairwiseCorrData.dropna()) #There will be NAN correlations between proteins which do not appear simultaneously in at least two cell lines
 
 
 class PairwiseCorrMatrix:
