@@ -10,7 +10,9 @@ from env import PATH
 
 if __name__ == "__main__":
 
-    biogrid = pd.read_table(PATH + '/externalDatasets/biogridPPIALL.txt')
-    biogrid = biogrid.query("`Organism Name Interactor A` == 'Homo sapiens' & `Organism Name Interactor B` == 'Homo sapiens'")
-    biogrid.to_csv(PATH + '/externalDatasets/biogridPPIHuman.csv.gz', compression='gzip')
+    # biogrid = ppiDataset(PATH + '/externalDatasets/biogridPPIHuman.csv.gz', compression='gzip')
+    # biogrid.getPPIs(dataset='biogrid')
+    # print(biogrid.ppis)
+    # string = pd.read_csv(PATH + '/externalDatasets/stringPPI900Selected.csv.gz', compression='gzip')
+    # print(string)
     

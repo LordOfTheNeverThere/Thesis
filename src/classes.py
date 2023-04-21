@@ -41,11 +41,11 @@ class ppiDataset:
             # Filter Biogrid for certain parameters
 
             # Only allow ppis documented by physical interaction
-            data = data.query('Experimental System Type == physical')
+            data = data.query("`Experimental System Type` == 'physical'")
             
             # Filter out Homedymers which are not object of our study
 
-            data = data.query('Official Symbol Interactor A != Official Symbol Interactor B')
+            data = data.query('`Official Symbol Interactor A` != `Official Symbol Interactor B`')
 
             data['proteinTuple'] = list(zip(data['Official Symbol Interactor A'], data['Official Symbol Interactor B']))
             ppiSet = set(data['proteinTuple'])
@@ -53,7 +53,7 @@ class ppiDataset:
             self.ppis = ppiSet
 
         elif (dataset == 'string'):
-            data['proteinTuple'] = list(zip(data[self.proteinLabels[0]], data[self.proteinLabels[1]]))
+            data['proteinTuple'] = list(zip(data['proteinA'], data['proteinB']))
             ppiSet = set(data['proteinTuple'])
 
             self.ppis = ppiSet
@@ -82,7 +82,7 @@ class ProteinsMatrix:
         proteinNames = data.columns.str.split(' ').str.get(0).to_numpy()
         ppiNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
         # Correlation Matrix
-        pearsonCorrMatrix = data.corr(method='pearson')
+        pearsonCorrMatrix = data.corr(method=lambda x, y: pearsonr(x, y)[0])
 
         pairwiseCorrData = pearsonCorrMatrix.to_numpy()[np.triu_indices(pearsonCorrMatrix.shape[0], k=1)]
 
@@ -108,7 +108,7 @@ class ProteinsMatrix:
             def pearsonPValues(data:pd.DataFrame = None)-> pd.DataFrame|None:
 
                 pValuesMatrix = data.corr(method=lambda x, y: pearsonr(x, y)[1])
-                pairwisePValues =pValuesMatrix.to_numpy()[np.triu_indices(pValuesMatrix.shape[0], k=1)].round(3)
+                pairwisePValues =pValuesMatrix.to_numpy()[np.triu_indices(pValuesMatrix.shape[0], k=1)]
                 pairwisePValues = pd.DataFrame({'pValue': pairwisePValues}, index=ppiNames)
                 pairwisePValues.index.names = ['PPI']
 
@@ -121,7 +121,7 @@ class ProteinsMatrix:
             by=columnName, ascending=False, inplace=True)
 
         if fileName:
-            pairwiseCorrData.to_csv(PATH + '/datasetsTese/' + fileName + '.csv.gz', compression='gzip')
+            pairwiseCorrData.dropna().to_csv(PATH + '/datasetsTese/' + fileName + '.csv.gz', compression='gzip')
 
         return PairwiseCorrMatrix(None,pairwiseCorrData.dropna()) #There will be NAN correlations between proteins which do not appear simultaneously in at least two cell lines
 
