@@ -101,7 +101,7 @@ class ProteinsMatrix:
             by=columnName, ascending=False, inplace=True)
 
         if fileName:
-            pairwiseCorrData.to_csv(PATH + fileName + '.csv.gz', compression='gzip')
+            pairwiseCorrData.to_csv(PATH + '/datasetsTese/' + fileName + '.csv.gz', compression='gzip')
 
         return PairwiseCorrMatrix(None,pairwiseCorrData.dropna()) #There will be NAN correlations between proteins which do not appear simultaneously in at least two cell lines
 
