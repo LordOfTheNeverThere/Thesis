@@ -32,15 +32,20 @@ def mofaBaseModel():
     # utils.drawRecallCurves([pairwiseCorr], ['blue'],PATH + "/images/mofaModelRecallCurve.png")
 
 
-# def mofa2(): DDEPRECATED Filtering did nothing
-#     """In this model we are only using the proteins in the mofa proteomics matrix which are also on the og matrix
-#     """
-#     mofaProteins = pd.read_csv(PATH + '/datasetsTese/proteomicsMOFA.csv.gz', compression='gzip', index_col='Unnamed: 0')
-#     ogProteins = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTrans.csv', index_col='modelID')
-    
-#     # Filter DataFrame based on columns from the list, even if the list contains values not present in the DataFrame
-#     filteredMofaProteins = mofaProteins[mofaProteins.columns.intersection(ogProteins.columns)]
-#     #The matrix suffers now change soo this is rather usless, keep it if however you wish to do some future tweaking
+def mofa2():
+    """In this model we are only using the proteins in the mofa proteomics matrix which are also on the og matrix"""
+    mofaPairwise = PairwiseCorrMatrix(PATH + '/datasetsTese/baseMOFACorr.csv.gz', data=None, compression='gzip', index_col='PPI')
+    ogPairwise = PairwiseCorrMatrix(PATH+'/datasetsTese/baseModePairwiseWithpValues.csv.gz', data=None ,compression='gzip',index_col='PPI')
+    ogPairwise.data = ogPairwise.data.dropna()
+    indexesOfInterest = mofaPairwise.data.index.intersection(ogPairwise.data.index) 
+    mofaPairwise.data = mofaPairwise.data.loc[indexesOfInterest]
+    print(mofaPairwise.data)
+
+    mofaPairwise.aucCalculator('corum')
+
+    # Filter PPIs in Mofa which are only present in OG pairwise Corr
+    # mofaPairwise = moga
+    #The matrix suffers now change soo this is rather usless, keep it if however you wish to do some future tweaking
     
 def mofa3(threshold: float | list[float]):
 
@@ -99,5 +104,5 @@ def opposingIntensities():
 
 if __name__ == '__main__':
     # mofa3([0.45, 0.46, 0.47, 0.48, 0.49, 0.5])
-    mofaBaseModel()
+    mofa2()
     # opposingIntensities()
