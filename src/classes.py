@@ -82,7 +82,7 @@ class ProteinsMatrix:
         proteinNames = data.columns.str.split(' ').str.get(0).to_numpy()
         ppiNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
         # Correlation Matrix
-        pearsonCorrMatrix = data.corr(method=lambda x, y: pearsonr(x, y)[0])
+        pearsonCorrMatrix = data.corr(method='pearson')
 
         pairwiseCorrData = pearsonCorrMatrix.to_numpy()[np.triu_indices(pearsonCorrMatrix.shape[0], k=1)]
 
