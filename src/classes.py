@@ -20,8 +20,11 @@ class ppiDataset:
 
         data = self.data.copy()
         ppiSet = None
+        allowedDatasets = ['corum', 'biogrid', 'string']
 
-        if dataset == 'corum':
+        assert dataset in allowedDatasets, f"dataset not supported use one of the following 'corum', 'biogrid', 'string', got: {dataset}"
+
+        if dataset == allowedDatasets[0]:
 
             def combinationsOfProteins(complx):
 
@@ -36,7 +39,7 @@ class ppiDataset:
             ppiList = list(data.dropna()['proteinTuple'])
             ppiSet = {item for sublist in ppiList for item in sublist}
 
-        elif(dataset == 'biogrid'):
+        elif (dataset == allowedDatasets[1]):
 
             # Filter Biogrid for certain parameters
 
@@ -52,14 +55,12 @@ class ppiDataset:
 
             self.ppis = ppiSet
 
-        elif (dataset == 'string'):
+        elif (dataset == allowedDatasets[3]):
             data['proteinTuple'] = list(zip(data['proteinA'], data['proteinB']))
             ppiSet = set(data['proteinTuple'])
 
             self.ppis = ppiSet
 
-        else:
-            print('Wrong Dataset parameter. Pick either corum, biogrid or string')
 
 
         return ppiSet
@@ -130,17 +131,15 @@ class PairwiseCorrMatrix:
 
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, ** readerKwargs):
 
+        assert filepath or (
+            data is not None), 'There should be either a filepath or data'
 
         if filepath:
             self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
             
         elif data is not None:
-            print('I am gooood!')
             self.data: data.copy()
 
-        else:
-            print('There should be either a filepath or data')
-            return
         self.corrCumSum = None
         self.indexes = None
         self.auc = None

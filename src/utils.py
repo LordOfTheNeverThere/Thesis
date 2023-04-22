@@ -252,6 +252,7 @@ def getModelsByQuery(datasetToQuery: str, featureToQuery:str, valueToQuery)->set
         set: Returns a set composed of all models abiding by the query
     """
 
+
     if datasetToQuery == 'samplesheet': # In the case we are querying the samplesheet.csv for model specific features
         datasetToQuery: pd.DataFrame = pd.read_csv(PATH + "/datasetsTese/" + datasetToQuery + ".csv", index_col='model_id')
     elif datasetToQuery == 'drugresponse':

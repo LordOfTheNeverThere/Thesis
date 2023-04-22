@@ -9,33 +9,31 @@ from classes import ppiDataset, ProteinsMatrix, PairwiseCorrMatrix
 
 from env import PATH
 
-# %% Load Dataset
+#Load Dataset
 def mofaBaseModel():
     proteinsData = ProteinsMatrix(PATH + '/datasetsTese/proteomicsMOFA.csv.gz', index_col='Unnamed: 0')
 
     #  Load external Datasets
 
     corum = ppiDataset(filepath=PATH + '/externalDatasets/corumPPI.csv.gz')
-    corum = corum.getPPIs(True)
+    corum = corum.getPPIs('corum')
 
-    pairwiseCorr = proteinsData.pearsonCorrelations(
-        filepath=None, columnName='mofaCorrelation', counting=False)
+    pairwiseCorr = proteinsData.pearsonCorrelations(None, columnName='mofaCorrelation', counting=False)
     
     pairwiseCorr = PairwiseCorrMatrix(data = pairwiseCorr)
+    ogPairwise = PairwiseCorrMatrix( PATH+'/datasetsTese/baseModel.csv.gz', data=None, compression='gzip', index_col='PPI')
 
-    pairwiseCorrData = pairwiseCorr.addGroundTruth(corum, 'Corum', None)
+    pairwiseCorr.addGroundTruth(corum, 'Corum', PATH + '/datasetsTese/baseMOFAPairwiseCorr')
 
-    pairwiseCorrData.to_csv(PATH + '/datasetsTese/baseMOFACorr.csv.gz', compression='gzip')
+    pairwiseCorr.aucCalculator('Corum', 'mofaBaseModel')
 
-    # pairwiseCorr.aucCalculator('Corum')
-
-    # utils.drawRecallCurves([pairwiseCorr], ['blue'],PATH + "/images/mofaModelRecallCurve.png")
+    utils.drawRecallCurves([pairwiseCorr, ogPairwise], ['blue', 'red'], PATH + "/images/mofaVsOgRecallCurve.png")
 
 
 def mofa2():
     """In this model we are only using the proteins in the mofa proteomics matrix which are also on the og matrix"""
     mofaPairwise = PairwiseCorrMatrix(PATH + '/datasetsTese/baseMOFACorr.csv.gz', data=None, compression='gzip', index_col='PPI')
-    ogPairwise = PairwiseCorrMatrix(PATH+'/datasetsTese/baseModePairwiseWithpValues.csv.gz', data=None ,compression='gzip',index_col='PPI')
+    ogPairwise = PairwiseCorrMatrix(PATH+'/datasetsTese/baseModel.csv.gz', data=None ,compression='gzip',index_col='PPI')
     ogPairwise.data = ogPairwise.data.dropna()
     indexesOfInterest = mofaPairwise.data.index.intersection(ogPairwise.data.index) 
     mofaPairwise.data = mofaPairwise.data.loc[indexesOfInterest]
@@ -57,7 +55,8 @@ def mofa3(threshold: float | list[float]):
     mofaProteins = ProteinsMatrix(PATH + '/datasetsTese/proteomicsMOFA.csv.gz', {'index_col':'Unnamed: 0'})
     ogProteins = ProteinsMatrix(PATH+'/datasetsTese/proteomicsDataTrans.csv', {'index_col': 'modelID'})
     
-
+    assert type(threshold) == float or type( threshold) == list, 'Wrong Type for prop threshold'
+    
     if type(threshold) == float:
         threshold = list(threshold)
     if type(threshold) == list:
@@ -84,12 +83,8 @@ def mofa3(threshold: float | list[float]):
 
         
         hues = ['red', 'blue', 'green', 'black', 'purple', 'brown']
-        utils.drawRecallCurves(allPairwiseCorrs, hues,
-                               PATH + "/images/mofaRecallPresenceThreshv3.png")
+        utils.drawRecallCurves(allPairwiseCorrs, hues, PATH + "/images/mofaRecallPresenceThreshv3.png")
 
-        
-    else:
-        print('Wrong Type for prop threshold')
 
 
 
@@ -103,6 +98,6 @@ def opposingIntensities():
  
 
 if __name__ == '__main__':
-    # mofa3([0.45, 0.46, 0.47, 0.48, 0.49, 0.5])
-    mofa2()
-    # opposingIntensities()
+
+    mofaBaseModel()
+
