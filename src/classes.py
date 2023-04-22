@@ -131,6 +131,8 @@ class PairwiseCorrMatrix:
 
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, ** readerKwargs):
 
+
+        self.data = data
         assert filepath or (
             data is not None), 'There should be either a filepath or data'
 
@@ -138,7 +140,7 @@ class PairwiseCorrMatrix:
             self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
             
         elif data is not None:
-            self.data: data.copy()
+            self.data: pd.DataFrame = data.copy()
 
         self.corrCumSum = None
         self.indexes = None
