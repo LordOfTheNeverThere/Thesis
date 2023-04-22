@@ -19,8 +19,6 @@ def mofaBaseModel():
     corum = corum.getPPIs('corum')
 
     pairwiseCorr = proteinsData.pearsonCorrelations(None, columnName='mofaCorrelation', counting=False)
-    
-    pairwiseCorr = PairwiseCorrMatrix(data = pairwiseCorr)
     ogPairwise = PairwiseCorrMatrix( PATH+'/datasetsTese/baseModel.csv.gz', data=None, compression='gzip', index_col='PPI')
 
     pairwiseCorr.addGroundTruth(corum, 'Corum', PATH + '/datasetsTese/baseMOFAPairwiseCorr')
@@ -56,7 +54,7 @@ def mofa3(threshold: float | list[float]):
     ogProteins = ProteinsMatrix(PATH+'/datasetsTese/proteomicsDataTrans.csv', {'index_col': 'modelID'})
     
     assert type(threshold) == float or type( threshold) == list, 'Wrong Type for prop threshold'
-    
+
     if type(threshold) == float:
         threshold = list(threshold)
     if type(threshold) == list:

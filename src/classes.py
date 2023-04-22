@@ -76,7 +76,7 @@ class ProteinsMatrix:
 
         
 
-    def pearsonCorrelations(self, fileName: str, columnName: str, counting: bool = True, pValue: bool = True) -> pd.DataFrame:
+    def pearsonCorrelations(self, fileName: str, columnName: str, counting: bool = True, pValue: bool = True) -> PairwiseCorrMatrix:
 
         data = self.data.copy()
         # Get list with the names of every PPI
