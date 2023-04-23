@@ -96,6 +96,8 @@ def opposingIntensities():
  
 
 if __name__ == '__main__':
-
-    mofaBaseModel()
+    ogPairwise = PairwiseCorrMatrix(
+        PATH+'/datasetsTese/baseModel.csv.gz', data=None, compression='gzip', index_col='PPI')
+    print(ogPairwise.data)
+    # mofaBaseModel()
 
