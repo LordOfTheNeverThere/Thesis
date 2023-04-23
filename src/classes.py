@@ -17,6 +17,14 @@ class ppiDataset:
         self.ppis = set()
 
     def getPPIs(self, dataset:str) -> set:
+        """Get the curated and observed ppis of a certains external PPI dataset
+
+        Args:
+            dataset (str): name of the dataset. It can either be 'corum', 'biogrid' or 'string'
+
+        Returns:
+            set: Set of tuples with proteinA and proteinB as putative PPI pairs
+        """
 
         data = self.data.copy()
         ppiSet = None
@@ -77,6 +85,17 @@ class ProteinsMatrix:
         
 
     def pearsonCorrelations(self, fileName: str, columnName: str, counting: bool = True, pValue: bool = True) -> PairwiseCorrMatrix:
+        """Calculate the pearson correlations and corresponding p-value, displaying them in a pairwise manner, returning an instance of the PairwiseCorrMatrix class
+
+        Args:
+            fileName (str): Name of the file where the datastructure will be stored
+            columnName (str): Name given to the df column with the correlation metric
+            counting (bool, optional): Should we count the number of times the two proteins appear in the same sample?. Defaults to True.
+            pValue (bool, optional): Should we add the p-value, level of statistical significane of our correlation to the final data structure. Defaults to True.
+
+        Returns:
+            PairwiseCorrMatrix: final data structure with all the information regarding pairwise correlations
+        """
 
         data = self.data.copy()
         # Get list with the names of every PPI
@@ -188,7 +207,12 @@ class PairwiseCorrMatrix:
         return data
     
     def aucCalculator(self, yColumnName:str, label:str):
+        """Adds the value of AUC of the Recall curve using a specified external PPI dataset with yColumnName
 
+        Args:
+            yColumnName (str): Name of the df column where there is the truth value of the existence or not of the PPI in the reported external PPI dataset
+            label (str): Text which will show up as label next to the value of the AUC, e.g 'Baseline Auc == 0.9' 
+        """
         pairwiseCorr = self.data 
 
         self.corrCumSum = np.cumsum(
@@ -201,9 +225,10 @@ class PairwiseCorrMatrix:
         if not label:
             self.label = f"(AUC {self.auc:.2f})"
         
-        self.label = label
+        self.label = label + f" (AUC {self.auc:.2f})"
 
     def query(self, query: str, inplace : bool = False) -> pd.DataFrame|None:
+
 
         if not inplace:
             return self.data.query(query)
@@ -211,6 +236,17 @@ class PairwiseCorrMatrix:
             self.data = self.data.query(query)
 
     def compare(self, other: PairwiseCorrMatrix, querySelf: str, queryOther: str, key: str = 'PPI') -> pd.DataFrame:
+        """Query two PairwiseCorrMatrices with independent queries and get the merged dataframe as result
+
+        Args:
+            other (PairwiseCorrMatrix): another PairwiseCorrMatrix object
+            querySelf (str): Query to apply on the self object
+            queryOther (str): Query to apply on the other object
+            key (str, optional): In what column name should the merge be happening on, acting as consesual index. Defaults to 'PPI'.
+
+        Returns:
+            pd.DataFrame: _description_
+        """
 
         left: pd.DataFrame = self.query(querySelf)
         right: pd.DataFrame = other.query(queryOther)
