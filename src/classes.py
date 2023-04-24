@@ -7,10 +7,8 @@ from scipy.stats import pearsonr
 from env import PATH
 
 
-class ppiDataset:
-
-    def __init__(self, filepath:str = None, data: pd.DataFrame = None, proteinLabels: list = [], **readerKwargs):
-
+class MatrixData:
+    def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
         self.data = data
         assert filepath or (
             data is not None), 'There should be either a filepath or data'
@@ -21,6 +19,12 @@ class ppiDataset:
         elif data is not None:
             self.data: pd.DataFrame = data.copy()
 
+class ppiDataset(MatrixData):
+
+    def __init__(self, filepath:str = None, data: pd.DataFrame = None, proteinLabels: list = [], **readerKwargs):
+
+
+        super().__init__(filepath, data, **readerKwargs)
         self.proteinLabels = proteinLabels
         self.ppis = set()
 
@@ -77,19 +81,11 @@ class ppiDataset:
         return ppiSet
 
 
-class ProteinsMatrix:
+class ProteinsMatrix(MatrixData):
 
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
 
-        self.data = data
-        assert filepath or (
-            data is not None), 'There should be either a filepath or data'
-
-        if filepath:
-            self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
-
-        elif data is not None:
-            self.data: pd.DataFrame = data.copy()
+        super().__init__(filepath, data, **readerKwargs)
 
     def pearsonCorrelations(self, columnName: str, counting: bool = True, pValue: bool = True) -> PairwiseCorrMatrix:
         """Calculate the pearson correlations and corresponding p-value, displaying them in a pairwise manner, returning an instance of the PairwiseCorrMatrix class
@@ -151,20 +147,11 @@ class ProteinsMatrix:
         return PairwiseCorrMatrix(None,pairwiseCorrData.dropna()) #There will be NAN correlations between proteins which do not appear simultaneously in at least two cell lines
 
 
-class PairwiseCorrMatrix:
+class PairwiseCorrMatrix(MatrixData):
 
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, ** readerKwargs):
 
-
-        self.data = data
-        assert filepath or (
-            data is not None), 'There should be either a filepath or data'
-
-        if filepath:
-            self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
-            
-        elif data is not None:
-            self.data: pd.DataFrame = data.copy()
+        super().__init__(filepath, data, **readerKwargs)
 
         self.corrCumSum = None
         self.indexes = None
@@ -254,6 +241,19 @@ class PairwiseCorrMatrix:
         right: pd.DataFrame = other.query(queryOther)
 
         return left.merge(right, on=key)
+    
+class DrugResponseMatrix(MatrixData):
+    """Class interface and methods for the drug response data"""
+
+    def __init__(self, filepath: str=None, data: pd.DataFrame=None, **readerKwargs):
+        super().__init__(filepath, data, **readerKwargs)
+
+
+    def binrise(self):
+
+    
+
+    
 
         
 
