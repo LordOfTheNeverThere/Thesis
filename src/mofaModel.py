@@ -6,6 +6,8 @@ from sklearn.metrics import auc
 import matplotlib.pyplot as plt
 import utils
 from classes import ppiDataset, ProteinsMatrix, PairwiseCorrMatrix
+import pickle
+import gzip
 
 from env import PATH
 
@@ -93,22 +95,37 @@ def mofa3(threshold: float | list[float]):
 
 
 def opposingIntensities():
-    mofa = PairwiseCorrMatrix(
-        PATH + '/datasetsTese/baseMOFAPairwiseCorr.csv.gz', compression='gzip')
-    baseModel = PairwiseCorrMatrix(PATH + '/datasetsTese/BaseModel.csv.gz', compression='gzip')
+
+    with gzip.open(PATH + '/datasetsTese/' + 'mofaPairwiseCorr.pickle.gz', 'wb') as f:
+        mofa = pickle.load(f)
+    f.close()
+
+    with gzip.open(PATH + '/datasetsTese/BaseModel.csv.gz', 'wb') as f:
+        baseModel = pickle.load(f)
+    f.close()
+
+    with gzip.open(PATH + '/datasetsTese/ogProteomics.csv.gz', 'wb') as f:
+        proteomics = pickle.load(f)
+    f.close()
+
     print(baseModel.data)
     print(mofa.data)
 
-    queriedFrame = baseModel.compare(mofa, 'Corum == 1','corum == 1')
+    queriedFrame = baseModel.compare(mofa, 'corum == 1','corum == 1')
 
     print(queriedFrame)
     queriedFrame['corrDiference'] = abs(queriedFrame['globalCorrelation'] - queriedFrame['mofaCorrelation'])
     highestDiference = queriedFrame.sort_values(by='corrDiference', ascending=False, inplace=True).head(5)
     indexes = list(highestDiference.index)
-    setOfPPIs = {(proteins.split(';')[0], proteins.split(';')[1]) for proteins in indexes} #Unpack PPIs of opposing inensities into tuples of proteins
+    setOfPPIs = {(proteins.split(';')[0], proteins.split(';')[1]) for proteins in indexes} #Unpack PPIs of opposing inensities into tuples of proteins 
 
-    for ppi in setOfPPIs:
-        pass
+    fig, ax = plt.subplots(5, 1, figsize=(20, 12))
+    for index, ppi in enumerate(setOfPPIs):
+        proteinA = proteomics.loc[ppi[0]]
+        proteinB = proteomics.loc[ppi[1]]
+
+        ax[index, 1].scatter(proteinA, proteinB)
+
 
 
 
