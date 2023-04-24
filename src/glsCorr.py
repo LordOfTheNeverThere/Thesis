@@ -44,7 +44,7 @@ def getGLSCorr():
     glsPValues = GLS_p[np.triu_indices(GLS_p.shape[0], k=1)]
     glsCoefs = GLS_coef[np.triu_indices(GLS_coef.shape[0], k=1)]
     pairwiseCorrData = pd.DataFrame({'glsCoefficient': glsCoefs, 'p-value': glsPValues}, index=  proteinNames)
-    pairwiseCorrData.to_csv(PATH + '/datasetsTese/baseMOFACorr.csv.gz', compression='gzip')
+    pairwiseCorrData.to_csv(PATH + '/datasetsTese/glsPairwiseCorr.csv.gz', compression='gzip')
 
 
 if __name__ == '__main__':

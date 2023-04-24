@@ -11,37 +11,43 @@ from env import PATH
 
 #Load Dataset
 def mofaBaseModel():
-    proteinsData = ProteinsMatrix(PATH + '/datasetsTese/proteomicsMOFA.csv.gz', index_col='Unnamed: 0')
+    # proteinsData = ProteinsMatrix(PATH + '/datasetsTese/proteomicsMOFA.csv.gz', index_col='Unnamed: 0')
 
-    #  Load external Datasets
+    # #  Load external Datasets
 
-    corum = ppiDataset(filepath=PATH + '/externalDatasets/corumPPI.csv.gz')
-    corum = corum.getPPIs('corum')
+    # corum = ppiDataset(filepath=PATH + '/externalDatasets/corumPPI.csv.gz')
+    # corum = corum.getPPIs('corum')
 
-    pairwiseCorr = proteinsData.pearsonCorrelations(None, columnName='mofaCorrelation', counting=False)
+    # pairwiseCorr = proteinsData.pearsonCorrelations(None, columnName='mofaCorrelation', counting=False)
+    pairwiseCorr = PairwiseCorrMatrix(PATH + '/datasetsTese/baseMOFAPairwiseCorr.csv.gz', data=None, compression='gzip', index_col='PPI')
     ogPairwise = PairwiseCorrMatrix( PATH+'/datasetsTese/baseModel.csv.gz', data=None, compression='gzip', index_col='PPI')
+    print(pairwiseCorr.data)
+    print(ogPairwise.data)
 
-    pairwiseCorr.addGroundTruth(corum, 'Corum', PATH + '/datasetsTese/baseMOFAPairwiseCorr')
+    # pairwiseCorr.addGroundTruth(corum, 'corum', PATH + '/datasetsTese/baseMOFAPairwiseCorr')
 
-    pairwiseCorr.aucCalculator('Corum', 'mofaBaseModel')
+    pairwiseCorr.aucCalculator('corum', 'mofaModel')
+    ogPairwise.aucCalculator('Corum', 'baseModel')
 
-    utils.drawRecallCurves([pairwiseCorr, ogPairwise], ['blue', 'red'], PATH + "/images/mofaVsOgRecallCurve.png")
+    utils.drawRecallCurves([pairwiseCorr, ogPairwise], ['blue', 'red'],"../images/mofaVsOgRecallCurve.png")
 
 
 def mofa2():
     """In this model we are only using the proteins in the mofa proteomics matrix which are also on the og matrix"""
-    mofaPairwise = PairwiseCorrMatrix(PATH + '/datasetsTese/baseMOFACorr.csv.gz', data=None, compression='gzip', index_col='PPI')
+    mofaPairwise = PairwiseCorrMatrix(PATH + '/datasetsTese/baseMOFAPairwiseCorr.csv.gz', data=None, compression='gzip', index_col='PPI')
     ogPairwise = PairwiseCorrMatrix(PATH+'/datasetsTese/baseModel.csv.gz', data=None ,compression='gzip',index_col='PPI')
     ogPairwise.data = ogPairwise.data.dropna()
     indexesOfInterest = mofaPairwise.data.index.intersection(ogPairwise.data.index) 
     mofaPairwise.data = mofaPairwise.data.loc[indexesOfInterest]
     print(mofaPairwise.data)
 
-    mofaPairwise.aucCalculator('corum')
+    mofaPairwise.aucCalculator('Corum', 'MofaWithOverlap')
 
-    # Filter PPIs in Mofa which are only present in OG pairwise Corr
-    # mofaPairwise = moga
-    #The matrix suffers now change soo this is rather usless, keep it if however you wish to do some future tweaking
+
+    utils.drawRecallCurves([mofaPairwise], ['red'], 'reCurveMofaOgFiltered.png')
+
+
+
     
 def mofa3(threshold: float | list[float]):
 
@@ -87,17 +93,28 @@ def mofa3(threshold: float | list[float]):
 
 
 def opposingIntensities():
-    mofa = PairwiseCorrMatrix(PATH + '/datasetsTese/baseMOFACorr.csv.gz')
-    baseModel = PairwiseCorrMatrix(PATH + '/datasetsTese/BaseModelPairwise.csv', gziped=False)
+    mofa = PairwiseCorrMatrix(
+        PATH + '/datasetsTese/baseMOFAPairwiseCorr.csv.gz', compression='gzip')
+    baseModel = PairwiseCorrMatrix(PATH + '/datasetsTese/BaseModel.csv.gz', compression='gzip')
+    print(baseModel.data)
+    print(mofa.data)
 
-    queriedFrame = baseModel.compare(mofa, 'Corum == 1 & globalCorrelation  > 0.8','Corum == 1 & mofaCorrelation  < 0.4')
+    queriedFrame = baseModel.compare(mofa, 'Corum == 1','corum == 1')
 
     print(queriedFrame)
+    queriedFrame['corrDiference'] = abs(queriedFrame['globalCorrelation'] - queriedFrame['mofaCorrelation'])
+    highestDiference = queriedFrame.sort_values(by='corrDiference', ascending=False, inplace=True).head(5)
+    indexes = list(highestDiference.index)
+    setOfPPIs = {(proteins.split(';')[0], proteins.split(';')[1]) for proteins in indexes} #Unpack PPIs of opposing inensities into tuples of proteins
+
+    for ppi in setOfPPIs:
+        pass
+
+
+
  
 
 if __name__ == '__main__':
-    ogPairwise = PairwiseCorrMatrix(
-        PATH+'/datasetsTese/baseModel.csv.gz', data=None, compression='gzip', index_col='PPI')
-    print(ogPairwise.data)
-    # mofaBaseModel()
+    mofaBaseModel()
+    #opposingIntensities()
 
