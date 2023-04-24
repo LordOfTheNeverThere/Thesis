@@ -315,7 +315,6 @@ def drawRecallCurves(paiwiseMatrices : list[PairwiseCorrMatrix], colours: list, 
     ax.set_xlabel("Ranked correlation")
     ax.grid(True, axis="both", ls="-", lw=0.1, alpha=1.0, zorder=0)
 
-    plt.savefig(filename,
-                bbox_inches="tight")
+    plt.savefig(PATH +  '/images/' + filename, bbox_inches="tight")
     plt.close("all")
 

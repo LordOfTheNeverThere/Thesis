@@ -9,10 +9,18 @@ from env import PATH
 
 class ppiDataset:
 
-    def __init__(self, filepath, proteinLabels: list = [], **readerKwargs):
+    def __init__(self, filepath:str = None, data: pd.DataFrame = None, proteinLabels: list = [], **readerKwargs):
 
-        self.data: pd.DataFrame = pd.read_csv(
-            filepath, **readerKwargs)
+        self.data = data
+        assert filepath or (
+            data is not None), 'There should be either a filepath or data'
+
+        if filepath:
+            self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
+            
+        elif data is not None:
+            self.data: pd.DataFrame = data.copy()
+
         self.proteinLabels = proteinLabels
         self.ppis = set()
 
@@ -51,40 +59,39 @@ class ppiDataset:
 
             # Filter Biogrid for certain parameters
 
-            # Only allow ppis documented by physical interaction
-            data = data.query("`Experimental System Type` == 'physical'")
-            
+            # Only allow ppis documented by physical interaction      
             # Filter out Homedymers which are not object of our study
-
-            data = data.query('`Official Symbol Interactor A` != `Official Symbol Interactor B`')
+            data = data.query("`Experimental System Type` == 'physical' and `Official Symbol Interactor A` != `Official Symbol Interactor B`").copy()
 
             data['proteinTuple'] = list(zip(data['Official Symbol Interactor A'], data['Official Symbol Interactor B']))
             ppiSet = set(data['proteinTuple'])
 
-            self.ppis = ppiSet
+            
 
-        elif (dataset == allowedDatasets[3]):
+        elif (dataset == allowedDatasets[2]):
             data['proteinTuple'] = list(zip(data['proteinA'], data['proteinB']))
             ppiSet = set(data['proteinTuple'])
 
-            self.ppis = ppiSet
-
-
-
+        
+        self.ppis = ppiSet
         return ppiSet
 
 
 class ProteinsMatrix:
 
-    def __init__(self, filepath: str, **readerKwargs):
+    def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
 
-        self.data: pd.DataFrame = pd.read_csv(
-            filepath, **readerKwargs)
+        self.data = data
+        assert filepath or (
+            data is not None), 'There should be either a filepath or data'
 
+        if filepath:
+            self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
 
-        
+        elif data is not None:
+            self.data: pd.DataFrame = data.copy()
 
-    def pearsonCorrelations(self, fileName: str, columnName: str, counting: bool = True, pValue: bool = True) -> PairwiseCorrMatrix:
+    def pearsonCorrelations(self, columnName: str, counting: bool = True, pValue: bool = True) -> PairwiseCorrMatrix:
         """Calculate the pearson correlations and corresponding p-value, displaying them in a pairwise manner, returning an instance of the PairwiseCorrMatrix class
 
         Args:
@@ -140,8 +147,6 @@ class ProteinsMatrix:
         pairwiseCorrData.sort_values(
             by=columnName, ascending=False, inplace=True)
 
-        if fileName:
-            pairwiseCorrData.dropna().to_csv(PATH + '/datasetsTese/' + fileName + '.csv.gz', compression='gzip')
 
         return PairwiseCorrMatrix(None,pairwiseCorrData.dropna()) #There will be NAN correlations between proteins which do not appear simultaneously in at least two cell lines
 
@@ -166,7 +171,7 @@ class PairwiseCorrMatrix:
         self.auc = None
         self.label = None
 
-    def addGroundTruth(self, ppis: set, externalDatasetName: str, filepath: str = None):
+    def addGroundTruth(self, ppis: set, externalDatasetName: str):
         """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
 
         Args:
@@ -198,9 +203,6 @@ class PairwiseCorrMatrix:
         data[externalDatasetName] = data.apply(
             axis=1, func=lambda model: addExternalTrueY(model))
 
-        if filepath:
-
-            data.to_csv(filepath + '.csv.gz', compression='gzip')
 
         self.data = data
 
@@ -260,56 +262,3 @@ class PairwiseCorrMatrix:
 
         
 
-# Deprecated
-# class TreeNode:
-
-#     def __init__(self, value, children: set = set()):
-
-#         self.value = value
-#         self.children = children
-
-#     def addChild(self, childNode):
-
-#         self.children.add(childNode)
-
-#     def removeChild(self, childNode):
-
-#         self.children = [
-#             child for child in self.children if child is not childNode]
-
-#     def transverse(self):
-
-#         nodesToVisit = [self]
-
-#         while len(nodesToVisit) > 0:
-
-#             currentNode = nodesToVisit.pop()
-#             print(currentNode.value)
-#             # convert the set into a list so that the trasnverse works
-#             nodesToVisit += list(currentNode.children)
-
-#     def getNode(self, nodeValue):
-
-#         if self.value == nodeValue:
-#             return self
-
-#         elif (len(self.children)):
-
-#             for node in self.children:
-
-#                 hasNode = node.getNode(nodeValue)
-#                 if hasNode:
-#                     return hasNode
-
-#         return None
-
-#     def getChildrenValue(self):
-#         return {child.value for child in self.children}
-
-#     def getNodeFirstLayer(self, nodeValue):
-
-#         for child in self.children:
-
-#             if child.value == nodeValue:
-
-#                 return child
