@@ -9,6 +9,7 @@ import gzip
 from env import PATH
 
 
+
 class MatrixData:
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
         self.data = data
@@ -22,16 +23,7 @@ class MatrixData:
             self.data: pd.DataFrame = data.copy()
         
     def __str__(self) -> str:
-        return self.data
-    
-    def read(self, filepath:str):
-
-        with gzip.open(filepath, 'rb') as f:
-            dataMatrix = pickle.load(f)
-        f.close()
-
-        return dataMatrix
-
+        return str(self.data)
 
     def write(self, filepath:str):
 
@@ -47,6 +39,7 @@ class ppiDataset(MatrixData):
         super().__init__(filepath, data, **readerKwargs)
         self.proteinLabels = proteinLabels
         self.ppis = set()
+
 
     def getPPIs(self, dataset:str) -> set:
         """Get the curated and observed ppis of a certains external PPI dataset
@@ -125,7 +118,7 @@ class ProteinsMatrix(MatrixData):
         proteinNames = data.columns.str.split(' ').str.get(0).to_numpy()
         ppiNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
         # Correlation Matrix
-        pearsonCorrMatrix = data.corr(method='pearson')
+        pearsonCorrMatrix = data.corr(method='pearson', numeric_only=True)
 
         pairwiseCorrData = pearsonCorrMatrix.to_numpy()[np.triu_indices(pearsonCorrMatrix.shape[0], k=1)]
 
@@ -177,6 +170,13 @@ class PairwiseCorrMatrix(MatrixData):
         self.indexes = None
         self.auc = None
         self.label = None
+
+    def __str__(self):
+
+        print = super().__str__()
+        print = print + '\n' +str(self.auc) + '\n' + str(self.label)
+
+        return print
 
     def addGroundTruth(self, ppis: set, externalDatasetName: str):
         """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe

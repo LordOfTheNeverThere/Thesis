@@ -4,6 +4,8 @@ import seaborn as sb
 import numpy as np
 import matplotlib.pyplot as plt
 from classes import PairwiseCorrMatrix
+import pickle
+import gzip
 
 from env import PATH
 
@@ -318,3 +320,10 @@ def drawRecallCurves(paiwiseMatrices : list[PairwiseCorrMatrix], colours: list, 
     plt.savefig('../images/' + filename, bbox_inches="tight")
     plt.close("all")
 
+def read(filepath: str):
+
+    with gzip.open(filepath, 'rb') as f:
+        object = pickle.load(f)
+    f.close()
+
+    return object

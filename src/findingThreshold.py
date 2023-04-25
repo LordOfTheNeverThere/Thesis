@@ -5,7 +5,7 @@ from sklearn.metrics import auc
 import matplotlib.pyplot as plt
 import utils
 from sklearn.metrics import auc
-from classes import ppiDataset
+from classes import ppiDataset, PairwiseCorrMatrix, ProteinsMatrix
 import time
 from itertools import repeat
 from env import PATH
@@ -17,12 +17,11 @@ CPUS = 30
 assert CPUS < mp.cpu_count() - 1
 
 
-proteinsData = pd.read_csv(
-    PATH+'/datasetsTese/proteomicsDataTrans.csv', index_col='modelID')
+proteinsData: ProteinsMatrix = utils.read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
 
-globalPairwiseCorr = pd.read_csv(
-    PATH+'/datasetsTese/BaseModelPairwise.csv', index_col='PPI')
-globalPairwiseCorr = globalPairwiseCorr['Corum']
+globalPairwiseCorr: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/baseModelPairwiseCorr.pickle.gz')
+
+
 
 
 
@@ -85,16 +84,15 @@ def getAUCvsThresholdPlot(pairwiseCorrData: pd.DataFrame) -> None:
 
     # What Professor Pedro Asked For :)
 
-def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: pd.DataFrame, corum: pd.DataFrame):
+def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: ProteinsMatrix, corum: pd.DataFrame):
     
-
-    proteinsDatSample = proteinsData.sample(n=sampleNum, axis=0, random_state=iteration * sampleNum)
-    pairwiseCorr = utils.getPairwiseCorrelation(proteinsDatSample, None, str(sampleNum) + ' samples', False)
-    del proteinsDatSample
-    pairwiseCorr = pairwiseCorr.merge(globalPairwiseCorr, on='PPI', how='left')
+    proteinsData.data = proteinsData.data.head(10)
+    proteinsData.data = proteinsData.data.sample(n=sampleNum, axis=0, random_state=iteration * sampleNum)
+    pairwiseCorr = proteinsData.pearsonCorrelations('correlation', False, False)
+    pairwiseCorr: pd.DataFrame = pairwiseCorr.data.merge(globalPairwiseCorr.data['corum'], on='PPI', how='left')
     # pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr.head(2000), 'Corum', None) DEPRECATED
     corrCumSum = np.cumsum(
-        pairwiseCorr['Corum']) / np.sum(pairwiseCorr['Corum'])
+        pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
     indexes = np.array(pairwiseCorr.reset_index().index) / \
         pairwiseCorr.shape[0]
     del pairwiseCorr
@@ -102,7 +100,7 @@ def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: pd.DataF
     return AUC
 
 
-def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: pd.DataFrame, corum: pd.DataFrame):
+def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: ProteinsMatrix, corum: pd.DataFrame):
 
     print(repeats, sampleNum)
     start = time.time()
@@ -111,25 +109,25 @@ def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: pd.DataFrame, c
         checkPPIGen = process.starmap(variousRepeatsWrapper, zip(range(0, repeats), repeat(
             sampleNum), repeat(proteinsData), repeat(corum)))  # While Cycle
     result = list(checkPPIGen)
-    if sampleNum == 450:
-        print('50% Done')
-        
+      
     print(time.time() - start)
+    xLabel = str(sampleNum) +' n == ' + str(repeats)  
 
-    return sampleNum, result
+    return xLabel, result
 
 
-def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], repeats: list[int]):
+def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int], repeats: list[int]):
 
-    corum = ppiDataset(filename=PATH + '/externalDatasets/corumPPI.csv.gz')
-    corum = corum.getPPIs(True)
+    corum = utils.read(PATH + '/externalDatasets/corum.pickle.gz').ppis
 
     checkPPIGen = map(wrapperCheckPPIs, subsampleSizes,  
         repeats, repeat(proteinsData), repeat(corum))  # First For Cycle
 
     allAUC = dict(checkPPIGen)
+    print(allAUC)
 
-    corumAUC = 0.76
+
+    corumAUC = globalPairwiseCorr.auc
     fig, ax = plt.subplots(figsize=(40, 8))
     ax.boxplot(allAUC.values(), labels=allAUC.keys())
     ax.set_ybound(lower=0.2, upper=1)
@@ -140,11 +138,13 @@ def randomSubSamplingAUC(proteinsData: pd.DataFrame, subsampleSizes: list[int], 
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
 
-    plt.savefig(PATH  +  "/images/aucPerSamplingNumberv2.0.png",
+    plt.savefig("../images/dummy.png",
                 bbox_inches="tight")
 
 
 if __name__ == '__main__':
+
+    
     subsamplingList = list(range(5,950,5))
     repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
     start = time.time()
