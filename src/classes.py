@@ -4,6 +4,8 @@ from itertools import combinations
 import numpy as np
 from sklearn.metrics import auc
 from scipy.stats import pearsonr
+import pickle
+import gzip
 from env import PATH
 
 
@@ -18,6 +20,24 @@ class MatrixData:
             
         elif data is not None:
             self.data: pd.DataFrame = data.copy()
+        
+    def __str__(self) -> str:
+        return self.data
+    
+    def read(self, filepath:str):
+        
+        with gzip.open(filepath, 'rb') as f:
+            dataMatrix = pickle.load(f)
+        f.close()
+
+        return dataMatrix
+
+
+    def write(self, filepath:str):
+
+        with gzip.open(filepath, 'wb') as f:
+            pickle.dump(self,f)
+        f.close()
 
 class ppiDataset(MatrixData):
 
@@ -250,6 +270,7 @@ class DrugResponseMatrix(MatrixData):
 
 
     def binrise(self):
+        pass
 
     
 
