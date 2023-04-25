@@ -25,7 +25,7 @@ class MatrixData:
         return self.data
     
     def read(self, filepath:str):
-        
+
         with gzip.open(filepath, 'rb') as f:
             dataMatrix = pickle.load(f)
         f.close()
@@ -257,8 +257,8 @@ class PairwiseCorrMatrix(MatrixData):
             pd.DataFrame: _description_
         """
 
-        left: pd.DataFrame = self.query(querySelf)
-        right: pd.DataFrame = other.query(queryOther)
+        left: pd.DataFrame = self.query(querySelf).copy()
+        right: pd.DataFrame = other.query(queryOther).copy()
 
         return left.merge(right, on=key)
     
