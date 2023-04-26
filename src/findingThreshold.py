@@ -86,7 +86,6 @@ def getAUCvsThresholdPlot(pairwiseCorrData: pd.DataFrame) -> None:
 
 def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: ProteinsMatrix, corum: pd.DataFrame):
     
-    proteinsData.data = proteinsData.data.head(10)
     proteinsData.data = proteinsData.data.sample(n=sampleNum, axis=0, random_state=iteration * sampleNum)
     pairwiseCorr = proteinsData.pearsonCorrelations('correlation', False, False)
     pairwiseCorr: pd.DataFrame = pairwiseCorr.data.merge(globalPairwiseCorr.data['corum'], on='PPI', how='left')
