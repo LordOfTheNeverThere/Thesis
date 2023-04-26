@@ -133,10 +133,11 @@ def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int]
     ax.set_ylabel("AUC", fontsize=14)
     ax.set_xlabel("Sampling Number", fontsize=14)
     ax.axhline(y=corumAUC, color='red', linestyle='-', label='BaseModel AUC')
-    ax.axhline(y=0.9*corumAUC, color='blue', linestyle=':', label='90% of BaseModel AUC')
+    ax.axhline(y=0.9*corumAUC, color='blue', linestyle=':', label="90% of BaseModel's AUC")
+    ax.axhline(y=0.8*corumAUC, color='blue',linestyle=':', label="80% of Base Model's AUC")
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
-
+    plt.legend()
     plt.savefig("../images/dummy.png",
                 bbox_inches="tight")
 
