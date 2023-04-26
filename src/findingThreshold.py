@@ -124,7 +124,6 @@ def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int]
         repeats, repeat(proteinsData), repeat(corum))  # First For Cycle
 
     allAUC = dict(checkPPIGen)
-    print(allAUC)
 
 
     corumAUC = globalPairwiseCorr.auc
