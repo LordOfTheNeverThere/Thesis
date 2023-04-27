@@ -13,13 +13,13 @@ import multiprocessing as mp
 
 
 RANDOMSTATE = None
-CPUS = 30
+CPUS = 1
 assert CPUS < mp.cpu_count() - 1
 
 
-proteinsData: ProteinsMatrix = utils.read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
+proteinsData: ProteinsMatrix = utils.read(PATH + '/datasetsTese/mofaProteomics.pickle.gz')
 
-globalPairwiseCorr: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/baseModelPairwiseCorr.pickle.gz')
+globalPairwiseCorr: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/mofaPairwiseCorr.pickle.gz')
 
 
 
@@ -144,11 +144,14 @@ def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int]
 
 if __name__ == '__main__':
 
+    print(proteinsData)
+    print(globalPairwiseCorr)
+
     
-    subsamplingList = list(range(5,950,5))
-    repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
-    start = time.time()
-    randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList)
-    end = time.time()
-    sumOfTime = end-start
-    print(sumOfTime)
+    # subsamplingList = list(range(5,950,5))
+    # repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
+    # start = time.time()
+    # randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList)
+    # end = time.time()
+    # sumOfTime = end-start
+    # print(sumOfTime)
