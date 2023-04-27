@@ -2,12 +2,13 @@ import numpy as np
 import pandas as pd
 from scipy.special import stdtr
 import matplotlib.pyplot as plt
-from classes import PairwiseCorrMatrix
+import utils
+from classes import PairwiseCorrMatrix, ProteinsMatrix
 
 from env import PATH
-def getGLSCorr():
+def getGLSCorr(proteinData: ProteinsMatrix) -> PairwiseCorrMatrix:
 
-    proteinData = pd.read_csv(PATH+'/datasetsTese/proteomicsDataTrans.csv',index_col='modelID')
+    
 
     proteinData.dropna(axis=1, thresh=round(proteinData.shape[0] * 0.2), inplace=True) #We require that a protein has about 20% missingness for it to be considered a dropable column
 
@@ -43,11 +44,15 @@ def getGLSCorr():
     # Save everything
     glsPValues = GLS_p[np.triu_indices(GLS_p.shape[0], k=1)]
     glsCoefs = GLS_coef[np.triu_indices(GLS_coef.shape[0], k=1)]
-    pairwiseCorrData = pd.DataFrame({'glsCoefficient': glsCoefs, 'p-value': glsPValues}, index=  proteinNames)
-    pairwiseCorrData.to_csv(PATH + '/datasetsTese/glsPairwiseCorr.csv.gz', compression='gzip')
+    pairwiseCorrData = pd.DataFrame({'glsCoefficient': glsCoefs, 'p-value': glsPValues}, index=proteinNames)
+    pairwiseCorrData = PairwiseCorrMatrix(None, pairwiseCorrData)
+    # pairwiseCorrData.write(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
+
+    return pairwiseCorrData
 
 
 if __name__ == '__main__':
+    proteinData: ProteinsMatrix = utils.read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
 
-    getGLSCorr()
+    getGLSCorr(proteinData)
 

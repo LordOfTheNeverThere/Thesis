@@ -10,6 +10,7 @@ import time
 from itertools import repeat
 from env import PATH
 import multiprocessing as mp
+from glsCorr import getGLSCorr
 
 
 RANDOMSTATE = None
@@ -19,7 +20,7 @@ assert CPUS < mp.cpu_count() - 1
 
 proteinsData: ProteinsMatrix = utils.read(PATH + '/datasetsTese/mofaProteomics.pickle.gz')
 
-globalPairwiseCorr: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/mofaPairwiseCorr.pickle.gz')
+globalPairwiseCorr: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
 
 
 
@@ -84,10 +85,15 @@ def getAUCvsThresholdPlot(pairwiseCorrData: pd.DataFrame) -> None:
 
     # What Professor Pedro Asked For :)
 
-def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: ProteinsMatrix, corum: pd.DataFrame):
+def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: ProteinsMatrix, glmCoefs: bool = False):
     
     proteinsData.data = proteinsData.data.sample(n=sampleNum, axis=0, random_state=iteration * sampleNum)
-    pairwiseCorr = proteinsData.pearsonCorrelations('correlation', False, False)
+
+    if glmCoefs: # We are eiher using glm coefs as predictors of Novel PPI's or Pearson Correlation Coeficients
+        pairwiseCorr = getGLSCorr(proteinsData)
+    else:
+        pairwiseCorr = proteinsData.pearsonCorrelations('correlation', False, False)
+
     pairwiseCorr: pd.DataFrame = pairwiseCorr.data.merge(globalPairwiseCorr.data['corum'], on='PPI', how='left')
     # pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr.head(2000), 'Corum', None) DEPRECATED
     corrCumSum = np.cumsum(
@@ -99,14 +105,13 @@ def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: Proteins
     return AUC
 
 
-def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: ProteinsMatrix, corum: pd.DataFrame):
+def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: ProteinsMatrix, glmCoefs: bool = False):
 
     print(repeats, sampleNum)
     start = time.time()
 
     with mp.Pool(CPUS) as process:
-        checkPPIGen = process.starmap(variousRepeatsWrapper, zip(range(0, repeats), repeat(
-            sampleNum), repeat(proteinsData), repeat(corum)))  # While Cycle
+        checkPPIGen = process.starmap(variousRepeatsWrapper, zip(range(0, repeats), repeat(sampleNum), repeat(proteinsData), repeat(glmCoefs)))  # While Cycle
     result = list(checkPPIGen)
       
     print(time.time() - start)
@@ -115,12 +120,12 @@ def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: ProteinsMatrix,
     return xLabel, result
 
 
-def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int], repeats: list[int]):
+def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int], repeats: list[int], glmCoefs:bool = False):
 
     corum = utils.read(PATH + '/externalDatasets/corum.pickle.gz').ppis
 
-    checkPPIGen = map(wrapperCheckPPIs, subsampleSizes,  
-        repeats, repeat(proteinsData), repeat(corum))  # First For Cycle
+    checkPPIGen = map(wrapperCheckPPIs, subsampleSizes, repeats, repeat(
+        proteinsData), repeat(glmCoefs))  # First For Cycle
 
     allAUC = dict(checkPPIGen)
 
@@ -142,15 +147,12 @@ def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int]
 
 
 if __name__ == '__main__':
-
-    print(proteinsData)
-    print(globalPairwiseCorr)
-
     
-    # subsamplingList = list(range(5,950,5))
+    subsamplingList = list(range(5,15,5))
     # repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
-    # start = time.time()
-    # randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList)
-    # end = time.time()
-    # sumOfTime = end-start
-    # print(sumOfTime)
+    repeatsList = [2,2]
+    start = time.time()
+    randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList, True)
+    end = time.time()
+    sumOfTime = end-start
+    print(sumOfTime)
