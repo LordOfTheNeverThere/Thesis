@@ -9,7 +9,7 @@ from env import PATH
 def getGLSCorr(proteinData: ProteinsMatrix) -> PairwiseCorrMatrix:
 
     
-
+    proteinData = proteinData.data.copy()
     proteinData.dropna(axis=1, thresh=round(proteinData.shape[0] * 0.2), inplace=True) #We require that a protein has about 20% missingness for it to be considered a dropable column
 
     proteinNames = proteinData.columns.str.split(' ').str.get(0).to_numpy()
@@ -41,11 +41,12 @@ def getGLSCorr(proteinData: ProteinsMatrix) -> PairwiseCorrMatrix:
     GLS_p = 2 * stdtr(df, -np.abs(GLS_coef / GLS_se))
     np.fill_diagonal(GLS_p, 1)
 
-    # Save everything
+    # Construct new PairwiseGLSCoefs Matrix
     glsPValues = GLS_p[np.triu_indices(GLS_p.shape[0], k=1)]
     glsCoefs = GLS_coef[np.triu_indices(GLS_coef.shape[0], k=1)]
     pairwiseCorrData = pd.DataFrame({'glsCoefficient': glsCoefs, 'p-value': glsPValues}, index=proteinNames)
     pairwiseCorrData = PairwiseCorrMatrix(None, pairwiseCorrData)
+    pairwiseCorrData.data.index.name = 'PPI'
     # pairwiseCorrData.write(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
 
     return pairwiseCorrData

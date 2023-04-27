@@ -14,13 +14,14 @@ from glsCorr import getGLSCorr
 
 
 RANDOMSTATE = None
-CPUS = 1
+CPUS = 2
 assert CPUS < mp.cpu_count() - 1
 
 
-proteinsData: ProteinsMatrix = utils.read(PATH + '/datasetsTese/mofaProteomics.pickle.gz')
+proteinsData: ProteinsMatrix = utils.read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
 
 globalPairwiseCorr: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
+
 
 
 
@@ -91,10 +92,12 @@ def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: Proteins
 
     if glmCoefs: # We are eiher using glm coefs as predictors of Novel PPI's or Pearson Correlation Coeficients
         pairwiseCorr = getGLSCorr(proteinsData)
+        pairwiseCorr.data = pairwiseCorr.data.sort_values(by='glsCoefficient', ascending=False)
     else:
         pairwiseCorr = proteinsData.pearsonCorrelations('correlation', False, False)
+    
 
-    pairwiseCorr: pd.DataFrame = pairwiseCorr.data.merge(globalPairwiseCorr.data['corum'], on='PPI', how='left')
+    pairwiseCorr: pd.DataFrame = pairwiseCorr.data.merge(globalPairwiseCorr.data['corum'], on='PPI')
     # pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr.head(2000), 'Corum', None) DEPRECATED
     corrCumSum = np.cumsum(
         pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
@@ -115,14 +118,13 @@ def wrapperCheckPPIs(sampleNum: int, repeats: int, proteinsData: ProteinsMatrix,
     result = list(checkPPIGen)
       
     print(time.time() - start)
-    xLabel = str(sampleNum) +' n == ' + str(repeats)  
+    xLabel = str(sampleNum) +'| (n == ' + str(repeats) +')' 
 
     return xLabel, result
 
 
 def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int], repeats: list[int], glmCoefs:bool = False):
 
-    corum = utils.read(PATH + '/externalDatasets/corum.pickle.gz').ppis
 
     checkPPIGen = map(wrapperCheckPPIs, subsampleSizes, repeats, repeat(
         proteinsData), repeat(glmCoefs))  # First For Cycle
@@ -142,15 +144,14 @@ def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int]
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
     plt.legend()
-    plt.savefig("../images/dummy.png",
+    plt.savefig("../images/aucPerSamplingGlsCoefsv1.0.png",
                 bbox_inches="tight")
 
 
 if __name__ == '__main__':
-    
-    subsamplingList = list(range(5,15,5))
-    # repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
-    repeatsList = [2,2]
+    pass
+    subsamplingList = list(range(5,950,5))
+    repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
     start = time.time()
     randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList, True)
     end = time.time()
