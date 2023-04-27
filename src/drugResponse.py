@@ -1,4 +1,5 @@
 import pandas as pd
+import utils
 from classes import DrugResponseMatrix
 from env import PATH
 
@@ -6,9 +7,6 @@ from env import PATH
 
 
 if __name__ == "__main__":
+    pass
 
-    drugResponse = pd.read_csv(PATH + '/datasetsTese/drugResponse.csv', index_col='Unnamed: 0')
-    maxConcentration = pd.read_csv(PATH + '/externalDatasets/drugMaxScreenConcentration.csv', index_col='Unnamed: 0')
-
-
-    print(tuple([maxConcentration['MAX_CONC'],maxConcentration.index]))
+    

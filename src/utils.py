@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from classes import PairwiseCorrMatrix
 import pickle
 import gzip
+from classes import MatrixData
 
 from env import PATH
 
@@ -241,7 +242,7 @@ def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, file
 
 
 
-def getModelsByQuery(datasetToQuery: str, featureToQuery:str, valueToQuery)->set:
+def getModelsByQuery(datasetToQuery: MatrixData, featureToQuery:str, valueToQuery)->set:
     """This func does a query on 3 of possible datasets (samplesheet, drugresponse, CRISPR) and returns a list of the models that
     abide by this query
 
@@ -253,22 +254,6 @@ def getModelsByQuery(datasetToQuery: str, featureToQuery:str, valueToQuery)->set
     Returns:
         set: Returns a set composed of all models abiding by the query
     """
-
-
-    if datasetToQuery == 'samplesheet': # In the case we are querying the samplesheet.csv for model specific features
-        datasetToQuery: pd.DataFrame = pd.read_csv(PATH + "/datasetsTese/" + datasetToQuery + ".csv", index_col='model_id')
-    elif datasetToQuery == 'drugresponse':
-        datasetToQuery: pd.DataFrame = pd.read_csv(
-            PATH + "/datasetsTese/" + datasetToQuery + ".csv", index_col='model_id')
-    elif datasetToQuery == 'CRISPR':
-        datasetToQuery: pd.DataFrame = pd.read_csv(
-            PATH + "/datasetsTese/crisprcas9_22Q2.csv", index_col='model_id')
-    else:
-        try:
-            datasetToQuery: pd.DataFrame = pd.read_csv(
-                PATH + "/datasetsTese/" + datasetToQuery + ".csv", index_col='model_id')
-        except:
-            print("The only values accepted for datasetToQuery are: samplesheet, drugresponse, CRISPR. You inserted \n" + datasetToQuery)
         
 
     queriedDataset = datasetToQuery.query(f"{featureToQuery} == @valueToQuery")
