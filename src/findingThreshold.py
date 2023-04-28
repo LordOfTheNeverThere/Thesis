@@ -14,7 +14,7 @@ from glsCorr import getGLSCorr
 
 
 RANDOMSTATE = None
-CPUS = 20
+CPUS = 10
 assert CPUS < mp.cpu_count() - 1
 
 
