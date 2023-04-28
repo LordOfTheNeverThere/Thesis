@@ -106,7 +106,7 @@ def opposingIntensities():
 
     
 
-    queriedFrame = baseModel.compare(mofa, 'corum == 1r','corum == 1')
+    queriedFrame = baseModel.compare(mofa, 'corum == 1','corum == 1')
     queriedFrame['corrDiference'] = abs(queriedFrame['globalCorrelation'] - queriedFrame['mofaCorrelation'])
     queriedFrame.sort_values(by='corrDiference', ascending=False, inplace=True)
     highestDiference = queriedFrame.head(5)

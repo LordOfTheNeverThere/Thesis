@@ -14,15 +14,13 @@ from glsCorr import getGLSCorr
 
 
 RANDOMSTATE = None
-CPUS = 28
+CPUS = 20
 assert CPUS < mp.cpu_count() - 1
 
 
 proteinsData: ProteinsMatrix = utils.read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
 
 globalPairwiseCorr: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
-
-
 
 
 
@@ -88,17 +86,17 @@ def getAUCvsThresholdPlot(pairwiseCorrData: pd.DataFrame) -> None:
 
 def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: ProteinsMatrix, glmCoefs: bool = False):
     
-    proteinsData.data = proteinsData.data.sample(n=sampleNum, axis=0, random_state=iteration * sampleNum)
+    sampledProteins = ProteinsMatrix(None,  proteinsData.data.sample(n=sampleNum, axis=0, random_state=iteration * sampleNum))
 
     if glmCoefs: # We are eiher using glm coefs as predictors of Novel PPI's or Pearson Correlation Coeficients
-        pairwiseCorr = getGLSCorr(proteinsData)
+        pairwiseCorr = getGLSCorr(sampledProteins)
         pairwiseCorr.data = pairwiseCorr.data.sort_values(by='glsCoefficient', ascending=False)
     else:
-        pairwiseCorr = proteinsData.pearsonCorrelations('correlation', False, False)
+        pairwiseCorr = sampledProteins.pearsonCorrelations('correlation', False, False)
     
 
+    del sampledProteins
     pairwiseCorr: pd.DataFrame = pairwiseCorr.data.merge(globalPairwiseCorr.data['corum'], on='PPI')
-    # pairwiseCorr = utils.addGroundTruth(corum, pairwiseCorr.head(2000), 'Corum', None) DEPRECATED
     corrCumSum = np.cumsum(
         pairwiseCorr['corum']) / np.sum(pairwiseCorr['corum'])
     indexes = np.array(pairwiseCorr.reset_index().index) / \
