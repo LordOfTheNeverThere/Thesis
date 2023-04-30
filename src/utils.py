@@ -306,7 +306,14 @@ def drawRecallCurves(paiwiseMatrices : list[PairwiseCorrMatrix], colours: list, 
     plt.close("all")
 
 def read(filepath: str):
+    """Load one of the pickled objects stored in filepath
 
+    Args:
+        filepath (str): filepath of pickled, gziped object
+
+    Returns:
+        _type_: object
+    """
     with gzip.open(filepath, 'rb') as f:
         object = pickle.load(f)
     f.close()
