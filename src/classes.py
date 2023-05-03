@@ -36,9 +36,9 @@ class MatrixData:
 
 
         if not inplace:
-            return self.data.query(query)
+            return self.data.query(query).copy()
         else:
-            self.data = self.data.query(query)
+            self.data = self.data.query(query).copy()
 
     def compare(self, other: MatrixData, querySelf: str, queryOther: str, key: str = 'PPI') -> pd.DataFrame:
         """Query two PairwiseCorrMatrices with independent queries and get the merged dataframe as result
