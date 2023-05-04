@@ -3,13 +3,15 @@ import pandas as pd
 from scipy.special import stdtr
 import matplotlib.pyplot as plt
 import utils
-from classes import PairwiseCorrMatrix, ProteinsMatrix
+from classes import PairwiseCorrMatrix, ProteinsMatrix, ppiDataset
 import time as t
 
 from env import PATH
-def getGLSCorr(proteinData: ProteinsMatrix, pValues: bool = True, dataForCovariance:pd.DataFrame = None) -> PairwiseCorrMatrix:
+def getGLSCorr(proteinData: ProteinsMatrix, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
+
     proteinData = proteinData.data.copy()
-    if dataForCovariance is not None:
+
+    if listCovMatrix is not None:
         # The matrix used for the covariance is not the one used as an X in the linear regression, 
         # we used this to allow the use of the genomic matrix as the matrix where the cov of each sample would be calculated, 
         # since the tecidual bias of proteomic expression would be more present in the genome, 
@@ -18,11 +20,26 @@ def getGLSCorr(proteinData: ProteinsMatrix, pValues: bool = True, dataForCovaria
         # Therefore calculating the cov of genomics.csv could give a more correct value on the true covariation of two samples 
         # and correct the possible correlation of PPIs that are simply due to the diferent baseline expression of proteins belonging in the ppi
 
-        samplesInCommon = proteinData.index.intersection(dataForCovariance.index)
-        dataForCovariance = dataForCovariance.loc[samplesInCommon, :]
-        proteinData = proteinData.loc[samplesInCommon, :]
+        listCovMatrix.append(proteinData)
+        samplesInCommon = pd.concat(listCovMatrix, axis=1, join='inner').index #Conactenate all matrices and select their indices which would be the common ones
+        listCovMatrix.pop(-1) # Remove recently added proteinData to the list
+
+        proteinData = proteinData.loc[samplesInCommon, :] 
         proteinDataMean = proteinData.fillna(proteinData.mean())
         proteinDataMean.dropna(axis=1, inplace=True) #We delete all columns with nan values because after all this preprocessing they must be completetly empty columns
+        covMatrix = np.zeros((len(samplesInCommon), len(samplesInCommon)))
+
+        for dataForCov in listCovMatrix:
+            
+            dataForCov = dataForCov.loc[samplesInCommon, :]
+            dataForCov.dropna(axis=1, thresh=round(proteinData.shape[0] * 0.2), inplace=True) #How we are handling missing data, there should be at leats 20% of missingness for a collumn to be dropable
+            dataForCov = dataForCov.fillna(dataForCov.mean())
+            print(dataForCov)
+            # calculate covariance matrix in order to see the covariace between samples, and notice tecidual patterns codified in the samples
+            dataForCov = np.cov(dataForCov)
+            print(dataForCov)
+            covMatrix = covMatrix + dataForCov
+            print(covMatrix)
 
 
 
@@ -30,14 +47,15 @@ def getGLSCorr(proteinData: ProteinsMatrix, pValues: bool = True, dataForCovaria
         
         proteinData.dropna(axis=1, thresh=round(proteinData.shape[0] * 0.2), inplace=True) #We require that a protein has about 20% missingness for it to be considered a dropable column
         proteinDataMean = proteinData.fillna(proteinData.mean())
-        dataForCovariance = proteinDataMean
+        dataForCov = proteinDataMean
+        # calculate covariance matrix in order to see the covariace between samples, and notice tecidual patterns codified in the samples
+        covMatrix = np.cov(dataForCov)
 
     proteinNames = proteinDataMean.columns.str.split(' ').str.get(0).to_numpy()
     proteinNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
-    # calculate covariance matrix in order to see the covariace between samples, and notice tecidual patterns codified in the samples
-    covMatrix = np.cov(dataForCovariance)
 
-    #invert it
+
+    #invert it the covariance matrix
     covMatrix = np.linalg.inv(covMatrix)
 
     # Decompose it with Cholesky, returning the lower triangular matrix of the positive definite matrix covMatrix, because cov(x1,x2) == cov(x2,x1)
@@ -83,10 +101,12 @@ def getGLSCorr(proteinData: ProteinsMatrix, pValues: bool = True, dataForCovaria
         np.fill_diagonal(GLS_p, 1)
         glsPValues = GLS_p[np.triu_indices(GLS_p.shape[0], k=1)]
         pairwiseCorrData = pd.DataFrame(
-            {'glsCoefficient': glsCoefs, 'p-value': glsPValues}, index=proteinNames)
+            {coefColumnName: glsCoefs, 'p-value': glsPValues}, index=proteinNames)
     else:
         pairwiseCorrData = pd.DataFrame(
-            {'glsCoefficient': glsCoefs}, index=proteinNames)
+            {coefColumnName: glsCoefs}, index=proteinNames)
+        
+    pairwiseCorrData.sort_values(by='glsCoefficient', ascending=False, inplace=True) #Sorting the pairwise corr by the higest beta coeficient as proxy to PPI
     
     pairwiseCorrData = PairwiseCorrMatrix(None, pairwiseCorrData)
     pairwiseCorrData.data.index.name = 'PPI'
@@ -95,10 +115,29 @@ def getGLSCorr(proteinData: ProteinsMatrix, pValues: bool = True, dataForCovaria
 
 
 if __name__ == '__main__':
-    proteinData: ProteinsMatrix = utils.read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
-    transcriptData = pd.read_csv(PATH + '/datasetsTese/transcriptomics.csv', index_col='Unnamed: 0').transpose()
-    glsCoefs = getGLSCorr(proteinData, True, transcriptData)
-    glsCoefs.write(PATH + '/datasetsTese/glsPairwiseCorrTranscriptCov.pickle.gz')
+    gls: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
+    glsRNA: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/glsPairwiseCorrTranscriptCov.pickle.gz')
+    glsRNAProt: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/glsPairwiseCorrTranscriptProteinCov.pickle.gz')
+    corum: ppiDataset = utils.read(PATH + '/externalDatasets/corum.pickle.gz')
+
+    print(gls)
+    print(glsRNA)
+    print(glsRNAProt)
+
+    gls.addGroundTruth(corum.ppis, 'corum')
+    glsRNA.addGroundTruth(corum.ppis, 'corum')
+    glsRNAProt.addGroundTruth(corum.ppis, 'corum')
+    gls.aucCalculator('corum', 'gls Model')
+    glsRNA.aucCalculator('corum', 'gls covRNA')
+    glsRNAProt.aucCalculator('corum', 'gls covRNAProtein')
+
+    gls.write(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
+    glsRNA.write(PATH + '/datasetsTese/glsPairwiseCorrTranscriptCov.pickle.gz')
+    glsRNAProt.write(PATH + '/datasetsTese/glsPairwiseCorrTranscriptProteinCov.pickle.gz')
+
+    print(gls)
+    print(glsRNA)
+    print(glsRNAProt)
 
 
     
