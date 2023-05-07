@@ -11,6 +11,7 @@ from resources import *
 
 
 
+
 class MatrixData:
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
         self.data = data
@@ -290,14 +291,14 @@ class DrugResponseMatrix(MatrixData):
 
 
         # Create mask that see if all columns are less than the values in the threshold col, and convert them to ints so the bool's become either 0 or 1
-        data = data.apply(lambda row: row < row['efficacyThreshold'], axis=1).astype(int)
+        data:pd.DataFrame = data.apply(lambda row: row < row['efficacyThreshold'], axis=1).astype(int)
 
         relevantDrugs = (data.sum(axis=1) >= deathThresh) # Condition that only accounts for drugs that kill at leats 3 cell lines
 
         if inplace:
-            self.data = self.data.loc[relevantDrugs] # apply condition (We lose 130 drugs, 697 -> 567) 26/4/23
+            self.data = data.loc[relevantDrugs].drop(columns=['efficacyThreshold']) # apply condition (We lose 130 drugs, 697 -> 567) 26/4/23
         else:
-            return self.data.loc[relevantDrugs]
+            return data.loc[relevantDrugs].drop(columns=['efficacyThreshold'])
 
     
 
