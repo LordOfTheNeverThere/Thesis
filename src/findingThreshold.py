@@ -3,14 +3,12 @@ import seaborn as sb
 import numpy as np
 from sklearn.metrics import auc
 import matplotlib.pyplot as plt
-import utils
 from sklearn.metrics import auc
-from classes import ppiDataset, PairwiseCorrMatrix, ProteinsMatrix
 import time
 from itertools import repeat
-from env import PATH
 import multiprocessing as mp
 from glsCorr import getGLSCorr
+from resources import *
 
 
 RANDOMSTATE = None

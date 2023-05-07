@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sb
 import numpy as np
 import matplotlib.pyplot as plt
-
+from resources import *
 # %% Load file and Transform (Only Once)
 
 # proteinsData = pd.read_csv('../datasetsTese/proteomics.csv', index_col='GeneSymbol')

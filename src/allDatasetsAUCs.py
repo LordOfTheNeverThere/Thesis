@@ -1,15 +1,14 @@
 import pandas as pd
 import seaborn as sb
 import numpy as np
-from classes import ppiDataset
-from env import PATH
+from resources import *
 
 
 
 
 
 if __name__ == "__main__":
-
+    pass
     # biogrid = ppiDataset(PATH + '/externalDatasets/biogridPPIHuman.csv.gz', compression='gzip')
     # biogrid.getPPIs(dataset='biogrid')
     # print(biogrid.ppis)

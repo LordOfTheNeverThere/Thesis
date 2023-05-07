@@ -7,7 +7,7 @@ from sklearn.metrics import auc
 from scipy.stats import pearsonr
 import pickle
 import gzip
-from env import PATH
+from resources import *
 
 
 
@@ -285,7 +285,7 @@ class DrugResponseMatrix(MatrixData):
         # With 50% of the natural log of the max Screen Concentration we can create an empirically proven threshold, 
         # where generelly IC50 values greater than that mean that The drug has no efficacy, and below drug has efficancy, 
         # or in other words the cell line doesn't or does 'respond to a drug'
-        data['efficacyThreshold']= data['MAX_CONC'].apply(lambda row: math.log(row) * 0.5) 
+        data['efficacyThreshold']= data['MAX_CONC'].apply(lambda row: math.log(row * 0.5)) 
         data.drop(columns=['MAX_CONC'], inplace=True)
 
 

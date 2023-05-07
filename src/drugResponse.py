@@ -1,9 +1,6 @@
 import pandas as pd
-import utils
-from classes import DrugResponseMatrix
 import matplotlib.pyplot as plt
-from env import PATH
-
+from resources import *
 
 
 

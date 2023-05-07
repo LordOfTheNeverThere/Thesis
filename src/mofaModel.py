@@ -4,12 +4,9 @@ import seaborn as sb
 import numpy as np
 from sklearn.metrics import auc
 import matplotlib.pyplot as plt
-import utils
-from classes import ppiDataset, ProteinsMatrix, PairwiseCorrMatrix
 import pickle
 import gzip
-
-from env import PATH
+from resources import *
 
 #Load Dataset
 def mofaBaseModel():

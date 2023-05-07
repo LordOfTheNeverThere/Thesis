@@ -2,11 +2,9 @@ import numpy as np
 import pandas as pd
 from scipy.special import stdtr
 import matplotlib.pyplot as plt
-import utils
-from classes import PairwiseCorrMatrix, ProteinsMatrix, ppiDataset
 import time as t
+from resources import *
 
-from env import PATH
 def getGLSCorr(proteinData: ProteinsMatrix, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
 
     proteinData = proteinData.data.copy()

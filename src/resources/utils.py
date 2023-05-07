@@ -1,14 +1,13 @@
-#%%
+
 import pandas as pd
 import seaborn as sb
 import numpy as np
 import matplotlib.pyplot as plt
-from classes import PairwiseCorrMatrix
 import pickle
 import gzip
-from classes import MatrixData
+from resources import *
 
-from env import PATH
+
 
 
 # def getPairwiseCorrData(data: pd.DataFrame, columnName :str ='correlation') -> pd.Series:
@@ -314,6 +313,8 @@ def read(filepath: str):
     Returns:
         _type_: object
     """
+    import sys
+    sys.path.append('C:/Users/migue/Documents/Unsynced University/Thesis/src/resources')
     with gzip.open(filepath, 'rb') as f:
         object = pickle.load(f)
     f.close()
