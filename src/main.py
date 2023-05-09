@@ -12,6 +12,9 @@ from resources import *
 if __name__ == '__main__':
 
 
+
+
+
     ogPairwise :PairwiseCorrMatrix = read(PATH + '/datasetsTese/baseModelFiltered.pickle.gz')
     glsPairwise :PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
     ogProteomics :ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
@@ -28,14 +31,15 @@ if __name__ == '__main__':
     mergedData = mergedData.loc[mergedData['corum'] == 0]
     mergedData = mergedData.loc[mergedData['biogrid'] == 0]
     mergedData = mergedData.loc[mergedData['string'] == 0]
+    mergedData = mergedData.loc[mergedData['string400'] == 0]
     
-    # mergedData = mergedData.query('glsCoefficient < 0.01 & glsCoefficient > 0').copy().sort_values(['globalCorrelation'], ascending=[False])
-    mergedData = mergedData.query('glsCoefficient <= 0.001 & glsCoefficient > 0 & globalCorrelation < 0.6 & globalCorrelation > 0.5').copy()
-    print(mergedData)
-    top5evidencePPI = mergedData.head(5)
+    mergedData = mergedData.query('globalCorrelation < 0.01 & globalCorrelation > 0').copy().sort_values(['glsCoefficient'], ascending=[False])
+    
+    top5evidencePPI = mergedData.head(10)
+    top5evidencePPI.to_csv('../images/top10GlsbetasForHighR.csv')
     indexes = list(top5evidencePPI.index)
     setOfPPIs = [(proteins.split(';')[0], proteins.split(';')[1] ) for proteins in indexes]#Unpack PPIs of opposing inensities into tuples of proteins 
-    fig, ax = plt.subplots(5, 1, figsize=(15, 40))
+    fig, ax = plt.subplots(10, 1, figsize=(15, 40))
     for index, ppi in enumerate(setOfPPIs):
 
         proteinAB =  ogProteomics.data.loc[:,[ppi[0], ppi[1]]] #Get the protein expresion of the two proteins in the ppi
@@ -51,11 +55,11 @@ if __name__ == '__main__':
         ax[index].scatter(proteinAB[ppi[0]], proteinAB[ppi[1]], c = tissues)
         ax[index].set_xlabel(ppi[0])
         ax[index].set_ylabel(ppi[1])
-        ax[index].set_title("Protein expression across samples, by Tissue, $β_{GLS}∈(0,0.001]$, $r∈(0.5, 0.6)$")
+        ax[index].set_title("Protein expression across samples, by Tissue, $r∈(0,0.001]$, $β_{GLS}↑$")
         ax[index].tick_params(labelsize=16)
         legend = [plt.Line2D([0], [0], marker='o', color=TISSUEPALETTE[key], label=key) for key in TISSUEPALETTE]
         ax[index].legend(handles = legend, fontsize=8, framealpha=0.2)
 
-    plt.savefig('../images/correlationsPearsonOnlyWithTissueTypev4.0.png')
+    plt.savefig('../images/correlationsPearsonOnlyWithTissueTypev5.0.png')
 
 
