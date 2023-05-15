@@ -237,7 +237,19 @@ class ProteinsMatrix(MatrixData):
         print(tlsResData)
 
     def getGLSCorr(self, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
-        
+        """Get the GLS coeficents between each Protein X and Y, where X != Y, these will measure the correlation between each protein. 
+        But this method differs from the pearsonCorrelations since it has underneath a GLM where the covariance matrix can be any specified.
+        This covariance matrix will transform both X and y of the proteinData.data. By default this covariance matrix is calculated with proteinData.data
+        Where we get the covariance between samples, as a similarity measure between samples
+
+        Args:
+            pValues (bool, optional): Add the pValues of each gls Coefficient to the output data. Defaults to True.
+            listCovMatrix (list[pd.DataFrame], optional):List of matrices to use to calculate covariance, if only one is required insert [matrix]. Defaults to None.
+            coefColumnName (str, optional): Name to appear on the Dataframe' Column of glsCoefs. Defaults to 'glsCoefficient'.
+
+        Returns:
+            PairwiseCorrMatrix: Data structure with all above information
+        """
         proteinData = self.data.copy()
 
         if listCovMatrix is not None:
