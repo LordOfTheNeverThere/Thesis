@@ -240,7 +240,8 @@ class ProteinsMatrix(MatrixData):
         """Get the GLS coeficents between each Protein X and Y, where X != Y, these will measure the correlation between each protein. 
         But this method differs from the pearsonCorrelations since it has underneath a GLM where the covariance matrix can be any specified.
         This covariance matrix will transform both X and y of the proteinData.data. By default this covariance matrix is calculated with proteinData.data
-        Where we get the covariance between samples, as a similarity measure between samples
+        Where we get the covariance between samples, as a similarity measure between samples. This tweak is speacilly important if our residuals
+        correlate with X, meaning we are not in the normal OLS case.
 
         Args:
             pValues (bool, optional): Add the pValues of each gls Coefficient to the output data. Defaults to True.
