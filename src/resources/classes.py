@@ -185,6 +185,56 @@ class ProteinsMatrix(MatrixData):
 
 
         return PairwiseCorrMatrix(None,pairwiseCorrData.dropna()) #There will be NAN correlations between proteins which do not appear simultaneously in at least two cell lines
+    
+    def tlsResidues(self) -> ResiduesMatrix:
+
+        proteomics = self.data.copy()
+        tlsResList = []
+        
+
+        for columnX in proteomics:
+            for columnY in proteomics:
+
+                if (columnX == columnY): #We dont want to calculate the residues of homo Pairwise 'Correlations'
+                    continue
+
+                index= columnX + ';' + columnY
+                X = proteomics.loc[:,columnX].dropna(axis=0) #Get X and Y data
+                Y = proteomics.loc[:,columnY].dropna(axis=0)
+                samplesInCommon = X.index.intersection(Y.index)
+
+                if len(samplesInCommon) < 5: # We have no important information from protein protein interactions with less than 5 coocorence
+                    continue
+
+                X=X.loc[samplesInCommon] #Locate samples that both have some value (not nan)
+                Y=Y.loc[samplesInCommon]
+
+                meanX = X.mean()
+                meanY = Y.mean()
+
+                meanErrorX = X - meanX #Start Calculating quantities to minimise for the tlsCoef Calculation
+                meanErrorY = Y - meanY
+
+                meanSqErrorX = meanErrorX ** 2
+                meanSqErrorY = meanErrorY ** 2
+
+                u = meanSqErrorX.sum()
+                v = meanSqErrorY.sum()
+                r = (meanErrorX * meanErrorY).sum()
+                w = v - u
+
+                tlsCoef = (w + (w**2 + r**2)**0.5) #Calculating tls Coefficient
+                tlsCoef = tlsCoef/r
+
+                intercept = meanY - (tlsCoef * meanX) #Intercept of linear fit
+                predY = intercept + (tlsCoef * X)
+                residues = abs(Y - predY) # TLS Residues in absolute val
+                residues = pd.DataFrame(residues,columns=[index])
+                tlsResList.append(residues)
+
+
+        tlsResData = pd.concat(tlsResList, join='outer', sort=False)
+        print(tlsResData)
 
 
 class PairwiseCorrMatrix(MatrixData):
@@ -299,6 +349,11 @@ class DrugResponseMatrix(MatrixData):
             self.data = data.loc[relevantDrugs].drop(columns=['efficacyThreshold']) # apply condition (We lose 130 drugs, 697 -> 567) 26/4/23
         else:
             return data.loc[relevantDrugs].drop(columns=['efficacyThreshold'])
+        
+class ResiduesMatrix(MatrixData):
+
+    def __init__(self, filepath: str=None, data: pd.DataFrame=None, **readerKwargs):
+        super().__init__(filepath, data, **readerKwargs)
 
     
 
