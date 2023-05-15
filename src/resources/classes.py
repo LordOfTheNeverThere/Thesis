@@ -228,7 +228,7 @@ class ProteinsMatrix(MatrixData):
 
                 intercept = meanY - (tlsCoef * meanX) #Intercept of linear fit
                 predY = intercept + (tlsCoef * X)
-                residues = abs(Y - predY) # TLS Residues in absolute val
+                residues = Y - predY # TLS Residues in absolute val
                 residues = pd.DataFrame(residues,columns=[index])
                 tlsResList.append(residues)
 
@@ -357,7 +357,7 @@ class ResiduesMatrix(MatrixData):
 
     
 
-    
+
 
         
 
