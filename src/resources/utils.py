@@ -314,7 +314,7 @@ def read(filepath: str):
         _type_: object
     """
     import sys
-    sys.path.append('C:/Users/migue/Documents/Unsynced University/Thesis/src/resources')
+    sys.path.append('/resources')
     with gzip.open(filepath, 'rb') as f:
         object = pickle.load(f)
     f.close()
