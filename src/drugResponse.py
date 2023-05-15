@@ -24,12 +24,12 @@ if __name__ == "__main__":
     # plt.savefig('../images/numOfCapableDrugsPerCellDeathThresh.png')´
 
     drugRes:pd.DataFrame = drugRes.binrise(0,False)
-    sumCellDrugs = drugRes.sum(axis=0) # We get the sum of all drugs that kill each cell lines (col)
+    sumCellDrugs = drugRes.sum(axis=1) # We get the sum of all cell lines that are killed by a drug (col)
     print(sumCellDrugs)
     fig, ax = plt.subplots(1)
     plt.hist(sumCellDrugs.reset_index(drop=True), 20)
-    ax.set_xlabel('# of Drugs')
-    ax.set_ylabel('Cell lines killed')
+    ax.set_ylabel('# of Drugs')
+    ax.set_xlabel('# Responsive Cell lines')
     ax.set_title("Histogram of Cell lines killed per drug")
 
 
