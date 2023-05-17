@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     drugRes:pd.DataFrame = drugRes.binrise(0,False)
     sumCellDrugs = drugRes.sum(axis=1) # We get the sum of all cell lines that are killed by a drug (col)
-    print(sumCellDrugs)
+    print(sumCellDrugs.sort_values(ascending=False))
     fig, ax = plt.subplots(1)
     plt.hist(sumCellDrugs.reset_index(drop=True), 20)
     ax.set_ylabel('# of Drugs')
