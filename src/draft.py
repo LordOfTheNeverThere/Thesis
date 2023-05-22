@@ -19,7 +19,6 @@ if __name__ == '__main__':
     pairwiseCorr.write(PATH + '/datasetsTese/baseModelProteinMean.pickle.gz')
     drawRecallCurves([pairwiseCorr, glsPairwiseCorr],['blue', 'red'], '../images/ogMeanVsGLSRecallCurve.png')
 
-    glsPairwiseCorr.aucCalculator()
 
     
 
