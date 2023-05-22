@@ -419,8 +419,8 @@ class PairwiseCorrMatrix(MatrixData):
         Args:
             yColumnName (str): Name of the df column where there is the truth value of the existence or not of the PPI in the reported external PPI dataset
             label (str): Text which will show up as label next to the value of the AUC, e.g 'Baseline Auc == 0.9' 
-            pValueColumn (str): Name of the column of the statistical meausure to quantify the probability of PPI existence
-            ascending(bool): should the pValueColumn be ordered ascending or not for best AUC calculation
+            proxyColumn (str): Name of the column of the statistical meausure to quantify the probability of PPI existence
+            ascending(bool): should the proxyColumn be ordered ascending or not for best AUC calculation
         """
         pairwiseCorr = self.data 
 
