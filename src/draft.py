@@ -7,21 +7,21 @@ from resources import *
 if __name__ == '__main__':
 
 
-    pearsonPairCorr:PairwiseCorrMatrix = read(PATH + '/datasetsTese/baseModelPairwiseCorr.pickle.gz')
-    pearsonPairCorrFiltered:PairwiseCorrMatrix = read(PATH + '/datasetsTese/baseModelFiltered.pickle.gz')
+    corum:ppiDataset = read(PATH + '/externalDatasets/corum.pickle.gz')
+    proteinData :ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
+    proteinData.data.dropna(axis=1, thresh=round(proteinData.data.shape[0] * 0.2), inplace=True) #We require that a protein has about 20% missingness for it to be considered a dropable column
+    proteinData.data = proteinData.data.fillna(proteinData.data.mean())
+    glsPairwiseCorr : PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
+    glsPairwiseCorr.aucCalculator('corum', 'gls Model', 'p-value', True)
+    pairwiseCorr = proteinData.pearsonCorrelations('pearsonR')
+    pairwiseCorr.addGroundTruth(ppis=corum.ppis,externalDatasetName='corum')
+    pairwiseCorr.aucCalculator('corum', 'ProteinMean AUC')
+    pairwiseCorr.write(PATH + '/datasetsTese/baseModelProteinMean.pickle.gz')
+    drawRecallCurves([pairwiseCorr, glsPairwiseCorr],['blue', 'red'], '../images/ogMeanVsGLSRecallCurve.png')
 
-    newFilteredData = pearsonPairCorrFiltered.data.merge(pearsonPairCorr.data['pValue'], how='left', on='PPI')
-    newFilteredData['pValue_x'] = newFilteredData['pValue_y']
-    newFilteredData.rename(columns={'pValue_x': 'pValue'}, inplace=True)
-    newFilteredData.drop(columns=['pValue_y'], inplace=True)
-    pearsonPairCorrFiltered.data = newFilteredData
+    glsPairwiseCorr.aucCalculator()
 
-    pearsonPairCorrFiltered.aucCalculator('corum', 'baseModel', 'pValue', ascending=True)
-    pearsonPairCorr.aucCalculator('corum', 'baseModel', 'pValue', ascending=True)
-
-    pearsonPairCorr.write(PATH + '/datasetsTese/baseModelPairwiseCorr.pickle.gz')
-    pearsonPairCorrFiltered.write(PATH + '/datasetsTese/baseModelFiltered.pickle.gz')
-
+    
 
 
 
