@@ -16,8 +16,9 @@ if __name__ == '__main__':
     pairwiseCorr = proteinData.pearsonCorrelations('pearsonR')
     pairwiseCorr.addGroundTruth(ppis=corum.ppis,externalDatasetName='corum')
     pairwiseCorr.aucCalculator('corum', 'ProteinMean AUC')
+    glsPairwiseCorr.write(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
     pairwiseCorr.write(PATH + '/datasetsTese/baseModelProteinMean.pickle.gz')
-    drawRecallCurves([pairwiseCorr, glsPairwiseCorr],['blue', 'red'], '../images/ogMeanVsGLSRecallCurve.png')
+    drawRecallCurves([pairwiseCorr, glsPairwiseCorr],['blue', 'red'], '../images/pValuesOgMeanVsGLSRecallCurve.png')
 
 
     
