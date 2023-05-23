@@ -8,8 +8,9 @@ from resources import *
 
 
 proteomics:ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
+glsPairwise:PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
+print(glsPairwise)
 
-
-proteomics.tlsResidues() # Correct This!
+proteomics.tlsResidues(glsPairwise) # Correct This!
 
 

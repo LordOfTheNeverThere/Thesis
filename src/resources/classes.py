@@ -187,55 +187,59 @@ class ProteinsMatrix(MatrixData):
 
         return PairwiseCorrMatrix(None,pairwiseCorrData.dropna()) #There will be NAN correlations between proteins which do not appear simultaneously in at least two cell lines
     
-    def tlsResidues(self) -> ResiduesMatrix:
+    def tlsResidues(self, pairwiseCorr:PairwiseCorrMatrix) -> ResiduesMatrix:
 
+        pairwiseCorr = pairwiseCorr.data
         proteomics = self.data.copy()
         tlsResList = []
+        ppis =  pairwiseCorr.loc[pairwiseCorr['corum'] == 1].loc[pairwiseCorr['glsCoefficient'] > 0.8].index 
+        #Get the ppis that are most likely true ppis, so that we can analyse what samples do not correspond to the correlation, 
+        # are farthest from the linear regession line, hence, have greatest TLS and so are samples of interest where the PPI likely. 
+        # So it would be interesting to se afterwards if that sample has a responsiveness to a drug all the other samples do not meaning 
+        # we are in a presence of a PPI that might be correlated to a feature, a certain drug responsiveness
         
 
-        for columnX in proteomics:
-            for columnY in proteomics:
+        for ppi in ppis:
+            proteinA = ppi.split(';')[0]
+            proteinB = ppi.split(';')[1]
 
-                if (columnX == columnY): #We dont want to calculate the residues of homo Pairwise 'Correlations'
-                    continue
+            X = proteomics.loc[:,proteinA].dropna(axis=0) #Get X and Y data
+            Y = proteomics.loc[:,proteinB].dropna(axis=0)
+            samplesInCommon = X.index.intersection(Y.index)
 
-                index= columnX + ';' + columnY
-                X = proteomics.loc[:,columnX].dropna(axis=0) #Get X and Y data
-                Y = proteomics.loc[:,columnY].dropna(axis=0)
-                samplesInCommon = X.index.intersection(Y.index)
+            if len(samplesInCommon) < 5: # We have no important information from protein protein interactions with less than 5 coocorence
+                continue
+                print(f"{ppi} was not used for calculating the tls Redidues Matrix because it did not have at least 5 samples")
 
-                if len(samplesInCommon) < 5: # We have no important information from protein protein interactions with less than 5 coocorence
-                    continue
+            X=X.loc[samplesInCommon] #Locate samples that both have some value (not nan)
+            Y=Y.loc[samplesInCommon]
 
-                X=X.loc[samplesInCommon] #Locate samples that both have some value (not nan)
-                Y=Y.loc[samplesInCommon]
+            meanX = X.mean()
+            meanY = Y.mean()
 
-                meanX = X.mean()
-                meanY = Y.mean()
+            meanErrorX = X - meanX #Start Calculating quantities to minimise for the tlsCoef Calculation
+            meanErrorY = Y - meanY
 
-                meanErrorX = X - meanX #Start Calculating quantities to minimise for the tlsCoef Calculation
-                meanErrorY = Y - meanY
+            meanSqErrorX = meanErrorX ** 2
+            meanSqErrorY = meanErrorY ** 2
 
-                meanSqErrorX = meanErrorX ** 2
-                meanSqErrorY = meanErrorY ** 2
+            u = meanSqErrorX.sum()
+            v = meanSqErrorY.sum()
+            r = (meanErrorX * meanErrorY).sum()
+            w = v - u
 
-                u = meanSqErrorX.sum()
-                v = meanSqErrorY.sum()
-                r = (meanErrorX * meanErrorY).sum()
-                w = v - u
+            tlsCoef = (w + (w**2 + r**2)**0.5) #Calculating tls Coefficient
+            tlsCoef = tlsCoef/r
 
-                tlsCoef = (w + (w**2 + r**2)**0.5) #Calculating tls Coefficient
-                tlsCoef = tlsCoef/r
-
-                intercept = meanY - (tlsCoef * meanX) #Intercept of linear fit
-                predY = intercept + (tlsCoef * X)
-                residues = Y - predY # TLS Residues in absolute val
-                residues = pd.DataFrame(residues,columns=[index])
-                tlsResList.append(residues)
+            intercept = meanY - (tlsCoef * meanX) #Intercept of linear fit
+            predY = intercept + (tlsCoef * X)
+            residues = Y - predY # TLS Residues in absolute val
+            residues = pd.DataFrame(residues,columns=[ppi])
+            tlsResList.append(residues)
 
 
         tlsResData = pd.concat(tlsResList, join='outer', sort=False)
-        print(tlsResData)
+        return ResiduesMatrix(None,tlsResData)
 
     def getGLSCorr(self, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
         """Get the GLS coeficents between each Protein X and Y, where X != Y, these will measure the correlation between each protein. 
