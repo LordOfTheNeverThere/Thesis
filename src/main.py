@@ -18,24 +18,6 @@ if __name__ == '__main__':
     sortingType = False
 
 
-
-    # corum:ppiDataset = read(PATH + '/externalDatasets/corum.pickle.gz')
-    # proteinData :ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
-    # glsPairwise :PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
-    # proteinData.data.dropna(axis=1, thresh=round(proteinData.data.shape[0] * 0.2), inplace=True) #We require that a protein has about 20% missingness for it to be considered a dropable column
-    # proteinData.data = proteinData.data.fillna(proteinData.data.mean())
-
-    # pairwiseCorr = proteinData.pearsonCorrelations('pearsonR')
-    # pairwiseCorr.addGroundTruth(ppis=corum.ppis,externalDatasetName='corum')
-    # pairwiseCorr.aucCalculator('corum', 'ProteinMean AUC')
-    # drawRecallCurves([pairwiseCorr, glsPairwise],['blue', 'red'], '../images/ogMeanVsGLSRecallCurve.png')
-
-
-
-
-
-
-
     vaePairwise :PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz')
     vaeGlsPairwise :PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz')
     ogProteomics :ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
