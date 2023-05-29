@@ -22,10 +22,12 @@ vaeGLSCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEGLSPairCorr.pickl
 vaeGLSCorrs.data=vaeGLSCorrs.data.rename(columns= {'glsCoefficient': 'beta'})
 vaePearsonCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz') # R + vae
 
+print('Loading Completed')
 
 glsCorrs = proteomics.getGLSCorr(coefColumnName='beta')
 glsCorrs.addGroundTruth(corum.ppis, 'corum') # gls
 
+print('GlsCorr created!')
 #Add all aucs
 pairwiseCorrs = [glsCorrs, pearsonCorrs, vaeGLSCorrs, vaePearsonCorrs]
 yColumnLists = [['corum', 'corum'],['corum', 'corum'],['corum', 'corum'],['corum', 'corum']]
