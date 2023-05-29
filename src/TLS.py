@@ -26,6 +26,7 @@ print('Loading Completed')
 
 glsCorrs = proteomics.getGLSCorr(coefColumnName='beta')
 glsCorrs.addGroundTruth(corum.ppis, 'corum') # gls
+glsCorrs.write(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
 
 print('GlsCorr created!')
 #Add all aucs

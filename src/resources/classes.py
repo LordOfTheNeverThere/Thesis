@@ -362,7 +362,7 @@ class ProteinsMatrix(MatrixData):
 
 class PairwiseCorrMatrix(MatrixData):
 
-    def __init__(self, filepath: str = None, data: pd.DataFrame = None, aucs = dict, ** readerKwargs):
+    def __init__(self, filepath: str = None, data: pd.DataFrame = None, aucs = dict(), ** readerKwargs):
         """_summary_
 
         Args:
