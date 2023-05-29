@@ -27,14 +27,14 @@ glsCorrs = proteomics.getGLSCorr(coefColumnName='beta')
 glsCorrs.addGroundTruth(corum.ppis, 'corum') # gls
 
 #Add all aucs
-
+pairwiseCorrs = [glsCorrs, pearsonCorrs, vaeGLSCorrs, vaePearsonCorrs]
 yColumnLists = [['corum', 'corum'],['corum', 'corum'],['corum', 'corum'],['corum', 'corum']]
 proxyColumnLists = [['pValue', 'beta'],['pValue', 'pearsonR'],['pValue', 'beta'],['pValue', 'pearsonR']]
 ascendingLists = [[True, False],[True, 'pearsonR'],[True, False],[True, False]]
 labels = ['gls', 'pearson', 'VAE-GLS', 'VAE-pearson']
 
 with mp.Pool(CPUS) as process:
-    process.map(allAucWrapper, yColumnLists, labels, proxyColumnLists, ascendingLists)  # While Cycle
+    process.map(allAucWrapper, pairwiseCorrs,yColumnLists, labels, proxyColumnLists, ascendingLists)  # While Cycle
 
 
 
