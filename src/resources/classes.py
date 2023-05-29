@@ -446,9 +446,9 @@ class PairwiseCorrMatrix(MatrixData):
         self.aucs[proxyColumn] = auc(self.indexes[proxyColumn], self.corrCumSums[proxyColumn]) # update aucs dict to have a new auc for a specific proxy column
 
         if not label: #if the user did not insert any label default it
-            self.labels[proxyColumn] = f"(AUC {proxyColumn} {self.auc:.2f})"
+            self.labels[proxyColumn] = f"(AUC {proxyColumn} {self.aucs[proxyColumn]:.2f})"
         
-        self.labels[proxyColumn] =  label + f" (AUC {proxyColumn} {self.auc:.2f})"
+        self.labels[proxyColumn] =  label + f" (AUC {proxyColumn} {self.aucs[proxyColumn]:.2f})"
 
     def aucsCalculator(self, yColumnNameList:list[str], label:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None ):
 
