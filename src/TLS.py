@@ -37,7 +37,7 @@ labels = ['gls', 'pearson', 'VAE-GLS', 'VAE-pearson']
 filepaths= [PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz', PATH + '/datasetsTese/baseModelFiltered.pickle.gz', PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz', PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz']
 
 with mp.Pool(CPUS) as process:
-    process.map(allAucWrapper, pairwiseCorrs, yColumnLists, labels, proxyColumnLists, ascendingLists, filepaths)  # While Cycle
+    process.starmap(allAucWrapper, pairwiseCorrs, yColumnLists, labels, proxyColumnLists, ascendingLists, filepaths)  # While Cycle
 
 
 
