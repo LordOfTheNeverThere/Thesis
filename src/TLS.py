@@ -14,8 +14,7 @@ def allAucWrapper(self:PairwiseCorrMatrix,  yColumnNameList:list[str], label:str
 
     self.aucsCalculator(yColumnNameList= yColumnNameList, label= label, proxyColumnList=proxyColumnList, ascendingList = ascendingList, filepath = filepath)
 
-proteomics:ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
-corum: ppiDataset = read(PATH + '/externalDatasets/corum.pickle.gz')
+glsCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz'
 pearsonCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/baseModelFiltered.pickle.gz') # R
 pearsonCorrs.data=pearsonCorrs.data.rename(columns= {'globalCorrelation': 'pearsonR'})
 vaeGLSCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz') # gls + vae
@@ -24,11 +23,6 @@ vaePearsonCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEPearsonPairCo
 
 print('Loading Completed')
 
-glsCorrs = proteomics.getGLSCorr(coefColumnName='beta')
-glsCorrs.addGroundTruth(corum.ppis, 'corum') # gls
-glsCorrs.write(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
-
-print('GlsCorr created!')
 #Add all aucs
 pairwiseCorrs = [glsCorrs, pearsonCorrs, vaeGLSCorrs, vaePearsonCorrs]
 yColumnLists = [['corum', 'corum'],['corum', 'corum'],['corum', 'corum'],['corum', 'corum']]

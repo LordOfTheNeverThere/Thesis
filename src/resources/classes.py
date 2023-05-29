@@ -443,7 +443,7 @@ class PairwiseCorrMatrix(MatrixData):
         
         self.indexes[proxyColumn] = np.array(pairwiseCorr.reset_index().index) / \
             pairwiseCorr.shape[0]
-        self.aucs[proxyColumn] = auc(self.indexes, self.corrCumSums) # update aucs dict to have a new auc for a specific proxy column
+        self.aucs[proxyColumn] = auc(self.indexes[proxyColumn], self.corrCumSums[proxyColumn]) # update aucs dict to have a new auc for a specific proxy column
 
         if not label: #if the user did not insert any label default it
             self.labels[proxyColumn] = f"(AUC {proxyColumn} {self.auc:.2f})"
