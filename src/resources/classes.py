@@ -283,12 +283,10 @@ class ProteinsMatrix(MatrixData):
                 dataForCov = dataForCov.loc[samplesInCommon, :]
                 dataForCov.dropna(axis=1, thresh=round(proteinData.shape[0] * 0.2), inplace=True) #How we are handling missing data, there should be at leats 20% of missingness for a collumn to be dropable
                 dataForCov = dataForCov.fillna(dataForCov.mean())
-                print(dataForCov)
                 # calculate covariance matrix in order to see the covariace between samples, and notice tecidual patterns codified in the samples
                 dataForCov = np.cov(dataForCov)
-                print(dataForCov)
                 covMatrix = covMatrix + dataForCov
-                print(covMatrix)
+
 
 
 
@@ -351,12 +349,10 @@ class ProteinsMatrix(MatrixData):
             np.fill_diagonal(GLS_p, 1)
             glsPValues = GLS_p[np.triu_indices(GLS_p.shape[0], k=1)]
             pairwiseCorrData = pd.DataFrame(
-                {coefColumnName: glsCoefs, 'p-value': glsPValues}, index=proteinNames)
+                {coefColumnName: glsCoefs, 'pValue': glsPValues}, index=proteinNames)
         else:
             pairwiseCorrData = pd.DataFrame(
                 {coefColumnName: glsCoefs}, index=proteinNames)
-            
-        pairwiseCorrData.sort_values(by='glsCoefficient', ascending=False, inplace=True) #Sorting the pairwise corr by the higest beta coeficient as proxy to PPI
         
         pairwiseCorrData = PairwiseCorrMatrix(None, pairwiseCorrData)
         pairwiseCorrData.data.index.name = 'PPI'
