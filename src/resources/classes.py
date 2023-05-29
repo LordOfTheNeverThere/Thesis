@@ -362,7 +362,7 @@ class ProteinsMatrix(MatrixData):
 
 class PairwiseCorrMatrix(MatrixData):
 
-    def __init__(self, filepath: str = None, data: pd.DataFrame = None, aucs = dict(), ** readerKwargs):
+    def __init__(self, filepath: str = None, data: pd.DataFrame = None, aucs = dict, ** readerKwargs):
         """_summary_
 
         Args:
@@ -449,6 +449,16 @@ class PairwiseCorrMatrix(MatrixData):
             self.labels[proxyColumn] = f"(AUC {proxyColumn} {self.auc:.2f})"
         
         self.labels[proxyColumn] =  label + f" (AUC {proxyColumn} {self.auc:.2f})"
+
+    def aucsCalculator(self, yColumnNameList:list[str], label:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None ):
+
+        for aucIndex in range(len(yColumnNameList)):
+            self.aucCalculator(yColumnNameList[aucIndex],label,proxyColumnList[aucIndex], ascendingList[aucIndex])
+        
+    
+        if filepath is not None:
+            self.write(filepath)
+        print(self)
 
     
 class DrugResponseMatrix(MatrixData):
