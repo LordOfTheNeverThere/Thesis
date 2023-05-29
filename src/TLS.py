@@ -32,9 +32,10 @@ yColumnLists = [['corum', 'corum'],['corum', 'corum'],['corum', 'corum'],['corum
 proxyColumnLists = [['pValue', 'beta'],['pValue', 'pearsonR'],['pValue', 'beta'],['pValue', 'pearsonR']]
 ascendingLists = [[True, False],[True, 'pearsonR'],[True, False],[True, False]]
 labels = ['gls', 'pearson', 'VAE-GLS', 'VAE-pearson']
+filepaths= [PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz', PATH + '/datasetsTese/baseModelFiltered.pickle.gz', PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz', PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz']
 
 with mp.Pool(CPUS) as process:
-    process.map(allAucWrapper, pairwiseCorrs,yColumnLists, labels, proxyColumnLists, ascendingLists)  # While Cycle
+    process.map(allAucWrapper, pairwiseCorrs, yColumnLists, labels, proxyColumnLists, ascendingLists, filepaths)  # While Cycle
 
 
 
