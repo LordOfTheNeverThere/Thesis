@@ -14,7 +14,7 @@ def allAucWrapper(self:PairwiseCorrMatrix,  yColumnNameList:list[str], label:str
 
     self.aucsCalculator(yColumnNameList= yColumnNameList, label= label, proxyColumnList=proxyColumnList, ascendingList = ascendingList, filepath = filepath)
 
-glsCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz'
+glsCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
 pearsonCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/baseModelFiltered.pickle.gz') # R
 pearsonCorrs.data=pearsonCorrs.data.rename(columns= {'globalCorrelation': 'pearsonR'})
 vaeGLSCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz') # gls + vae
