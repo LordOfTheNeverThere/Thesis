@@ -366,19 +366,28 @@ class ProteinsMatrix(MatrixData):
 
 class PairwiseCorrMatrix(MatrixData):
 
-    def __init__(self, filepath: str = None, data: pd.DataFrame = None, ** readerKwargs):
+    def __init__(self, filepath: str = None, data: pd.DataFrame = None, aucs = dict(), ** readerKwargs):
+        """_summary_
 
+        Args:
+            filepath (str, optional): filepath where Datafrane is stored to instatiate the object. Defaults to None.
+            data (pd.DataFrame, optional):Dataframe to instatiate Object. Defaults to None.
+            aucs (_type_, optional): dict with name of columns to which we calculate the auc and value. Defaults to None.
+        """
         super().__init__(filepath, data, **readerKwargs)
 
-        self.corrCumSum = None
-        self.indexes = None
-        self.auc = None
-        self.label = None
+        self.corrCumSums = aucs
+        self.indexes = aucs
+        self.aucs:dict = aucs 
+        self.labels = aucs
 
     def __str__(self):
 
         print = super().__str__()
-        print = print + '\n' +str(self.auc) + '\n' + str(self.label)
+        for columnName, aucVal in self.aucs.items():
+
+            print = print + '\n' +str(aucVal) + ' ' +str(columnName) + '\n' + str(self.labels[columnName])
+        
 
         return print
 
@@ -433,17 +442,17 @@ class PairwiseCorrMatrix(MatrixData):
         
         pairwiseCorr.sort_values(by=proxyColumn, ascending=ascending, inplace=True) # We sort rows by the smallest to greatest pValues
 
-        self.corrCumSum = np.cumsum(
+        self.corrCumSums[proxyColumn] = np.cumsum(
             pairwiseCorr[yColumnName]) / np.sum(pairwiseCorr[yColumnName])
         
-        self.indexes = np.array(pairwiseCorr.reset_index().index) / \
+        self.indexes[proxyColumn] = np.array(pairwiseCorr.reset_index().index) / \
             pairwiseCorr.shape[0]
-        self.auc = auc(self.indexes, self.corrCumSum)
+        self.aucs[proxyColumn] = auc(self.indexes, self.corrCumSums) # update aucs dict to have a new auc for a specific proxy column
 
-        if not label:
-            self.label = f"(AUC {self.auc:.2f})"
+        if not label: #if the user did not insert any label default it
+            self.labels[proxyColumn] = f"(AUC {proxyColumn} {self.auc:.2f})"
         
-        self.label = label + f" (AUC {self.auc:.2f})"
+        self.labels[proxyColumn] =  label + f" (AUC {proxyColumn} {self.auc:.2f})"
 
     
 class DrugResponseMatrix(MatrixData):
