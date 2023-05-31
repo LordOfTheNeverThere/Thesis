@@ -5,34 +5,44 @@ import numpy as np
 import matplotlib.pyplot as plt
 from resources import *
 import multiprocessing as mp
+from scipy.stats import pearsonr
+from itertools import combinations
 
 CPUS = 10
 assert CPUS < mp.cpu_count() - 1
 
+def wrapper(proteomics:ProteinsMatrix, filepath:str):
+    
+    PairwiseCorr = proteomics.pearsonCorrelations('pearsonR')
+    PairwiseCorr.write(filepath)
 
-def allAucWrapper(self:PairwiseCorrMatrix,  yColumnNameList:list[str], label:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None ):
+og: ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
+vae= ProteinsMatrix(PATH + '/datasetsTese/proteomicsVAE.csv.gz', compression='gzip', index_col='Unnamed: 0')
 
-    self.aucsCalculator(yColumnNameList= yColumnNameList, label= label, proxyColumnList=proxyColumnList, ascendingList = ascendingList, filepath = filepath)
+filepaths = [PATH + '/datasetsTese/baseModelFiltered.pickle.gz', PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz']
+proteomics = [og, vae]
 
-glsCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
-pearsonCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/baseModelFiltered.pickle.gz') # R
-pearsonCorrs.data=pearsonCorrs.data.rename(columns= {'globalCorrelation': 'pearsonR'})
-vaeGLSCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz') # gls + vae
-vaeGLSCorrs.data=vaeGLSCorrs.data.rename(columns= {'glsCoefficient': 'beta'})
-vaePearsonCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz') # R + vae
 
-print('Loading Completed')
-
-#Add all aucs
-pairwiseCorrs = [glsCorrs, pearsonCorrs, vaeGLSCorrs, vaePearsonCorrs]
-yColumnLists = [['corum', 'corum'],['corum', 'corum'],['corum', 'corum'],['corum', 'corum']]
-proxyColumnLists = [['pValue', 'beta'],['pValue', 'pearsonR'],['pValue', 'beta'],['pValue', 'pearsonR']]
-ascendingLists = [[True, False],[True, 'pearsonR'],[True, False],[True, False]]
-labels = ['gls', 'pearson', 'VAE-GLS', 'VAE-pearson']
-filepaths= [PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz', PATH + '/datasetsTese/baseModelFiltered.pickle.gz', PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz', PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz']
 
 with mp.Pool(CPUS) as process:
-    process.starmap(allAucWrapper, zip(pairwiseCorrs, yColumnLists, labels, proxyColumnLists, ascendingLists, filepaths)) 
+    checkPPIGen = process.starmap(wrapper, zip(proteomics, filepaths))  # While Cycle
+
+
+# glsCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
+# pearsonCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/baseModelFiltered.pickle.gz') # R
+# vaeGLSCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz') # gls + vae
+# vaePearsonCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz') # R + vae
+
+# print('Loading Completed')
+
+##Add all aucs
+# pairwiseCorrs = [glsCorrs, pearsonCorrs, vaeGLSCorrs, vaePearsonCorrs]
+# yColumnLists = [['corum', 'corum'],['corum', 'corum'],['corum', 'corum'],['corum', 'corum']]
+# proxyColumnLists = [['pValue', 'beta'],['pValue', 'pearsonR'],['pValue', 'beta'],['pValue', 'pearsonR']]
+# ascendingLists = [[True, False],[True, 'pearsonR'],[True, False],[True, False]]
+# labels = ['gls', 'pearson', 'VAE-GLS', 'VAE-pearson']
+# filepaths= [PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz', PATH + '/datasetsTese/baseModelFiltered.pickle.gz', PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz', PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz']
+
 
 
 

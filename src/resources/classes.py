@@ -130,65 +130,44 @@ class ProteinsMatrix(MatrixData):
 
         super().__init__(filepath, data, **readerKwargs)
 
-    def pearsonCorrelations(self, columnName: str, counting: bool = True, pValue: bool = True) -> PairwiseCorrMatrix:
+    def pearsonCorrelations(self, columnName: str, thresholdInteraction:int = 5) -> PairwiseCorrMatrix:
         """Calculate the pearson correlations and corresponding p-value, displaying them in a pairwise manner, returning an instance of the PairwiseCorrMatrix class
 
         Args:
-            fileName (str): Name of the file where the datastructure will be stored
             columnName (str): Name given to the df column with the correlation metric
-            counting (bool, optional): Should we count the number of times the two proteins appear in the same sample?. Defaults to True.
-            pValue (bool, optional): Should we add the p-value, level of statistical significane of our correlation to the final data structure. Defaults to True.
+            thresholdInteraction (int, optional): The minimum number of coincident samples for it to be considered a putative PPI
 
         Returns:
             PairwiseCorrMatrix: final data structure with all the information regarding pairwise correlations
         """
 
         data = self.data.copy()
-        # Get list with the names of every PPI
-        proteinNames = data.columns.str.split(' ').str.get(0).to_numpy()
-        ppiNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
-        # Correlation Matrix
-        pearsonCorrMatrix = data.corr(method='pearson', numeric_only=True)
+        permutationsColumns = list(combinations(data.columns, 2))
+        pairwiseCorr:dict = {'PPI':[],'proteinA': [],'proteinB': [], columnName: [], 'pValue':[], 'counts':[]}
+        
+        for (proteinAName, proteinBName) in permutationsColumns:
 
-        pairwiseCorrData = pearsonCorrMatrix.to_numpy()[np.triu_indices(pearsonCorrMatrix.shape[0], k=1)]
+            proteinA = data[proteinAName].dropna(axis=0)
+            proteinB = data[proteinBName].dropna(axis=0)
+            samples  = proteinA.index.intersection(proteinB.index)
+            proteinA = proteinA.loc[samples]
+            proteinB = proteinB.loc[samples]
 
-        pairwiseCorrData = pd.DataFrame({columnName: pairwiseCorrData}, index=ppiNames)
-        pairwiseCorrData.index.names=['PPI']
-
-        if counting:
-
-            # Co-occorance Matrix
-            # Get 1 and 0 depending on if there is a value or not in a specific spot
-            coOccuranceMatrix = (data/data).fillna(0).astype(int)
-            # Simple linear algebra to get the co-occurance values
-            coOccuranceMatrix = coOccuranceMatrix.T.dot(coOccuranceMatrix)
-            coOccuranceMatrix = coOccuranceMatrix.to_numpy()[np.triu_indices(coOccuranceMatrix.shape[0], k=1)]
-            coOccuranceData = pd.DataFrame({'counts': coOccuranceMatrix}, index=ppiNames)
-            coOccuranceData.index.names = ['PPI']
-
-            pairwiseCorrData = pairwiseCorrData.merge(
-                coOccuranceData, on='PPI', how='left')
+            count = len(proteinA)
+            if count  < thresholdInteraction :
+                continue
             
-        if pValue:
+            (corr, pValue) = pearsonr(proteinA, proteinB)
+            pairwiseCorr['PPI'].append(proteinAName + ';' + proteinBName)
+            pairwiseCorr['proteinA'].append(proteinAName)
+            pairwiseCorr['proteinB'].append(proteinBName)
+            pairwiseCorr['pearsonR'].append(corr)
+            pairwiseCorr['pValue'].append(pValue)
+            pairwiseCorr['counts'].append(count)
 
-            def pearsonPValues(data:pd.DataFrame = None)-> pd.DataFrame|None:
-
-                pValuesMatrix = data.corr(method=lambda x, y: pearsonr(x, y)[1])
-                pairwisePValues =pValuesMatrix.to_numpy()[np.triu_indices(pValuesMatrix.shape[0], k=1)]
-                pairwisePValues = pd.DataFrame({'pValue': pairwisePValues}, index=ppiNames)
-                pairwisePValues.index.names = ['PPI']
-
-                return pairwisePValues['pValue']
-            
-            pairwiseCorrData['pValue'] = pearsonPValues(pearsonCorrMatrix)
-            
-
-        pairwiseCorrData.sort_values(
-            by=columnName, ascending=False, inplace=True)
-
-
-        return PairwiseCorrMatrix(None,pairwiseCorrData.dropna()) #There will be NAN correlations between proteins which do not appear simultaneously in at least two cell lines
-    
+        index = pairwiseCorr.pop('PPI')
+        return PairwiseCorrMatrix(None, pd.DataFrame(pairwiseCorr, index=index))
+      
     def tlsResidues(self, pairwiseCorr:PairwiseCorrMatrix) -> ResiduesMatrix:
 
         pairwiseCorr = pairwiseCorr.data
