@@ -275,7 +275,7 @@ def pearsonR(x, y, *, alternative='two-sided'):
     # to avoid a TypeError raised by btdtr when r is higher precision.)
     ab = n/2 - 1
     if platform == 'linux' or platform == 'darwin':
-
+        print(np.float128(r))
         if alternative == 'two-sided':
             prob = 2*special.btdtr(ab, ab, 0.5*(1 - abs(np.float128(r))))
         elif alternative == 'less':
@@ -286,7 +286,7 @@ def pearsonR(x, y, *, alternative='two-sided'):
             raise ValueError('alternative must be one of '
                             '["two-sided", "less", "greater"]')
     else:
-        
+
         if alternative == 'two-sided':
             prob = 2*special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
         elif alternative == 'less':
