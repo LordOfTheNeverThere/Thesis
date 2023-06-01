@@ -3,7 +3,7 @@ from resources import ProteinsMatrix, read, PATH
 import multiprocessing as mp
 
 
-CPUS = 1
+CPUS = 5
 assert CPUS < mp.cpu_count() - 1
 
 def wrapper(proteomics:ProteinsMatrix, filepath:str):
@@ -13,16 +13,15 @@ def wrapper(proteomics:ProteinsMatrix, filepath:str):
 
 og: ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
 vae= ProteinsMatrix(PATH + '/datasetsTese/proteomicsVAE.csv.gz', compression='gzip', index_col='Unnamed: 0')
+vae.data = vae.data.iloc[0:949,:]
 
 filepaths = [PATH + '/datasetsTese/baseModelFiltered.pickle.gz', PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz']
 proteomics = [og, vae]
 
-vae.data = vae.data.iloc[:,0:12]
-print(vae.pearsonCorrelations('pearsonR').query('pValue == 0'))
 
 
-# with mp.Pool(CPUS) as process:
-#     checkPPIGen = process.starmap(wrapper, zip(proteomics, filepaths))  # While Cycle
+with mp.Pool(CPUS) as process:
+    checkPPIGen = process.starmap(wrapper, zip(proteomics, filepaths))  # While Cycle
 
 
 # glsCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
