@@ -3,7 +3,7 @@ from resources import ProteinsMatrix, read, PATH
 import multiprocessing as mp
 
 
-CPUS = 5
+CPUS = 1
 assert CPUS < mp.cpu_count() - 1
 
 def wrapper(proteomics:ProteinsMatrix, filepath:str):
