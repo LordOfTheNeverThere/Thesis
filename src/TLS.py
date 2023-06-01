@@ -1,14 +1,9 @@
-
-import pandas as pd
-import seaborn as sb
-import numpy as np
 import matplotlib.pyplot as plt
-from resources import *
+from resources import ProteinsMatrix, read, PATH
 import multiprocessing as mp
-from scipy.stats import pearsonr
-from itertools import combinations
 
-CPUS = 10
+
+CPUS = 1
 assert CPUS < mp.cpu_count() - 1
 
 def wrapper(proteomics:ProteinsMatrix, filepath:str):
@@ -22,10 +17,12 @@ vae= ProteinsMatrix(PATH + '/datasetsTese/proteomicsVAE.csv.gz', compression='gz
 filepaths = [PATH + '/datasetsTese/baseModelFiltered.pickle.gz', PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz']
 proteomics = [og, vae]
 
+vae.data = vae.data.iloc[:,0:12]
+print(vae.pearsonCorrelations('pearsonR').query('pValue == 0'))
 
 
-with mp.Pool(CPUS) as process:
-    checkPPIGen = process.starmap(wrapper, zip(proteomics, filepaths))  # While Cycle
+# with mp.Pool(CPUS) as process:
+#     checkPPIGen = process.starmap(wrapper, zip(proteomics, filepaths))  # While Cycle
 
 
 # glsCorrs:PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
