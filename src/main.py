@@ -19,7 +19,7 @@ if __name__ == '__main__':
     vaeGLS: PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz')
     
     barPlotCategories1 = {'$β_{GLS}$': {'ogMean \n coef': glsPairwise.aucs['beta'],'ogMean \n p-value': glsPairwise.aucs['pValue'], 'VAE \n coef': vaeGLS.aucs['beta'], 'VAE \n p-value': vaeGLS.aucs['pValue']},
-                        'pearsonR': {'og \n coef': baseModel.aucs['pearsonR'],'og \n p-value': baseModel.aucs['pValue'], 'ogMean \n coef': meanProteinsModel.aucs['pearsonR'],'ogMean \n p-value': meanProteinsModel.aucs['pValue'], 'VAE \n coef': vaePearson.aucs['pearsonR'], 'VAE \n p-value': vaeGLS.aucs['pValue']}
+                        'pearsonR': {'og \n coef': baseModel.aucs['pearsonR'],'og \n p-value': baseModel.aucs['pValue'], 'ogMean \n coef': meanProteinsModel.aucs['pearsonR'],'ogMean \n p-value': meanProteinsModel.aucs['pValue'], 'VAE \n coef': vaePearson.aucs['pearsonR'], 'VAE \n p-value': vaePearson.aucs['pValue']}
     }
 
     barPlotCategories2 = {'og \n pearsonR': {'coef': baseModel.aucs['pearsonR'], 'p-value': baseModel.aucs['pValue']},
@@ -37,14 +37,18 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.xticks(rotation = 0)
     plt.savefig('barplotAUCbyProxyMetric.png', bbox_inches="tight")
+    pd.DataFrame(barPlotCategories1).plot(kind='bar')
+    plt.tight_layout()
+    plt.xticks(rotation = 0)
+    plt.savefig('barplotAUCbyProteinsMatrix.png', bbox_inches="tight")
 
 
-    proteomics: ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
-    baseModel.data = baseModel.data.loc[baseModel.data['corum'] == 1]
-    glsPairwise.data = glsPairwise.data.loc[glsPairwise.data['corum'] == 1]
+    # proteomics: ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
+    # baseModel.data = baseModel.data.loc[baseModel.data['corum'] == 1]
+    # glsPairwise.data = glsPairwise.data.loc[glsPairwise.data['corum'] == 1]
 
 
 
-    PairwiseCorrMatrix.heatmap([baseModel, glsPairwise], ['pearsonR', 'beta'], [(0,1),(0,1)], 5, 'missingness', proteomics, 'heatmapMVperPPI5Bins.png')
-    PairwiseCorrMatrix.heatmap([baseModel, glsPairwise], ['pearsonR', 'beta'], [(0,1),(0,1)], 10, 'missingness', proteomics, 'heatmapMVperPPI10Bins.png')
+    # PairwiseCorrMatrix.heatmap([baseModel, glsPairwise], ['pearsonR', 'beta'], [(0,1),(0,1)], 5, 'missingness', proteomics, 'heatmapMVperPPI5Bins.png')
+    # PairwiseCorrMatrix.heatmap([baseModel, glsPairwise], ['pearsonR', 'beta'], [(0,1),(0,1)], 10, 'missingness', proteomics, 'heatmapMVperPPI10Bins.png')
 2
