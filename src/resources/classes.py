@@ -494,7 +494,6 @@ class PairwiseCorrMatrix(MatrixData):
 
                     heatmapData.loc[str(rowTuple),str(colTuple)] = mvsPerPPI
 
-        plt.figure(figsize=(15, 15)) 
         sns.heatmap(heatmapData, annot=True, cmap='YlOrRd', fmt=".1f")
         plt.xlabel('Pearson R')
         plt.ylabel('$β_{GLS}$')
