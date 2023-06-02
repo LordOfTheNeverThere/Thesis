@@ -288,9 +288,9 @@ def drawRecallCurves(paiwiseMatrices : list[PairwiseCorrMatrix], colours: list, 
 
     for index, pairwiseCorr in enumerate(paiwiseMatrices):
         ax.plot(
-            pairwiseCorr[proxyColumn].indexes,
-            pairwiseCorr[proxyColumn].corrCumSum,
-            label=pairwiseCorr.label[proxyColumn],
+            pairwiseCorr.indexes[proxyColumn],
+            pairwiseCorr.corrCumSums[proxyColumn],
+            label=pairwiseCorr.labels[proxyColumn],
             c=colours[index],
         )
 
@@ -322,3 +322,14 @@ def read(filepath: str):
     return object
 
 
+def pxPyScatterPlots(other:PairwiseCorrMatrix, limitsR: tuple[float], limitsMetricOther:tuple[ﬂoat], corum:int, lung:bool,sortingColum:str, ascending:bool)->None:
+    """Creates a scatter plot with top 5 PPI according with queries done to the 
+
+    Args:
+        limitsMetric (tuple[float]): Interval (start, end) for metric for
+        limitsMetricOther (tuple[): _description_
+        corum (int): _description_
+        lung (bool): _description_
+        sortingColum (str): _description_
+        ascending (bool): _description_
+    """
