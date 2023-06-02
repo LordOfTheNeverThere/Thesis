@@ -10,6 +10,9 @@ from scipy.special import stdtr
 from scipy.stats import pearsonr
 from statsmodels.stats.multitest import multipletests
 from scipy.stats import chi2
+import seaborn as sns
+import matplotlib.pyplot as plt
+import time as t
 from resources import *
 
 
@@ -448,44 +451,65 @@ class PairwiseCorrMatrix(MatrixData):
         print(self)
 
     @classmethod    
-    def heatmap(cls, insts:list[PairwiseCorrMatrix], columns: list[str], interval:list[tuple[float]], bins, metric, proteomics:ProteinsMatrix):
+    def heatmap(cls, insts:list[PairwiseCorrMatrix], columns: list[str], interval:list[tuple[float]], bins, metric, proteomics:ProteinsMatrix, filepath):
 
-
+        start = t.time()
         dfs = [instance.data.copy() for instance in insts]
-        intervals = [np.linspace(rang[0], rang[1], bins)  for rang in interval] # Get two linspace ranges with all intervals with range and according bins number
-        len(intervals[0])
-        heatmapCols = [(round(interval[0][index], 2), round(interval[0][index + 1], 2)) for index in range(len(intervals[0])) if index < (len(intervals[0]) -1)] # Get tuples of itervals
-        heatmapRows = [(round(interval[0][index], 2), round(interval[0][index + 1], 2)) for index in range(len(intervals[1])) if index < (len(intervals[1]) -1)]
-        heatmapData = {}
-        print(intervals)
-        print(heatmapCols)
-        print(heatmapRows)
-         
-        # for colTuple, rowTuple  in zip(heatmapCols, heatmapRows):
+        intervals = [np.linspace(rang[0], rang[1], bins + 1)  for rang in interval] # Get two linspace ranges with all intervals with range and according bins number
+        heatmapColsRows = []
+
+        for interval in intervals:
+            aux = []
+            for index, startVal in enumerate(interval[0:-1]):
+                aux.append((round(startVal, 2), round(interval[index + 1], 2)))
             
-        #     instColData = dfs[0].loc[ (dfs[0][columns[0]] >=  colTuple[0]) & (dfs[0][columns[0]] <  colTuple[1]) ]
-        #     instRowData = dfs[0].loc[ (dfs[0][columns[0]] >=  rowTuple[0]) & (dfs[0][columns[0]] <  rowTuple[1]) ]
-        #     ppisCommon = set(instColData.index.intersection(instRowData.index)) # What are the ppis in common by the two queries
+            heatmapColsRows.append(aux)
 
-        #     if metric == 'missingness':
-                
-        #         mvs = 0 #missing values counter
+        heatmapCols = heatmapColsRows[0] # Get tuples of itervals
+        heatmapRows =  heatmapColsRows[1]
+        heatmapData = pd.DataFrame()
+        print('Time for getting all initial Lists ' + str(t.time() - start))
+        
+         
+        for colTuple in heatmapCols:
+            for rowTuple in heatmapRows:
+                print(colTuple, rowTuple)
+                start= t.time()
+                instColData = dfs[0].loc[ (dfs[0][columns[0]] >=  colTuple[0]) & (dfs[0][columns[0]] <  colTuple[1]) ]
+                instRowData = dfs[1].loc[ (dfs[1][columns[1]] >=  rowTuple[0]) & (dfs[1][columns[1]] <  rowTuple[1]) ]
+                ppisCommon = set(instColData.index.intersection(instRowData.index)) # What are the ppis in common by the two queries
+                print('Time for getting ppis in Common ' + str(t.time() - start))
 
-        #         for ppi in ppisCommon:
-        #             proteinA = ppi.split(';')[0]
-        #             proteinB = ppi.split(';')[1]
-        #             mvs =  mvs + proteomics.data[[proteinA, proteinB]].isna().sum().sum()  # count missing values
-        #         mvsPerPPI = mvs / len(ppisCommon) #Standardise Mv in a query by the total number of ppis belonging to that query
+                if metric == 'missingness':
+                    
+                    mvs = 0 #missing values counter
+                    stopwatch = 0
 
-        #         heatmapData[str(colTuple)] = mvsPerPPI
+                    for ppi in ppisCommon:
+                        
+                        proteinA = ppi.split(';')[0]
+                        proteinB = ppi.split(';')[1]
+                        start = t.time()
+                        mv =  proteomics.data[[proteinA, proteinB]].isna().sum().sum()  # count missing values
+                        stopwatch = stopwatch + (t.time() - start)
+                        mvs =  mvs + mv
+                    print('total Time for mv Calculation ' + str(stopwatch))
 
-        # heatmapData = pd.DataFrame(heatmapData, index=heatmapRows)
-        # print(heatmapData)
+                    if len(ppisCommon) == 0:
+                        mvsPerPPI = 0
+                    else:
+                        mvsPerPPI = mvs / len(ppisCommon) #Standardise Mv in a query by the total number of ppis belonging to that query
 
+                    heatmapData.loc[str(rowTuple),str(colTuple)] = mvsPerPPI
 
+        plt.figure(figsize=(15, 15)) 
+        sns.heatmap(heatmapData, annot=True, cmap='YlOrRd', fmt=".1f")
+        plt.xlabel('Pearson R')
+        plt.ylabel('$β_{GLS}$')
 
-
-                       
+        plt.savefig(filepath)
+        
+        return heatmapData              
 
     
 class DrugResponseMatrix(MatrixData):
