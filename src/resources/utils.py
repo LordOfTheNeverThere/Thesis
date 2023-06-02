@@ -288,9 +288,9 @@ def drawRecallCurves(paiwiseMatrices : list[PairwiseCorrMatrix], colours: list, 
 
     for index, pairwiseCorr in enumerate(paiwiseMatrices):
         ax.plot(
-            pairwiseCorr[proxyColumn].indexes,
-            pairwiseCorr[proxyColumn].corrCumSum,
-            label=pairwiseCorr.label[proxyColumn],
+            pairwiseCorr.indexes[proxyColumn],
+            pairwiseCorr.corrCumSums[proxyColumn],
+            label=pairwiseCorr.labels[proxyColumn],
             c=colours[index],
         )
 
