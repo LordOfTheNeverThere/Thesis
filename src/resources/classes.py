@@ -1,6 +1,6 @@
 from __future__ import annotations #  postpone evaluation of annotations
 import pandas as pd
-from itertools import combinations
+from itertools import combinations, product
 import numpy as np
 import math
 from sklearn.metrics import auc
@@ -451,56 +451,66 @@ class PairwiseCorrMatrix(MatrixData):
         print(self)
 
     @classmethod    
-    def heatmap(cls, insts:list[PairwiseCorrMatrix], columns: list[str], interval:list[tuple[float]], bins, metric, proteomics:ProteinsMatrix, filepath):
+    def heatmap(cls, insts:list[PairwiseCorrMatrix], columns: list[str], bins:int, proteomics:ProteinsMatrix, filepath:str, title:str):
 
-        dfs = [instance.data.copy() for instance in insts]
-        intervals = [np.linspace(rang[0], rang[1], bins + 1)  for rang in interval] # Get two linspace ranges with all intervals with range and according bins number
-        heatmapColsRows = []
+        dfs = [instance.data[column].copy() for instance, column in zip(insts, columns)]
+        df = pd.concat(dfs, join='inner', axis=1)
 
-        for interval in intervals:
-            aux = []
-            for index, startVal in enumerate(interval[0:-1]):
-                aux.append((round(startVal, 2), round(interval[index + 1], 2)))
-            
-            heatmapColsRows.append(aux)
+        # Bin the two series that make up the dataframe with equal bins and return the intervals of each bin used
+        df['bin0'] = pd.qcut(df[columns[0]], bins)
+        df['bin1'] = pd.qcut(df[columns[1]], bins)
+        intervals0 = sorted(df['bin0'].unique())
+        intervals1 = sorted(df['bin1'].unique())
 
-        heatmapCols = heatmapColsRows[0] # Get tuples of itervals
-        heatmapRows =  heatmapColsRows[1]
         heatmapData = pd.DataFrame()
-        
-         
-        for colTuple in heatmapCols:
-            for rowTuple in heatmapRows:
-                instColData = dfs[0].loc[ (dfs[0][columns[0]] >=  colTuple[0]) & (dfs[0][columns[0]] <  colTuple[1]) ]
-                instRowData = dfs[1].loc[ (dfs[1][columns[1]] >=  rowTuple[0]) & (dfs[1][columns[1]] <  rowTuple[1]) ]
-                ppisCommon = set(instColData.index.intersection(instRowData.index)) # What are the ppis in common by the two queries
+        heatmapNumPPIs = pd.DataFrame()
+
+        for interval0, interval1 in list(product(intervals0, intervals1)):
 
 
-                if metric == 'missingness':
-                    
-                    mvs = 0 #missing values counter
+            colData = df.loc[df['bin0'] == interval0]
+            rowData = df.loc[df['bin1'] == interval1]
+            ppisCommon = set(colData.index.intersection(rowData.index)) # What are the ppis in common by the two queries
+            mvs = 0 #missing values counter
+ 
+            for ppi in ppisCommon: # count missing values
+                
+                proteinA = ppi.split(';')[0]
+                proteinB = ppi.split(';')[1]
+                mv =  proteomics.data[[proteinA, proteinB]].isna().sum().sum()  
+                mvs =  mvs + mv
+                numPPIs = len(ppisCommon)
 
-                    for ppi in ppisCommon:
-                        
-                        proteinA = ppi.split(';')[0]
-                        proteinB = ppi.split(';')[1]
-                        mv =  proteomics.data[[proteinA, proteinB]].isna().sum().sum()  # count missing values
-                        mvs =  mvs + mv
+                if numPPIs == 0:
+                    mvsPerPPI = 0
+                else:
+                    mvsPerPPI = mvs / numPPIs #Standardise Mv in a query by the total number of ppis belonging to that query
 
-                    if len(ppisCommon) == 0:
-                        mvsPerPPI = 0
-                    else:
-                        mvsPerPPI = mvs / len(ppisCommon) #Standardise Mv in a query by the total number of ppis belonging to that query
+            heatmapData.loc[str(interval0),str(interval1)] = mvsPerPPI
+            heatmapNumPPIs.loc[str(interval0),str(interval1)] = numPPIs
 
-                    heatmapData.loc[str(rowTuple),str(colTuple)] = mvsPerPPI
-
+        plt.figure(figsize=(8,8))
         sns.heatmap(heatmapData, annot=True, cmap='YlOrRd', fmt=".1f")
         plt.xlabel('Pearson R')
+        plt.xticks(rotation=0)
         plt.ylabel('$β_{GLS}$')
+        plt.title(title)
 
         plt.savefig(filepath)
+
+        plt.close()
+
+        #Number of PPIS per range heatmap
+        plt.figure(figsize=(8,8))
+        sns.heatmap(heatmapNumPPIs, annot=True, cmap='YlOrRd', fmt=".0f")
+        plt.xlabel('Pearson R')
+        plt.xticks(rotation=0)
+        plt.ylabel('$β_{GLS}$')
+        plt.title(title + '\n' +' Number of PPIs')
+
+        plt.savefig(filepath.split('.')[0] + '#PPIs' + filepath.split('.')[0])
         
-        return heatmapData              
+        return heatmapData, heatmapNumPPIs            
 
     
 class DrugResponseMatrix(MatrixData):

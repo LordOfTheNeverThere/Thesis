@@ -11,20 +11,20 @@ plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["font.sans-serif"] = "Arial"
 
 # Matplotlib set main axis font size
-plt.rcParams["axes.titlesize"] = 7
+plt.rcParams["axes.titlesize"] = 12
 
 # Matplotlib set legend font size
-plt.rcParams["legend.fontsize"] = 6
+plt.rcParams["legend.fontsize"] = 10
 
 # Matplotlib set tick label font size
-plt.rcParams["axes.labelsize"] = 9
+plt.rcParams["axes.labelsize"] = 14
 
 # Matplotlib set tick label font size
-plt.rcParams["xtick.labelsize"] = 6
-plt.rcParams["ytick.labelsize"] = 6
+plt.rcParams["xtick.labelsize"] = 10
+plt.rcParams["ytick.labelsize"] = 10
 
 # Matplotlib set grid line width
-plt.rcParams["grid.linewidth"] = 0.5
+plt.rcParams["grid.linewidth"] = 1
 
 # Matplotlib ommit top and right spines
 plt.rcParams["axes.spines.top"] = False
