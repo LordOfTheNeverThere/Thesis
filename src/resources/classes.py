@@ -457,8 +457,8 @@ class PairwiseCorrMatrix(MatrixData):
         df = pd.concat(dfs, join='inner', axis=1)
 
         # Bin the two series that make up the dataframe with equal bins and return the intervals of each bin used
-        df['bin0'] = pd.qcut(df[columns[0]], bins)
-        df['bin1'] = pd.qcut(df[columns[1]], bins)
+        df['bin0'] = pd.qcut(df[columns[0]], bins, precision=2)
+        df['bin1'] = pd.qcut(df[columns[1]], bins, precision=2)
         intervals0 = sorted(df['bin0'].unique())
         intervals1 = sorted(df['bin1'].unique())
 
