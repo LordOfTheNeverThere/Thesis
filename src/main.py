@@ -44,9 +44,15 @@ if __name__ == '__main__':
 
 
     proteomics: ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
-    baseModel.data = baseModel.data.loc[baseModel.data['corum'] == 1]
-    glsPairwise.data = glsPairwise.data.loc[glsPairwise.data['corum'] == 1]
+    # baseModel.data = baseModel.data.loc[baseModel.data['corum'] == 1]
+    # glsPairwise.data = glsPairwise.data.loc[glsPairwise.data['corum'] == 1]
 
 
 
-    PairwiseCorrMatrix.heatmap([baseModel, glsPairwise], ['pearsonR', 'beta'], 5, proteomics, 'heatmapMVperPPI5BinsAllDomainQuantileCorum=1.png', 'Missingness/#PPIs with Corum == 1')
+    #PairwiseCorrMatrix.heatmap([baseModel, glsPairwise], ['pearsonR', 'beta'], 5, proteomics, 'heatmapMVperPPI5BinsAllDomainQuantileCorum=1.png', 'Missingness/#PPIs with Corum == 1')
+
+
+    baseModel.data = baseModel.data.loc[baseModel.data['corum'] == 0]
+    glsPairwise.data = glsPairwise.data.loc[glsPairwise.data['corum'] == 0]
+
+    PairwiseCorrMatrix.heatmap([baseModel, glsPairwise], ['pearsonR', 'beta'], 10, proteomics, 'heatmapMVperPPI10BinsAllDomainQuantileCorum=0.png', 'Missingness/#PPIs with Corum == 0')
