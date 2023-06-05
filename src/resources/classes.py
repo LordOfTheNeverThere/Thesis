@@ -508,7 +508,7 @@ class PairwiseCorrMatrix(MatrixData):
         plt.ylabel('$β_{GLS}$')
         plt.title(title + '\n' +' Number of PPIs')
 
-        plt.savefig(filepath.split('.')[0] + '#PPIs' + filepath.split('.')[0])
+        plt.savefig(filepath.split('.')[0] + '#PPIs' + filepath.split('.')[1])
         
         return heatmapData, heatmapNumPPIs            
 
