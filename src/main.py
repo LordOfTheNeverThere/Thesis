@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     vaePearPair:PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz')
     start = t.time()
-    ppis = read(PATH + '/externalDatasets/corum.pickle.gz')
+    ppis = read(PATH + '/externalDatasets/corum.pickle.gz').ppis
     vaePearPair.addGroundTruth(ppis, 'corum')
     print(t.time() - start)
     start = t.time()
