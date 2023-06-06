@@ -18,15 +18,16 @@ from resources import *
 
 
 def calcMahalanobis(y:pd.DataFrame, data: pd.DataFrame, cov:pd.DataFrame=None):
-    
-    y_mu = (y - np.mean(data)).T # In Liner Algebra The covariates are usually row vectors in dataframes these are usually column vectors
+
+    y_mu = (y - np.mean(data, axis=0)).T # In Liner Algebra The covariates are usually row vectors in dataframes these are usually column vectors
     if not cov:
         cov = np.cov(data.values.T)
     inv_covmat = np.linalg.inv(cov)
     left = np.dot(y_mu.T, inv_covmat)
-    mahal = np.dot(left, y_mu)
+    mahal = np.dot(left, y_mu).diagonal()
+    pValue = 1 - chi2.cdf(mahal, 3)
 
-    return mahal.diagonal()
+    return np.sqrt(mahal), pValue
 
 class MatrixData:
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
@@ -191,8 +192,9 @@ class ProteinsMatrix(MatrixData):
         # So it would be interesting to se afterwards if that sample has a responsiveness to a drug all the other samples do not meaning 
         # we are in a presence of a PPI that might be correlated to a feature, a certain drug responsiveness
         tlsResList = []
+        correlationsTLSMahal = []
 
-        for index, ppi in enumerate(ppis[:2]):
+        for index, ppi in enumerate(ppis):
  
             proteinA = ppi.split(';')[0]
             proteinB = ppi.split(';')[1]
@@ -232,17 +234,22 @@ class ProteinsMatrix(MatrixData):
 
             # Malahanobis Distance
             proteinExpression = pd.concat([X,Y], axis=1)
-            calcMahalanobis(proteinExpression, proteinExpression, None)
+            mahalDist, mahalPValues = calcMahalanobis(proteinExpression, proteinExpression, None)
 
-            dfData = {(ppi, 'TLS'): residues}
+            dfData = {(ppi, 'TLS'): residues,
+                      (ppi,'malahanobis'): mahalDist,
+                      (ppi,'mahalPValue'): mahalPValues,
+                     }
+            correlationsTLSMahal.append(pearsonr(residues, mahalDist)[0])
             residues = pd.DataFrame(dfData)
             if index == 0:
                 tlsResData = residues
             else:
                 tlsResList.append(residues)
 
-
+        print(pd.DataFrame(correlationsTLSMahal).describe()) 
         tlsResData = tlsResData.join(tlsResList, how='outer')
+        print(tlsResData)
         return ResiduesMatrix(None,tlsResData)
 
     def getGLSCorr(self, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:

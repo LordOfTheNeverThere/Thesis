@@ -17,5 +17,4 @@ if __name__ == '__main__':
 
     tlsResidualsMatrix = og.tlsResidues(ppis)
     numOfCells = tlsResidualsMatrix.data.shape[0]  * tlsResidualsMatrix.data.shape[1] # Number of cells in the residuals matrix.
-    print(((tlsResidualsMatrix.data.isna().sum().sum()) / numOfCells))
 
