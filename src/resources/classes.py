@@ -171,19 +171,17 @@ class ProteinsMatrix(MatrixData):
         index = pairwiseCorr.pop('PPI')
         return PairwiseCorrMatrix(None, pd.DataFrame(pairwiseCorr, index=index))
       
-    def tlsResidues(self, pairwiseCorr:PairwiseCorrMatrix) -> ResiduesMatrix:
+    def tlsResidues(self, ppis:list[pd.Index]) -> ResiduesMatrix:
 
-        pairwiseCorr = pairwiseCorr.data
         proteomics = self.data.copy()
-        tlsResList = []
-        ppis =  pairwiseCorr.loc[pairwiseCorr['corum'] == 1].loc[pairwiseCorr['glsCoefficient'] > 0.8].index 
         #Get the ppis that are most likely true ppis, so that we can analyse what samples do not correspond to the correlation, 
         # are farthest from the linear regession line, hence, have greatest TLS and so are samples of interest where the PPI likely. 
         # So it would be interesting to se afterwards if that sample has a responsiveness to a drug all the other samples do not meaning 
         # we are in a presence of a PPI that might be correlated to a feature, a certain drug responsiveness
-        
+        tlsResList = []
 
-        for ppi in ppis:
+        for index, ppi in enumerate(ppis):
+ 
             proteinA = ppi.split(';')[0]
             proteinB = ppi.split(';')[1]
 
@@ -218,12 +216,15 @@ class ProteinsMatrix(MatrixData):
 
             intercept = meanY - (tlsCoef * meanX) #Intercept of linear fit
             predY = intercept + (tlsCoef * X)
-            residues = Y - predY # TLS Residues in absolute val
+            residues = abs(Y - predY) # TLS Residues in absolute val
             residues = pd.DataFrame(residues,columns=[ppi])
-            tlsResList.append(residues)
+            if index == 0:
+                tlsResData = residues
+            else:
+                tlsResList.append(residues)
 
 
-        tlsResData = pd.concat(tlsResList, join='outer', sort=False)
+        tlsResData = tlsResData.join(tlsResList, how='outer')
         return ResiduesMatrix(None,tlsResData)
 
     def getGLSCorr(self, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
