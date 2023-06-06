@@ -247,7 +247,7 @@ class ProteinsMatrix(MatrixData):
             else:
                 tlsResList.append(residues)
 
-        print(pd.DataFrame(correlationsTLSMahal).describe()) 
+        print('Statistical Description of the Pearson Correlation between TLS and Mahalanobis distance \n' + str(pd.DataFrame(correlationsTLSMahal).describe())) 
         tlsResData = tlsResData.join(tlsResList, how='outer')
         print(tlsResData)
         return ResiduesMatrix(None,tlsResData)
