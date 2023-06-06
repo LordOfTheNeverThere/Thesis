@@ -9,6 +9,7 @@ import gzip
 from scipy.special import stdtr
 from scipy.stats import pearsonr
 from statsmodels.stats.multitest import multipletests
+from scipy.spatial.distance import mahalanobis
 from scipy.stats import chi2
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -16,7 +17,17 @@ import time as t
 from resources import *
 
 
+def calcMahalanobis(y:pd.DataFrame, data: pd.DataFrame, cov:pd.DataFrame=None):
 
+    y_mu = (y - np.mean(data, axis=0)).T # In Liner Algebra The covariates are usually row vectors in dataframes these are usually column vectors
+    if not cov:
+        cov = np.cov(data.values.T)
+    inv_covmat = np.linalg.inv(cov)
+    left = np.dot(y_mu.T, inv_covmat)
+    mahal = np.dot(left, y_mu).diagonal()
+    pValue = 1 - chi2.cdf(mahal, 3)
+
+    return np.sqrt(mahal), pValue
 
 class MatrixData:
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
@@ -175,13 +186,14 @@ class ProteinsMatrix(MatrixData):
 
         proteomics = self.data.copy()
         tlsResList = []
-        #Get the ppis that are most likely true ppis, so that we can analyse what samples do not correspond to the correlation, 
+        correlationsTLSMahal = []
+
         # are farthest from the linear regession line, hence, have greatest TLS and so are samples of interest where the PPI likely is having some biomolecular role. 
         # So it would be interesting to see afterwards if that sample has a responsiveness to a drug all the other samples do not meaning 
         # we are in a presence of a PPI that might be correlated to a feature, a certain drug responsiveness
-        
 
-        for ppi in ppis:
+        for index, ppi in enumerate(ppis):
+ 
             proteinA = ppi.split(';')[0]
             proteinB = ppi.split(';')[1]
 
@@ -196,7 +208,7 @@ class ProteinsMatrix(MatrixData):
 
             X=X.loc[samplesInCommon] #Locate samples that both have some value (not nan)
             Y=Y.loc[samplesInCommon]
-
+            # TLS Residues
             meanX = X.mean()
             meanY = Y.mean()
 
@@ -216,12 +228,26 @@ class ProteinsMatrix(MatrixData):
 
             intercept = meanY - (tlsCoef * meanX) #Intercept of linear fit
             predY = intercept + (tlsCoef * X)
-            residues = Y - predY # TLS Residues in absolute val
-            residues = pd.DataFrame(residues,columns=[ppi])
-            tlsResList.append(residues)
+            residues = abs(Y - predY) # TLS Residues in absolute val
 
+            # Malahanobis Distance
+            proteinExpression = pd.concat([X,Y], axis=1)
+            mahalDist, mahalPValues = calcMahalanobis(proteinExpression, proteinExpression, None)
 
-        tlsResData = pd.concat(tlsResList, join='outer', sort=False)
+            dfData = {(ppi, 'TLS'): residues,
+                      (ppi,'malahanobis'): mahalDist,
+                      (ppi,'mahalPValue'): mahalPValues,
+                     }
+            correlationsTLSMahal.append(pearsonr(residues, mahalDist)[0])
+            residues = pd.DataFrame(dfData)
+            if index == 0:
+                tlsResData = residues
+            else:
+                tlsResList.append(residues)
+
+        print('Statistical Description of the Pearson Correlation between TLS and Mahalanobis distance \n' + str(pd.DataFrame(correlationsTLSMahal).describe())) 
+        tlsResData = tlsResData.join(tlsResList, how='outer')
+        print(tlsResData)
         return ResiduesMatrix(None,tlsResData)
 
     def getGLSCorr(self, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
