@@ -411,7 +411,8 @@ class PairwiseCorrMatrix(MatrixData):
 
 
             found = 0
-            [proteinA, proteinB] = model.name.split(';')
+            proteinA = model['proteinA']
+            proteinB = model['proteinB']
             # In my implementation the ppis have (A,B) but not (B,A), they are combinations
             ppiAB: tuple = (proteinA, proteinB)
             ppiBA: tuple = (proteinB, proteinA)
