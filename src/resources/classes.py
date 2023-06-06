@@ -9,6 +9,7 @@ import gzip
 from scipy.special import stdtr
 from scipy.stats import pearsonr
 from statsmodels.stats.multitest import multipletests
+from scipy.spatial.distance import mahalanobis
 from scipy.stats import chi2
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -16,7 +17,16 @@ import time as t
 from resources import *
 
 
+def calcMahalanobis(y:pd.DataFrame, data: pd.DataFrame, cov:pd.DataFrame=None):
+    
+    y_mu = (y - np.mean(data)).T # In Liner Algebra The covariates are usually row vectors in dataframes these are usually column vectors
+    if not cov:
+        cov = np.cov(data.values.T)
+    inv_covmat = np.linalg.inv(cov)
+    left = np.dot(y_mu.T, inv_covmat)
+    mahal = np.dot(left, y_mu)
 
+    return mahal.diagonal()
 
 class MatrixData:
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
@@ -173,6 +183,8 @@ class ProteinsMatrix(MatrixData):
       
     def tlsResidues(self, ppis:list[pd.Index]) -> ResiduesMatrix:
 
+
+
         proteomics = self.data.copy()
         #Get the ppis that are most likely true ppis, so that we can analyse what samples do not correspond to the correlation, 
         # are farthest from the linear regession line, hence, have greatest TLS and so are samples of interest where the PPI likely. 
@@ -180,7 +192,7 @@ class ProteinsMatrix(MatrixData):
         # we are in a presence of a PPI that might be correlated to a feature, a certain drug responsiveness
         tlsResList = []
 
-        for index, ppi in enumerate(ppis):
+        for index, ppi in enumerate(ppis[:2]):
  
             proteinA = ppi.split(';')[0]
             proteinB = ppi.split(';')[1]
@@ -196,7 +208,7 @@ class ProteinsMatrix(MatrixData):
 
             X=X.loc[samplesInCommon] #Locate samples that both have some value (not nan)
             Y=Y.loc[samplesInCommon]
-
+            # TLS Residues
             meanX = X.mean()
             meanY = Y.mean()
 
@@ -217,7 +229,13 @@ class ProteinsMatrix(MatrixData):
             intercept = meanY - (tlsCoef * meanX) #Intercept of linear fit
             predY = intercept + (tlsCoef * X)
             residues = abs(Y - predY) # TLS Residues in absolute val
-            residues = pd.DataFrame(residues,columns=[ppi])
+
+            # Malahanobis Distance
+            proteinExpression = pd.concat([X,Y], axis=1)
+            calcMahalanobis(proteinExpression, proteinExpression, None)
+
+            dfData = {(ppi, 'TLS'): residues}
+            residues = pd.DataFrame(dfData)
             if index == 0:
                 tlsResData = residues
             else:
