@@ -369,7 +369,7 @@ class ProteinsMatrix(MatrixData):
 
 class PairwiseCorrMatrix(MatrixData):
 
-    def __init__(self, filepath: str = None, data: pd.DataFrame = None, aucs = dict(), ** readerKwargs):
+    def __init__(self, filepath: str = None, data: pd.DataFrame = None, ** readerKwargs):
         """_summary_
 
         Args:
@@ -379,10 +379,10 @@ class PairwiseCorrMatrix(MatrixData):
         """
         super().__init__(filepath, data, **readerKwargs)
 
-        self.corrCumSums = aucs
-        self.indexes = aucs
-        self.aucs:dict = aucs 
-        self.labels = aucs
+        self.corrCumSums = {}
+        self.indexes = {}
+        self.aucs = {} 
+        self.labels = {}
 
     def __str__(self):
 
@@ -445,10 +445,10 @@ class PairwiseCorrMatrix(MatrixData):
 
         
         pairwiseCorr.sort_values(by=proxyColumn, ascending=ascending, inplace=True) # We sort rows by the smallest to greatest pValues
-
+        print(self.indexes)
         self.corrCumSums[proxyColumn] = np.cumsum(
             pairwiseCorr[yColumnName]) / np.sum(pairwiseCorr[yColumnName])
-        
+        print(self.indexes) 
         self.indexes[proxyColumn] = np.array(pairwiseCorr.reset_index().index) / \
             pairwiseCorr.shape[0]
         self.aucs[proxyColumn] = auc(self.indexes[proxyColumn], self.corrCumSums[proxyColumn]) # update aucs dict to have a new auc for a specific proxy column
