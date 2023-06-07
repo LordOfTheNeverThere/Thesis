@@ -445,10 +445,8 @@ class PairwiseCorrMatrix(MatrixData):
 
         
         pairwiseCorr.sort_values(by=proxyColumn, ascending=ascending, inplace=True) # We sort rows by the smallest to greatest pValues
-        print(self.indexes)
         self.corrCumSums[proxyColumn] = np.cumsum(
             pairwiseCorr[yColumnName]) / np.sum(pairwiseCorr[yColumnName])
-        print(self.indexes) 
         self.indexes[proxyColumn] = np.array(pairwiseCorr.reset_index().index) / \
             pairwiseCorr.shape[0]
         self.aucs[proxyColumn] = auc(self.indexes[proxyColumn], self.corrCumSums[proxyColumn]) # update aucs dict to have a new auc for a specific proxy column
