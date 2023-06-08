@@ -1,6 +1,6 @@
 from __future__ import annotations #  postpone evaluation of annotations
 import pandas as pd
-from itertools import combinations, product
+from itertools import combinations, product, permutations
 import numpy as np
 import math
 from sklearn.metrics import auc
@@ -106,7 +106,7 @@ class ppiDataset(MatrixData):
             def combinationsOfProteins(complx):
 
                 if ';' in list(complx['subunits(Gene name)']):
-                    complx['proteinTuple'] = list(combinations(
+                    complx['proteinTuple'] = list(permutations(
                         complx['subunits(Gene name)'].split(';'), 2))
 
                     return complx
@@ -115,7 +115,6 @@ class ppiDataset(MatrixData):
                 lambda complx: combinationsOfProteins(complx), axis=1)
             ppiList = list(data.dropna()['proteinTuple'])
             ppiSet = {item for sublist in ppiList for item in sublist}
-
         elif (dataset == allowedDatasets[1]):
 
             # Filter Biogrid for certain parameters
@@ -124,14 +123,14 @@ class ppiDataset(MatrixData):
             # Filter out Homedymers which are not object of our study
             data = data.query("`Experimental System Type` == 'physical' and `Official Symbol Interactor A` != `Official Symbol Interactor B`").copy()
 
-            data['proteinTuple'] = list(zip(data['Official Symbol Interactor A'], data['Official Symbol Interactor B']))
-            ppiSet = set(data['proteinTuple'])
+            ppis = list(zip(data['Official Symbol Interactor A'], data['Official Symbol Interactor B'])) + list(zip(data['Official Symbol Interactor B'], data['Official Symbol Interactor A']))
+            ppiSet = set(ppis)
 
             
 
         elif (dataset == allowedDatasets[2]):
-            data['proteinTuple'] = list(zip(data['proteinA'], data['proteinB']))
-            ppiSet = set(data['proteinTuple'])
+            ppis = list(zip(data['proteinA'], data['proteinB'])) + list(zip(data['proteinB'], data['proteinA']))
+            ppiSet = set(ppis)
 
         
         self.ppis = ppiSet
@@ -394,6 +393,7 @@ class PairwiseCorrMatrix(MatrixData):
 
         return print
 
+    
     def addGroundTruth(self, ppis: set, externalDatasetName: str):
         """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
 
@@ -415,12 +415,8 @@ class PairwiseCorrMatrix(MatrixData):
             proteinB = model['proteinB']
             # In my implementation the ppis have (A,B) but not (B,A), they are combinations
             ppiAB: tuple = (proteinA, proteinB)
-            ppiBA: tuple = (proteinB, proteinA)
 
-            if ppiAB in ppis or ppiBA in ppis:
-                found = 1
-
-            model[externalDatasetName] = found
+            model[externalDatasetName] = int(ppiAB in ppis)
 
             return model[externalDatasetName]
 
