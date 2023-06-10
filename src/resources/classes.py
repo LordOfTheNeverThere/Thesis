@@ -392,6 +392,7 @@ class PairwiseCorrMatrix(MatrixData):
         
 
         return print
+    
 
     
     def addGroundTruth(self, ppis: set, externalDatasetName: str):
@@ -407,21 +408,8 @@ class PairwiseCorrMatrix(MatrixData):
             _type_: Data with added column
         """
         data = self.data.copy()
-        def addExternalTrueY(model):
 
-
-            found = 0
-            proteinA = model['proteinA']
-            proteinB = model['proteinB']
-            # In my implementation the ppis have (A,B) but not (B,A), they are combinations
-            ppiAB: tuple = (proteinA, proteinB)
-
-            model[externalDatasetName] = int(ppiAB in ppis)
-
-            return model[externalDatasetName]
-
-        data[externalDatasetName] = data.apply(
-            axis=1, func=lambda model: addExternalTrueY(model))
+        data[externalDatasetName] = [int((pA,pB) in ppis) for pA,pB in zip(data['proteinA'], data['proteinB'])]
 
 
         self.data = data
