@@ -12,6 +12,8 @@ if __name__ == "__main__":
     ogAndVAEModel: PairwiseCorrMatrix = read(PATH + '/datasetsTese/ogAndVAEPairwiseCorrs.pickle.gz')
     ogAndVAEData: pd.DataFrame = ogAndVAEModel.data
 
+    ogAndVAEData.to_csv(PATH + '/datasetsTese/ogAndVAEPairwiseCorrs.csv', index = False)
+
 
     corum:ppiDataset = read(PATH + '/externalDatasets/corum.pickle.gz')
     biogrid:ppiDataset = read(PATH + '/externalDatasets/biogrid.pickle.gz')
@@ -27,6 +29,6 @@ if __name__ == "__main__":
     for ppis, datasetName in zip(ppisSets, datasetNames):
 
         start = t.time()   
-        ogAndVAEModel.addGroundTruthNeo(ppis, datasetName)
+        ogAndVAEModel.addGroundTruth(ppis, datasetName)
         print(t.time() - start)
     ogAndVAEModel.write(PATH + '/datasetsTese/ogAndVAEPairwiseCorrs.pickle.gz')
