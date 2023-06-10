@@ -12,7 +12,7 @@ if __name__ == "__main__":
     ogAndVAEModel: PairwiseCorrMatrix = read(PATH + '/datasetsTese/ogAndVAEPairwiseCorrs.pickle.gz')
     ogAndVAEData: pd.DataFrame = ogAndVAEModel.data
 
-    ogAndVAEData.to_csv(PATH + '/datasetsTese/ogAndVAEPairwiseCorrs.csv', index = False)
+    ogAndVAEData.to_csv(PATH + '/datasetsTese/ogAndVAEPairwiseCorrs.csv.gz', index = False, compression='gzip')
 
 
     corum:ppiDataset = read(PATH + '/externalDatasets/corum.pickle.gz')

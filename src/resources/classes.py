@@ -9,7 +9,8 @@ import gzip
 from scipy.special import stdtr
 from scipy.stats import pearsonr
 from statsmodels.stats.multitest import multipletests
-from scipy.spatial.distance import mahalanobis
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import normalize
 from scipy.stats import chi2
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -556,9 +557,10 @@ class ResiduesMatrix(MatrixData):
 
 
 
-class LinearRegression:
+class GeneralLinearModel:
     """Authored by professor Emanuel Gonçalves, this call allows fo the computation of the linear regression coefs for a set of features. 
-    Do check if the response variable is Normally distributed, since this is nor a GLM
+    Do check if the response variable is Normally distributed, since this is nor a GLM.
+    There is no logging and covariate normalisation should be done prior to creating the object.
     """
     
     
@@ -569,7 +571,6 @@ class LinearRegression:
         X,
         M,
         M2=None,
-        normalize=False,
         fit_intercept=True,
         copy_X=True,
         n_jobs=4,
@@ -581,6 +582,7 @@ class LinearRegression:
             set(M.index),
             set(Y.index) if M2 is None else set(M2.index),
         )
+        self.samples = list(self.samples) # make sure it's a list, because indexing by sets is deprecated
 
         self.X = X.loc[self.samples]
         self.X = self.X.loc[:, self.X.count() > (M.shape[1] + (1 if M2 is None else 2))]
@@ -604,7 +606,6 @@ class LinearRegression:
     def model_regressor(self):
         regressor = LinearRegression(
             fit_intercept=self.fit_intercept,
-            normalize=self.normalize,
             copy_X=self.copy_X,
             n_jobs=self.n_jobs,
         )
@@ -646,8 +647,8 @@ class LinearRegression:
         lms = []
 
         for x_idx, x_var in enumerate(self.X):
-            if self.verbose > 0:
-                self.log.info(f"LM={x_var} ({x_idx})")
+            # if self.verbose > 0:
+            #     self.log.info(f"LM={x_var} ({x_idx})")
 
             # Mask NaNs
             x_ma = np.ma.mask_rowcols(self.X_ma[:, [x_idx]], axis=0)
@@ -661,7 +662,7 @@ class LinearRegression:
             if self.M2 is not None:
                 m2 = self.M2.iloc[~x_ma.mask.any(axis=1), [x_idx]]
                 m = pd.concat([m2, m], axis=1)
-            m = m.loc[:, m.std() > 0]
+            # m = m.loc[:, m.std(numeric_only = True) > 0]
             m += np.random.normal(0, 1e-4, m.shape)
 
             # Fit covariate model
@@ -725,8 +726,22 @@ class LinearRegression:
 
 
 
+class myLinearModel(GeneralLinearModel):
 
 
+    def __init__(self, Y, X, M, M2=None, fit_intercept=True, copy_X=True, n_jobs=4, verbose=1, residualsType:str = "TLS"):
 
+        assert residualsType in ["TLS", "malahanobis", None], "residualsType must be either TLS, None or malahanobis"
         
+        if residualsType is not None:
+            residualsCols = [col for col in X.columns if col[1] == residualsType]
+            X = X.loc[:, residualsCols]
+            X.columns = ['-'.join(col) for col in X.columns]
+            print(X)
+        
+        super().__init__(Y, X, M, M2, fit_intercept, copy_X, n_jobs, verbose)
+
+
+    
+
 
