@@ -25,8 +25,8 @@ if __name__ == "__main__":
 
 
     for ppis, datasetName in zip(ppisSets, datasetNames):
-        start = t.time()        
-        ogAndVAEModel.addGroundTruth(ppis, datasetName)
+
+        start = t.time()   
+        ogAndVAEModel.addGroundTruthNeo(ppis, datasetName)
         print(t.time() - start)
-    
     ogAndVAEModel.write(PATH + '/datasetsTese/ogAndVAEPairwiseCorrs.pickle.gz')
