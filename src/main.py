@@ -30,7 +30,7 @@ if __name__ == '__main__':
     otherCovariates = otherCovariates.drop(columns=['tissue'])
 
 
-    regressor = ResidualsLinearModel(Y, X, otherCovariates, residualsType='mahalanobis')
+    regressor = ResidualsLinearModel(Y, X, otherCovariates, residualsType='malahanobis')
     print(regressor.fit_matrix())
     regressor.volcanoPlot(filepath='testVolcano.png')
     
