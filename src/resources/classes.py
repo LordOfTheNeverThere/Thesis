@@ -671,12 +671,14 @@ class GeneralLinearModel(MatrixData):
 
             # Fit covariate model
             lm_small = self.model_regressor().fit(m, y)
-            meanBetasCovariates = lm_small.coef_
             lm_small_ll = self.loglike(y, lm_small.predict(m))
 
             # Fit full model: covariates + feature
             lm_full_x = np.concatenate([m, x], axis=1)
             lm_full = self.model_regressor().fit(lm_full_x, y)
+            betasFeature =  lm_full.coef_[:,-1]
+            meanBetasCovariates = lm_full.coef_[:, 0:-1]
+
             lm_full_ll = self.loglike(y, lm_full.predict(lm_full_x))
 
             # Log-ratio test
@@ -689,7 +691,7 @@ class GeneralLinearModel(MatrixData):
                     y_id=y.columns,
                     x_id=x_var,
                     n=y.attrs["nan_mask"].loc[y.columns, x.index].sum(1) if "nan_mask" in y.attrs else len(x),
-                    beta=lm_full.coef_[:, -1],
+                    beta=betasFeature,
                     lr=lr.values,
                     covs=m.shape[1],
                     pval=lr_pval,
