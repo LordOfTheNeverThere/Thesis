@@ -557,7 +557,7 @@ class ResiduesMatrix(MatrixData):
 
 
 
-class GeneralLinearModel:
+class GeneralLinearModel(MatrixData):
     """Authored by professor Emanuel Gonçalves, this call allows fo the computation of the linear regression coefs for a set of features. 
     Do check if the response variable is Normally distributed, since this is nor a GLM.
     There is no logging and covariate normalisation should be done prior to creating the object.
@@ -575,7 +575,11 @@ class GeneralLinearModel:
         copy_X=True,
         n_jobs=4,
         verbose=1,
+        filepath: str=None, 
+        data: pd.DataFrame=None, 
+        **readerKwargs
     ):
+        super().__init__(filepath, data, **readerKwargs)  
         self.samples = set.intersection(
             set(Y.index),
             set(X.index),
@@ -650,6 +654,7 @@ class GeneralLinearModel:
             # if self.verbose > 0:
             #     self.log.info(f"LM={x_var} ({x_idx})")
 
+
             # Mask NaNs
             x_ma = np.ma.mask_rowcols(self.X_ma[:, [x_idx]], axis=0)
 
@@ -657,13 +662,14 @@ class GeneralLinearModel:
             x = self.X.iloc[~x_ma.mask.any(axis=1), [x_idx]]
             y = self.Y.iloc[~x_ma.mask.any(axis=1), :]
 
+
             # Covariate matrix (remove invariable features and add noise)
             m = self.M.iloc[~x_ma.mask.any(axis=1), :]
             if self.M2 is not None:
                 m2 = self.M2.iloc[~x_ma.mask.any(axis=1), [x_idx]]
                 m = pd.concat([m2, m], axis=1)
             # m = m.loc[:, m.std(numeric_only = True) > 0]
-            m += np.random.normal(0, 1e-4, m.shape)
+            m += np.random.normal(0, 1e-6, m.shape)
 
             # Fit covariate model
             lm_small = self.model_regressor().fit(m, y)
@@ -695,6 +701,7 @@ class GeneralLinearModel:
             lms.append(res)
 
         lms = pd.concat(lms, ignore_index=True).sort_values("pval")
+        self.data = lms #Regression Results, of each X towwards every Y
 
         return lms
 
@@ -726,7 +733,7 @@ class GeneralLinearModel:
 
 
 
-class myLinearModel(GeneralLinearModel):
+class ResidualsLinearModel(GeneralLinearModel):
 
 
     def __init__(self, Y, X, M, M2=None, fit_intercept=True, copy_X=True, n_jobs=4, verbose=1, residualsType:str = "TLS"):
@@ -737,9 +744,44 @@ class myLinearModel(GeneralLinearModel):
             residualsCols = [col for col in X.columns if col[1] == residualsType]
             X = X.loc[:, residualsCols]
             X.columns = ['-'.join(col) for col in X.columns]
-            print(X)
         
         super().__init__(Y, X, M, M2, fit_intercept, copy_X, n_jobs, verbose)
+    
+    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.10):
+        """
+        Volcano plot in order to find statisticall relevant relationships.
+        """
+        data = self.data.copy()
+        data = data.loc[data['fdr'] < falseDiscoveryRate]
+        yValues = -np.log10(data['pval'])
+
+
+        # Plot
+        plt.scatter(
+            self.data.beta,
+            yValues,
+            c="k",
+            s=5,
+            alpha=0.5,
+            rasterized=True,
+        )
+
+        # Labels
+        plt.set_xlabel(r"$\beta$")
+        plt.set_ylabel(r"$-\log_{10}(p-value)$")
+
+        # Limits
+        plt.set_xlim(-1, 1)
+        plt.set_ylim(0, 10)
+
+        # Grid
+        plt.axvline(0, c="k", lw=0.5, ls="--")
+        plt.axhline(-np.log10(0.05), c="k", lw=0.5, ls="--")
+
+        # Title
+        plt.set_title("Volcano plot")
+
+        plt.savefig(filepath, bbox_inches="tight")
 
 
     
