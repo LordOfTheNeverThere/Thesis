@@ -2,7 +2,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import time as t
-from resources import myLinearModel, GeneralLinearModel, read, PATH
+from resources import ResidualsLinearModel, read, PATH
+
 
 
 
@@ -21,7 +22,6 @@ if __name__ == '__main__':
 
     X = residuals.data
 
-    #Create extra Covariates
     samplesheet = pd.read_csv(PATH + '/datasetsTese/samplesheet.csv', index_col='model_id')
     otherCovariates = samplesheet[['tissue', 'growth_properties']].dropna(axis=0, how='any')
     otherCovariates['hymCellLine'] = (otherCovariates['tissue'] == 'Haematopoietic and Lymphoid').astype(int)
@@ -30,5 +30,7 @@ if __name__ == '__main__':
     otherCovariates = otherCovariates.drop(columns=['tissue'])
 
 
-    regressor = myLinearModel(Y, X, otherCovariates, residualsType='malahanobis')
+    regressor = ResidualsLinearModel(Y, X, otherCovariates, residualsType='mahalanobis')
     print(regressor.fit_matrix())
+    regressor.volcanoPlot(filepath='testVolcano.png')
+    

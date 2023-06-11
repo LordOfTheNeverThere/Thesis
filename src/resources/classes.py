@@ -33,8 +33,6 @@ def calcMahalanobis(y:pd.DataFrame, data: pd.DataFrame, cov:pd.DataFrame=None):
 class MatrixData:
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
         self.data = data
-        assert filepath or (
-            data is not None), 'There should be either a filepath or data'
 
         if filepath:
             self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
@@ -673,6 +671,7 @@ class GeneralLinearModel(MatrixData):
 
             # Fit covariate model
             lm_small = self.model_regressor().fit(m, y)
+            meanBetasCovariates = lm_small.coef_
             lm_small_ll = self.loglike(y, lm_small.predict(m))
 
             # Fit full model: covariates + feature
@@ -697,6 +696,10 @@ class GeneralLinearModel(MatrixData):
                     fdr=multipletests(lr_pval, method="fdr_bh")[1],
                 )
             )
+            
+            smallerBetas = pd.DataFrame(meanBetasCovariates)
+            smallerBetas.columns = [str(col) + 'Beta' for col in m.columns]
+            res = pd.concat([res, smallerBetas], axis=1)
 
             lms.append(res)
 
@@ -747,18 +750,19 @@ class ResidualsLinearModel(GeneralLinearModel):
         
         super().__init__(Y, X, M, M2, fit_intercept, copy_X, n_jobs, verbose)
     
-    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.10):
+    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.10, pValHzLine:float = 0.001):
         """
         Volcano plot in order to find statisticall relevant relationships.
         """
         data = self.data.copy()
         data = data.loc[data['fdr'] < falseDiscoveryRate]
         yValues = -np.log10(data['pval'])
+        xValues = data['beta']
 
 
         # Plot
         plt.scatter(
-            self.data.beta,
+            xValues,
             yValues,
             c="k",
             s=5,
@@ -767,19 +771,17 @@ class ResidualsLinearModel(GeneralLinearModel):
         )
 
         # Labels
-        plt.set_xlabel(r"$\beta$")
-        plt.set_ylabel(r"$-\log_{10}(p-value)$")
+        plt.xlabel(r"$\beta$")
+        plt.ylabel(r"$-\log_{10}(p-value)$")
 
-        # Limits
-        plt.set_xlim(-1, 1)
-        plt.set_ylim(0, 10)
 
         # Grid
         plt.axvline(0, c="k", lw=0.5, ls="--")
-        plt.axhline(-np.log10(0.05), c="k", lw=0.5, ls="--")
+        plt.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
 
         # Title
-        plt.set_title("Volcano plot")
+        plt.title("Volcano plot")
+        plt.legend()
 
         plt.savefig(filepath, bbox_inches="tight")
 
