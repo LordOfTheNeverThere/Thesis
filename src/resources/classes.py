@@ -363,6 +363,41 @@ class ProteinsMatrix(MatrixData):
         pairwiseCorrData.data.index.name = 'PPI'
 
         return pairwiseCorrData
+    
+    def plotPxPyDrug(self, drug:str, ppi:str, drugResponse: DrugResponseMatrix, filepath:str):
+
+
+        drugResponse = drugResponse.binrise(inplace=False).T # The drug response matrix is binarised
+        samplesCommon = self.data.index.intersection(drugResponse.index) # We only want to plot the samples that are in both matrices
+        assert len(samplesCommon) > 0, 'There are no samples in common between the protein data and the drug response data'
+        drugResponse = drugResponse.loc[samplesCommon, drug]
+        proteinData = self.data.loc[samplesCommon, :]
+
+        if len(ppi.split('-')) > 0:
+            ppi = ppi.split('-')[0]
+        else:
+            print('ppi should be in format px;py-residual')
+        pxName = ppi.split(';')[0]
+        px = proteinData[pxName]
+        pyName = ppi.split(';')[1]
+        py = proteinData[pyName]
+
+        data = pd.DataFrame({'px': px, 'py': py, 'drugResponse': drugResponse})
+        colors = {0: 'green', 1: 'red'}
+
+        plt.scatter(data['px'], data['py'], c=data['drugResponse'].map(colors), label=[colors.values(), colors.keys()])
+        plt.title('Protein expression \n with Drug Response, >50% [drugMax]')
+        plt.xlabel(str(pxName))
+        plt.ylabel(str(pyName))
+        legend = [plt.Line2D([0], [0], marker='.', color=colors[key], label='Drug Response = ' + str(key)) for key in colors]
+        plt.legend(handles = legend, fontsize=8, framealpha=0.2)
+        plt.savefig(filepath)
+
+        
+        plt.close()
+
+
+
 
 
 class PairwiseCorrMatrix(MatrixData):
@@ -552,6 +587,22 @@ class ResiduesMatrix(MatrixData):
 
     def __init__(self, filepath: str=None, data: pd.DataFrame=None, **readerKwargs):
         super().__init__(filepath, data, **readerKwargs)
+
+    def getLinearModel(self, drugResponse: DrugResponseMatrix, samplesheet:pd.DataFrame, residualsType:str)->ResidualsLinearModel:
+
+        X = self.data.copy()
+        Y: pd.DataFrame = drugResponse.data.T # Samples should be rows and not columns
+        
+        confoundingFactors = samplesheet[['tissue', 'growth_properties']].dropna(axis=0, how='any')
+        confoundingFactors['hymCellLine'] = (confoundingFactors['tissue'] == 'Haematopoietic and Lymphoid').astype(int)
+        confoundingFactors['lung'] = (confoundingFactors['tissue'] == 'lung').astype(int)
+        confoundingFactors = pd.get_dummies(confoundingFactors, columns=['growth_properties'], prefix='', prefix_sep='')
+        confoundingFactors = confoundingFactors.drop(columns=['tissue'])
+
+        regressor = ResidualsLinearModel(Y, X, confoundingFactors, residualsType)
+        regressor.fit_matrix()
+
+        return regressor
 
 
 
@@ -784,9 +835,19 @@ class ResidualsLinearModel(GeneralLinearModel):
         # Title
         plt.title("Volcano plot")
         plt.legend()
-
+        self.volcanoPath = filepath
         plt.savefig(filepath, bbox_inches="tight")
+        plt.close()
 
+    def plotSignificantAssociation(self, proteomics:ProteinsMatrix, drugResponse:DrugResponseMatrix, filepath:str):
+
+        results = self.data.copy()
+
+        results = results.sort_values(by='pval', ascending=True)
+        drug = results['y_id'].iloc[0]
+        ppi  = results['x_id'].iloc[0]
+
+        proteomics.plotPxPyDrug(drug, ppi, drugResponse,filepath)
 
     
 
