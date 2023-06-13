@@ -15,6 +15,7 @@ from scipy.stats import chi2
 import seaborn as sns
 import matplotlib.pyplot as plt
 import time as t
+from typing import Iterable
 from resources import *
 
 
@@ -180,7 +181,7 @@ class ProteinsMatrix(MatrixData):
         index = pairwiseCorr.pop('PPI')
         return PairwiseCorrMatrix(None, pd.DataFrame(pairwiseCorr, index=index))
       
-    def tlsResidues(self, ppis: pd.Index) -> ResiduesMatrix:
+    def calculateResidues(self, ppis: Iterable(set[str])) -> ResiduesMatrix:
 
         proteomics = self.data.copy()
         tlsResList = []
@@ -245,7 +246,6 @@ class ProteinsMatrix(MatrixData):
 
         print('Statistical Description of the Pearson Correlation between TLS and Mahalanobis distance \n' + str(pd.DataFrame(correlationsTLSMahal).describe())) 
         tlsResData = tlsResData.join(tlsResList, how='outer')
-        print(tlsResData)
         return ResiduesMatrix(None,tlsResData)
 
     def getGLSCorr(self, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
@@ -591,7 +591,9 @@ class ResiduesMatrix(MatrixData):
     def getLinearModel(self, drugResponse: DrugResponseMatrix, samplesheet:pd.DataFrame, residualsType:str)->ResidualsLinearModel:
 
         X = self.data.copy()
-        Y: pd.DataFrame = drugResponse.data.T # Samples should be rows and not columns
+        Y: pd.DataFrame = drugResponse.data.copy().T # Samples should be rows and not columns
+        Y = Y.fillna(Y.mean(axis=0))
+        print(Y)
         
         confoundingFactors = samplesheet[['tissue', 'growth_properties']].dropna(axis=0, how='any')
         confoundingFactors['hymCellLine'] = (confoundingFactors['tissue'] == 'Haematopoietic and Lymphoid').astype(int)
@@ -599,7 +601,7 @@ class ResiduesMatrix(MatrixData):
         confoundingFactors = pd.get_dummies(confoundingFactors, columns=['growth_properties'], prefix='', prefix_sep='')
         confoundingFactors = confoundingFactors.drop(columns=['tissue'])
 
-        regressor = ResidualsLinearModel(Y, X, confoundingFactors, residualsType)
+        regressor = ResidualsLinearModel(Y, X, confoundingFactors, residualsType=residualsType)
         regressor.fit_matrix()
 
         return regressor
@@ -636,7 +638,6 @@ class GeneralLinearModel(MatrixData):
             set(Y.index) if M2 is None else set(M2.index),
         )
         self.samples = list(self.samples) # make sure it's a list, because indexing by sets is deprecated
-
         self.X = X.loc[self.samples]
         self.X = self.X.loc[:, self.X.count() > (M.shape[1] + (1 if M2 is None else 2))]
         self.X_ma = np.ma.masked_invalid(self.X.values)
@@ -753,7 +754,6 @@ class GeneralLinearModel(MatrixData):
             smallerBetas = pd.DataFrame(meanBetasCovariates)
             smallerBetas.columns = [str(col) + 'Beta' for col in m.columns]
             res = pd.concat([res, smallerBetas], axis=1)
-
             lms.append(res)
 
         lms = pd.concat(lms, ignore_index=True).sort_values("pval")
