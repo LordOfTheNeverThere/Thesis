@@ -87,7 +87,7 @@ def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: Proteins
     sampledProteins = ProteinsMatrix(None,  proteinsData.data.sample(n=sampleNum, axis=0, random_state=iteration * sampleNum))
 
     if glmCoefs: # We are eiher using glm coefs as predictors of Novel PPI's or Pearson Correlation Coeficients
-        pairwiseCorr = getGLSCorr(sampledProteins, False)
+        pairwiseCorr = sampledProteins.getGLSCorr()
         pairwiseCorr.data = pairwiseCorr.data.sort_values(by='glsCoefficient', ascending=False)
     else:
         pairwiseCorr = sampledProteins.pearsonCorrelations('correlation', False, False)
