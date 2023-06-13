@@ -10,11 +10,11 @@ from resources import *
 
 #Load Dataset
 def mofaBaseModel():
-    with gzip.open(PATH + '/datasetsTese/mofaPairwiseCorr.pickle.gz', 'rb') as file:
+    with gzip.open(PATH + '/internal/mofaPairwiseCorr.pickle.gz', 'rb') as file:
         mofaPairwise = pickle.load(file)
     file.close()
 
-    with gzip.open(PATH + '/datasetsTese/baseModelFiltered.pickle.gz', 'rb') as file:
+    with gzip.open(PATH + '/internal/baseModelFiltered.pickle.gz', 'rb') as file:
         ogPairwise = pickle.load(file)
     file.close()
 
@@ -25,11 +25,11 @@ def mofaBaseModel():
 
 def mofa2():
     """In this model we are only using the proteins in the mofa proteomics matrix which are also on the og matrix"""
-    with gzip.open(PATH + '/datasetsTese/mofaPairwiseCorr.pickle.gz', 'rb') as file:
+    with gzip.open(PATH + '/internal/mofaPairwiseCorr.pickle.gz', 'rb') as file:
         mofaPairwise = pickle.load(file)
     file.close()
 
-    with gzip.open(PATH + '/datasetsTese/baseModelFiltered.pickle.gz', 'rb') as file:
+    with gzip.open(PATH + '/internal/baseModelFiltered.pickle.gz', 'rb') as file:
         ogPairwise = pickle.load(file)
     file.close()
     ogPairwise.data = ogPairwise.data.dropna()
@@ -51,8 +51,8 @@ def mofa3(threshold: float | list[float]):
         threshold (float): Filtering threshold which states the value of presence a protein must have in order for it to be included in the final mofa matrix.
         If we want proteins that are present in at leat 10% of rows we set it to 0.10
     """
-    mofaProteins = ProteinsMatrix(PATH + '/datasetsTese/proteomicsMOFA.csv.gz', {'index_col':'Unnamed: 0'})
-    ogProteins = ProteinsMatrix(PATH+'/datasetsTese/proteomicsDataTrans.csv', {'index_col': 'modelID'})
+    mofaProteins = ProteinsMatrix(PATH + '/internal/proteomicsMOFA.csv.gz', {'index_col':'Unnamed: 0'})
+    ogProteins = ProteinsMatrix(PATH+'/internal/proteomicsDataTrans.csv', {'index_col': 'modelID'})
     
     assert type(threshold) == float or type( threshold) == list, 'Wrong Type for prop threshold'
 
@@ -68,7 +68,7 @@ def mofa3(threshold: float | list[float]):
             mofaProteins.data = mofaProteins.data[mofaProteins.columns.intersection(ogProteins.columns)]
             #  Load external Datasets
 
-            corum = ppiDataset(filepath=PATH + '/externalDatasets/corumPPI.csv.gz')
+            corum = ppiDataset(filepath=PATH + '/external/corumPPI.csv.gz')
             corum = corum.getPPIs(True)
 
             pairwiseCorr = mofaProteins.pearsonCorrelations(filepath=None, columnName='mofaCorrelation', counting=False)
@@ -89,15 +89,15 @@ def mofa3(threshold: float | list[float]):
 
 def opposingIntensities():
 
-    with gzip.open(PATH + '/datasetsTese/mofaPairwiseCorr.pickle.gz', 'rb') as f:
+    with gzip.open(PATH + '/internal/mofaPairwiseCorr.pickle.gz', 'rb') as f:
         mofa = pickle.load(f)
     f.close()
 
-    with gzip.open(PATH + '/datasetsTese/baseModelFiltered.pickle.gz', 'rb') as f:
+    with gzip.open(PATH + '/internal/baseModelFiltered.pickle.gz', 'rb') as f:
         baseModel = pickle.load(f)
     f.close()
 
-    with gzip.open(PATH + '/datasetsTese/mofaProteomics.pickle.gz', 'rb') as f:
+    with gzip.open(PATH + '/internal/mofaProteomics.pickle.gz', 'rb') as f:
         mofaProteomics = pickle.load(f)
     f.close()
 

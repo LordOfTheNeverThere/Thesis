@@ -12,36 +12,34 @@ from resources import ResidualsLinearModel, ResiduesMatrix, read, PATH, Proteins
 
 if __name__ == '__main__':
 
-    drugRes = read(PATH + '/datasetsTese/drugResponse.pickle.gz')
-    samplesheet = pd.read_csv(PATH + '/datasetsTese/samplesheet.csv', index_col=0)
+    drugRes = read(PATH + '/internal/drugResponse.pickle.gz')
+    samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
     
 
 
-    # regressionRes: ResidualsLinearModel = read(PATH + '/datasetsTese/regressionGlSGreater0.65MeanProteomics.pickle.gz')
+    # regressionRes: ResidualsLinearModel = read(PATH + '/internal/regressionGlSGreater0.65MeanProteomics.pickle.gz')
 
 
-    ogProteomics: ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
-    # meanProteomics = read(PATH + '/datasetsTese/meanProteomics.pickle.gz') 
-    vaeProteomics:ProteinsMatrix= read(PATH + '/datasetsTese/proteomicsVAE.pickle.gz') 
+    ogProteomics: ProteinsMatrix = read(PATH + '/internal/ogProteomics.pickle.gz')
+    # meanProteomics = read(PATH + '/internal/meanProteomics.pickle.gz') 
+    vaeProteomics:ProteinsMatrix= read(PATH + '/internal/proteomicsVAE.pickle.gz') 
 
 
     # regressionRes.plotSignificantAssociation(meanProteomics, drugRes, 'pxpyTestingEffectSizeOfResidualsGLSGreater0.65ProteinMean.png')^
 
-    vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz')
+    vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/VAEGLSPairCorr.pickle.gz')
 
     # ppisOfInterest = set(vaeGLSPairwise.data.query("pValue < 0.001 & corum == 1").copy().index)
     # residuals = vaeProteomics.calculateResidues(ppisOfInterest)
-    # residuals.write(PATH + '/datasetsTese/residuals/GLSPValueLess0.001VAEProteomics/residuals.pickle.gz')
+    # residuals.write(PATH + '/internal/residuals/GLSPValueLess0.001VAEProteomics/residuals.pickle.gz')
 
-    residuals:ResiduesMatrix = read(PATH + '/datasetsTese/residuals/GLSPValueLess0.001VAEProteomics/residuals.pickle.gz')
+    residuals:ResiduesMatrix = read(PATH + '/internal/residuals/GLSPValueLess0.001VAEProteomics/residuals.pickle.gz')
 
     regressor = residuals.getLinearModel(drugRes, samplesheet, 'malahanobis')
 
     print(regressor.data['beta'].describe())
     regressor.plotSignificantAssociation(vaeProteomics, drugRes, 'pxpyTestingEffectSizeOfResidualsGLSPValueLess0.001VAEProteomics.png')
-    regressor.write(PATH + '/datasetsTese/residuals/GLSPValueLess0.001VAEProteomics/regressionMalahanobis.pickle.gz')
-
-### TODO
+    regressor.write(PATH + '/internal/residuals/GLSPValueLess0.001VAEProteomics/regressionMalahanobis.pickle.gz')
 
 
     baseModel :PairwiseCorrMatrix = read(PATH + '/internal/baseModelFiltered.pickle.gz')

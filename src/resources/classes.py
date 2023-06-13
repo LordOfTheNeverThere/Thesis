@@ -562,7 +562,7 @@ class DrugResponseMatrix(MatrixData):
             deathThresh (int, optional): Number required of 'responsive' cell lines for a certain drug to be considered in the final set. Defaults to 3.
         """
         data = self.data.copy()
-        maxScreenConc = pd.read_csv(PATH + '/externalDatasets/drugMaxScreenConcentration.csv', index_col='Unnamed: 0')
+        maxScreenConc = pd.read_csv(PATH + '/external/drugMaxScreenConcentration.csv', index_col='Unnamed: 0')
         maxScreenConc.index.name = 'drug'
         
         data = data.merge(maxScreenConc, on='drug') # We only work with drugs for which we have a max screen concentration and IC50

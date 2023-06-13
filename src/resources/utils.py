@@ -49,7 +49,7 @@ from resources import *
 #     return pairwiseCorrsSeries
 
 
-# def fetchGeneEntrezID(proteinName: str, geneIDsData: pd.DataFrame = pd.read_table('../externalDatasets/geneIDsNCBI.tsv')) -> int:
+# def fetchGeneEntrezID(proteinName: str, geneIDsData: pd.DataFrame = pd.read_table('../external/geneIDsNCBI.tsv')) -> int:
 
 #     geneID = geneIDsData.where(geneIDsData['Symbol'] == proteinName)[
 #         'NCBI GeneID']
@@ -127,7 +127,7 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str, c
     pairwiseCorrData.sort_values(by=columnName,ascending=False, inplace=True)
     
     if fileName:
-        pairwiseCorrData.to_csv(PATH + '/datasetsTese/' + fileName + '.csv')
+        pairwiseCorrData.to_csv(PATH + '/internal/' + fileName + '.csv')
 
     return pairwiseCorrData
 
@@ -165,7 +165,7 @@ def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, file
     
     if filename:
 
-        data.to_csv(PATH + '/datasetsTese/' + filename + '.csv')
+        data.to_csv(PATH + '/internal/' + filename + '.csv')
     
     return data
 
@@ -207,7 +207,7 @@ def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, file
     
 #     if filename:
 
-#         data.to_csv(PATH + '/datasetsTese/' + filename + '.csv')
+#         data.to_csv(PATH + '/internal/' + filename + '.csv')
     
 #     return data
 
@@ -233,7 +233,7 @@ def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, file
 #         return subset1
 
 
-#     corumPPI = pd.read_json(PATH + '/externalDatasets/corumPPI.json')
+#     corumPPI = pd.read_json(PATH + '/external/corumPPI.json')
 #     listOfSets = corumPPI.apply(axis=1, func=lambda interaction: joinGeneNames(interaction))
 
 #     return listOfSets
@@ -345,10 +345,10 @@ def pxPyScatterPlots(other:PairwiseCorrMatrix, limitsR: tuple[float], limitsMetr
     sortingSymbol = '↑' if ascending else '↓'
 
 
-    baseModel :PairwiseCorrMatrix = read(PATH + '/datasetsTese/baseModelFiltered.pickle.gz')
-    glsPairwise :PairwiseCorrMatrix = read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
-    ogProteomics :ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
-    sampleSheet = pd.read_csv(PATH + '/datasetsTese/samplesheet.csv', index_col='model_id')
+    baseModel :PairwiseCorrMatrix = read(PATH + '/internal/baseModelFiltered.pickle.gz')
+    glsPairwise :PairwiseCorrMatrix = read(PATH + '/internal/glsPairwiseCorr.pickle.gz')
+    ogProteomics :ProteinsMatrix = read(PATH + '/internal/ogProteomics.pickle.gz')
+    sampleSheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col='model_id')
 
     # Merging/sorting and quering
 

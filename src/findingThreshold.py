@@ -16,9 +16,9 @@ CPUS = 10
 assert CPUS < mp.cpu_count() - 1
 
 
-proteinsData: ProteinsMatrix = utils.read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
+proteinsData: ProteinsMatrix = utils.read(PATH + '/internal/ogProteomics.pickle.gz')
 
-globalPairwiseCorr: PairwiseCorrMatrix = utils.read(PATH + '/datasetsTese/glsPairwiseCorr.pickle.gz')
+globalPairwiseCorr: PairwiseCorrMatrix = utils.read(PATH + '/internal/glsPairwiseCorr.pickle.gz')
 
 
 

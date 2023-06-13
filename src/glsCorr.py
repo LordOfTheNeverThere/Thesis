@@ -8,9 +8,9 @@ from resources import ProteinsMatrix, PATH, drawRecallCurves, read, ppiDataset
 
 if __name__ == '__main__':
 
-    proteomics: ProteinsMatrix = read(PATH + '/datasetsTese/ogProteomics.pickle.gz')
+    proteomics: ProteinsMatrix = read(PATH + '/internal/ogProteomics.pickle.gz')
 
-    corum :ppiDataset = read(PATH + '/externalDatasets/corum.pickle.gz')
+    corum :ppiDataset = read(PATH + '/external/corum.pickle.gz')
     
     glsPairwiseCorrs = proteomics.getGLSCorr()
 
@@ -18,8 +18,8 @@ if __name__ == '__main__':
     glsPairwiseCorrs.addGroundTruth(corum.ppis,'corum') #Add Ground truths and calculate AUC
     glsPairwiseCorrs.aucCalculator('corum', 'gls')
 
-    pearsonPairwiseCorrs.write(PATH + '/datasetsTese/VAEPearsonPairCorr.pickle.gz')
-    glsPairwiseCorrs.write(PATH + '/datasetsTese/VAEGLSPairCorr.pickle.gz')
+    pearsonPairwiseCorrs.write(PATH + '/internal/VAEPearsonPairCorr.pickle.gz')
+    glsPairwiseCorrs.write(PATH + '/internal/VAEGLSPairCorr.pickle.gz')
 
     drawRecallCurves([pearsonPairwiseCorrs, glsPairwiseCorrs],['blue', 'red'], '../images/VAEPearsonVsVAEGLSRecallCurve.png')
 
