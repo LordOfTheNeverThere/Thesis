@@ -16,7 +16,7 @@ from scipy.stats import chi2, shapiro
 import seaborn as sns
 import matplotlib.pyplot as plt
 import time as t
-from typing import Iterable
+from typing import Iterable,Any
 from resources import *
 
 
@@ -199,6 +199,7 @@ class ProteinsMatrix(MatrixData):
         return PairwiseCorrMatrix(None, pd.DataFrame(pairwiseCorr, index=index))
       
     def calculateResidues(self, ppis: Iterable(set[str])) -> ResiduesMatrix:
+    
 
         proteomics = self.data.copy()
         tlsResList = []
@@ -264,6 +265,35 @@ class ProteinsMatrix(MatrixData):
         print('Statistical Description of the Pearson Correlation between TLS and Mahalanobis distance \n' + str(pd.DataFrame(correlationsTLSMahal).describe())) 
         tlsResData = tlsResData.join(tlsResList, how='outer')
         return ResiduesMatrix(None,tlsResData)
+    @classmethod
+    def whitening(cls, proteinData, covMatrix, saveIndexes:bool= False) -> tuple[Any, Any]:
+        """Whitten the proteinData, so that each covariate has the same variance, which is equal to one
+
+        Args:
+            covMatrix (_type_):The covariance Matrix to withen the data
+
+        Returns:
+            tuple[Any, Any]: the warped X to be used in the linear regression and the intercept, which is the mean of the variances of a sample across all gene symbols
+        """        
+        #invert it the covariance matrix
+        covMatrix = np.linalg.inv(covMatrix)
+
+        # Decompose it with Cholesky, returning the lower triangular matrix of the positive definite matrix covMatrix, because cov(x1,x2) == cov(x2,x1)
+        cholsigmainvMean = np.linalg.cholesky(covMatrix)
+
+        # Whittening transformation, we codify our data into a space where each the variance of each covariate is the same and equal to one, 
+        # so we are kind like normalising it, in fact that's exactly what we are doing ~ N(0,I) As they call it warping...
+        warpedProteinsMean = proteinData.T.values @ cholsigmainvMean
+
+        # The Mean of the variances of a sample across all gene symbols is used as a beta0 for linear regression
+        warpedIntereceptMean = cholsigmainvMean.T.sum(axis=0)
+
+        if saveIndexes:
+            warpedProteinsMean = pd.DataFrame(warpedProteinsMean.T, columns=proteinData.columns, index=proteinData.index)
+
+
+
+        return warpedProteinsMean, warpedIntereceptMean
 
     def getGLSCorr(self, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
         """Get the GLS coeficents between each Protein X and Y, where X != Y, these will measure the correlation between each protein. 
@@ -325,19 +355,7 @@ class ProteinsMatrix(MatrixData):
         proteinNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
 
 
-        #invert it the covariance matrix
-        covMatrix = np.linalg.inv(covMatrix)
-
-        # Decompose it with Cholesky, returning the lower triangular matrix of the positive definite matrix covMatrix, because cov(x1,x2) == cov(x2,x1)
-        cholsigmainvMean = np.linalg.cholesky(covMatrix)
-
-
-        # Whittening transformation, we codify our data into a space where each the variance of each covariate is the same and equal to one, 
-        # so we are kind like normalising it, in fact that's exactly what we are doing ~ N(0,I) As they call it warping...
-        warpedProteinsMean = proteinDataMean.T.values @ cholsigmainvMean
-
-        # The Mean of the variances of a sample across all gene symbols is used as a beta0 for linear regression
-        warpedIntereceptMean = cholsigmainvMean.T.sum(axis=0)
+        warpedProteinsMean, warpedIntereceptMean = ProteinsMatrix.whitening(proteinDataMean, covMatrix)
 
 
         def linear_regression(warped_screens, warped_intercept):
@@ -430,13 +448,15 @@ class ProteinsMatrix(MatrixData):
         shapiroResults = {}
         testCounter = 0
 
+
         for protein in data:
+
             proteinData = data[protein].dropna()    
 
             if len(proteinData) >= thresh:
-                print(proteinData)
-                stat, pVal = shapiro(proteinData)
                 testCounter += 1
+                stat, pVal = shapiro(proteinData)
+                
             
             else:
                 stat, pVal = np.nan, np.nan
@@ -454,8 +474,10 @@ class ProteinsMatrix(MatrixData):
         except:
             self.normSummary = set()
             self.normSummary.add((globalPVal,  thresh, ratioNonNormal))
+        
+        print(self.normSummary)
 
-    def whiteTest(self, ppis:set = None , thresh: int = 5, globalPVal:float = 0.05) -> None:
+    def whiteTest(self,  thresh: int = 5, ppis:set = None , globalPVal:float = 0.05) -> None:
         """Executes  the White test (where H_0 is the homoskedasticity of the residuals, thence if the residuals are invariant to the change of x, 
         meaning that for y~x, x explains most of the variability, leaving no confounding factor out of the regression equation), for a global pValue, and with PPIs with at leats thresh samples
 
@@ -467,10 +489,10 @@ class ProteinsMatrix(MatrixData):
             Nonetype: None
         """
 
-        data = self.data.copy()
+        data = self.data.iloc[:,10:20].copy()
         if ppis is None:
             ppis: permutations[tuple[str, str]] = permutations(data.columns, 2)
-            
+
         whiteResults = {}
 
         for x,y in ppis:
@@ -496,7 +518,7 @@ class ProteinsMatrix(MatrixData):
                 xData = pd.DataFrame({'x':xData, 'intercept':np.ones(len(xData))})
 
                 #Calculating the White test
-                stat, pValue,_,_ = het_white(residuals, xData)
+                stat, pValue,_,_ = het_breuschpagan(residuals, xData)
 
                 whiteResults[(x,y)] = {'stat': stat, 'pValue': pValue}
         
@@ -512,6 +534,8 @@ class ProteinsMatrix(MatrixData):
         except:
             self.homoskeSummary = set()
             self.homoskeSummary.add((globalPVal,  thresh, ratioHeteroske, numPPIs))
+
+        print(self.homoskeSummary)
 
 
 
