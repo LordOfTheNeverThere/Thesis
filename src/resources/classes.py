@@ -1,6 +1,6 @@
 from __future__ import annotations #  postpone evaluation of annotations
 import pandas as pd
-from itertools import combinations, product, permutations
+from itertools import combinations, product, permutations, repeat
 import numpy as np
 import math
 from sklearn.metrics import auc
@@ -8,10 +8,11 @@ import pickle
 import gzip
 from scipy.special import stdtr
 from scipy.stats import pearsonr
+from statsmodels.stats.diagnostic import het_breuschpagan, het_white
 from statsmodels.stats.multitest import multipletests
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import normalize
-from scipy.stats import chi2
+from scipy.stats import chi2, shapiro
 import seaborn as sns
 import matplotlib.pyplot as plt
 import time as t
@@ -142,6 +143,17 @@ class ProteinsMatrix(MatrixData):
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
 
         super().__init__(filepath, data, **readerKwargs)
+
+    def __str__(self) -> str:
+        string =  super().__str__()
+
+        try:
+            for summary in self.normSummary:
+                
+                string +=  "\n" + f"For a Global p-value of {summary[0]:.2f} and a threshold of {summary[1]} samples, {summary[2]:.2f}% of the proteins are not normally distributed"
+            return string
+        except:
+            return string
 
     def pearsonCorrelations(self, columnName: str, thresholdInteraction:int = 5) -> PairwiseCorrMatrix:
         """Calculate the pearson correlations and corresponding p-value, displaying them in a pairwise manner, returning an instance of the PairwiseCorrMatrix class
@@ -396,8 +408,49 @@ class ProteinsMatrix(MatrixData):
         
         plt.close()
 
+    def shapiroWilksTest(self, thresh: int, globalPVal:float = 0.01) -> None:
+        """Performs the shappiro wilks test for each protein present and stores it in self.normTest and in self.normSummary
+
+        Args:
+            thresh (int): Minimum number of samples to perform the test
+            globalPVal (float): Global p-value threshold to reject the null hypothesis
+
+        Returns:
+            Nonetype: None
+        """
+
+        data = self.data.copy()
+        
+        shapiroResults = {}
+        testCounter = 0
+
+        for protein in data:
+            proteinData = data[protein].dropna()    
+
+            if len(proteinData) > thresh:
+                stat, pVal = shapiro(proteinData)
+                testCounter += 1
+            
+            else:
+                stat, pVal = np.nan, np.nan
+
+            shapiroResults[protein] = {'stat': stat, 'pValue': pVal}
+        
+        shapiroResults = pd.DataFrame(shapiroResults).T
+        print(shapiroResults.shape[0])
+        self.normTest = shapiroResults
+        relativePVal = globalPVal / testCounter
+        shapiroResults = shapiroResults.dropna(axis=0)
+        ratioNonNormal = (shapiroResults.query('pValue < @relativePVal').shape[0]/shapiroResults.shape[0]) * 100 # The smaller the pValue the more likely it is that the data is not normally distributed, we thence reject the null hypothesis that the data is normally distributed
+
+        try: # If the atribute doesn't exist we create it
+            self.normSummary.add((globalPVal,  thresh, ratioNonNormal))
+        except:
+            self.normSummary = set()
+            self.normSummary.add((globalPVal,  thresh, ratioNonNormal))
 
 
+        
 
 
 class PairwiseCorrMatrix(MatrixData):

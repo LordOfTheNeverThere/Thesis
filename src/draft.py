@@ -12,29 +12,40 @@ if __name__ == '__main__':
 
 
 
-    proteomics: pd.DataFrame = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz').data
-    x = proteomics.iloc[:,10].dropna()
-    y = proteomics.iloc[:,15].dropna()
-    samplesCommon = x.index.intersection(y.index)
-    x = x.loc[samplesCommon]
-    X = pd.DataFrame({'x':x, 'intercept':np.ones(len(x))})
-    y = y.loc[samplesCommon]
-    pearsonr(x,y)
+    proteomics: ProteinsMatrix = read(PATH + '/internal/ProteinsMatrix/ogProteomics.pickle.gz')
+    vaeProteomics: ProteinsMatrix = read(PATH + '/internal/ProteinsMatrix/proteomicsVAE.pickle.gz')
+    meanProteomics: ProteinsMatrix = read(PATH + '/internal/ProteinsMatrix/meanProteomics.pickle.gz')
+    proteomics.shapiroWilksTest(5)
+    vaeProteomics.shapiroWilksTest(5)
+    meanProteomics.shapiroWilksTest(5)
+    print(proteomics)
 
-    regressor = LinearRegression()
-    regressor.fit(x.values.reshape(-1,1), y.values.reshape(-1,1)) 
-    regressor.score(x.values.reshape(-1,1), y.values.reshape(-1,1))
 
-    residuals = y.values.reshape(-1,1) - regressor.predict(x.values.reshape(-1,1))
-    het_breuschpagan(residuals, X)
-    het_white(residuals, X)
+    proteomics.write(PATH + '/internal/ProteinsMatrix/ogProteomics.pickle.gz')
+    vaeProteomics.write(PATH + '/internal/ProteinsMatrix/proteomicsVAE.pickle.gz')
+    meanProteomics.write(PATH + '/internal/ProteinsMatrix/meanProteomics.pickle.gz')
+    # x = proteomics.iloc[:,10].dropna()
+    # y = proteomics.iloc[:,15].dropna()
+    # samplesCommon = x.index.intersection(y.index)
+    # x = x.loc[samplesCommon]
+    # X = pd.DataFrame({'x':x, 'intercept':np.ones(len(x))})
+    # y = y.loc[samplesCommon]
+    # pearsonr(x,y)
 
-    plt.close()
-    plt.scatter(x, y)
-    plt.show()
-    plt.close()
-    plt.scatter(x, residuals)
-    plt.show()
+    # regressor = LinearRegression()
+    # regressor.fit(x.values.reshape(-1,1), y.values.reshape(-1,1)) 
+    # regressor.score(x.values.reshape(-1,1), y.values.reshape(-1,1))
+
+    # residuals = y.values.reshape(-1,1) - regressor.predict(x.values.reshape(-1,1))
+    # het_breuschpagan(residuals, X)
+    # het_white(residuals, X)
+
+    # plt.close()
+    # plt.scatter(x, y)
+    # plt.show()
+    # plt.close()
+    # plt.scatter(x, residuals)
+    # plt.show()
     
 
 
