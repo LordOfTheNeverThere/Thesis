@@ -14,12 +14,23 @@ if __name__ == '__main__':
 
     proteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
     vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
-    meanProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/meanProteomics.pickle.gz')
+    meanProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75%PVProteomics.pickle.gz')
     # add noise to dataframe
-    vaeProteomics.shapiroWilksTest()
-    print(vaeProteomics.normTest.query('pValue == 0'))
-    wrapedProteomics, _ = ProteinsMatrix.whitening(vaeProteomics.data, np.cov(vaeProteomics.data), True)
+    proteomics.shapiroWilksTest()
+    print(proteomics.normTest.sort_values(by='pValue', ascending=True).head(10))
+    wrapedProteomics, _ = ProteinsMatrix.whitening(meanProteomics.data, np.cov(meanProteomics.data), True)
+    plt.close()
+    plt.hist([proteomics.data['H1-5'], wrapedProteomics['H1-5']], bins=50, label=['Original', 'Whitened'])
+    plt.xlabel('Protein Abundance')
+    plt.ylabel('Frequency')
+    plt.legend()
+    # show figure without cutting off labels
+    plt.tight_layout()
+    plt.show()
+
     ProteinsMatrix(None, wrapedProteomics).shapiroWilksTest()
+    
+
     # vaeProteomics.whiteTest(5)
     # meanProteomics.whiteTest(5)
     # print(proteomics)
