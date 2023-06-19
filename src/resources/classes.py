@@ -148,10 +148,15 @@ class ProteinsMatrix(MatrixData):
         string =  super().__str__()
 
         try:
-            for summary in self.normSummary:
-                
+
+            for summary in self.normSummary:    
                 string +=  "\n" + f"For a Global p-value of {summary[0]:.2f} and a threshold of {summary[1]} samples, {summary[2]:.2f}% of the proteins are not normally distributed"
+            
+            for summary in self.homoskeSummary:    
+                string +=  "\n" + f"For a Global p-value of {summary[0]:.2f} and a threshold of {summary[1]} samples, {summary[2]:.2f}% in {summary[3]} PPIs of after linear regression don't follow the homoskedasticity assumption"
+
             return string
+        
         except:
             return string
 
@@ -408,7 +413,8 @@ class ProteinsMatrix(MatrixData):
         
         plt.close()
 
-    def shapiroWilksTest(self, thresh: int, globalPVal:float = 0.01) -> None:
+    def shapiroWilksTest(self, thresh: int = 5, globalPVal:float = 0.01) -> None:
+
         """Performs the shappiro wilks test for each protein present and stores it in self.normTest and in self.normSummary
 
         Args:
@@ -427,7 +433,8 @@ class ProteinsMatrix(MatrixData):
         for protein in data:
             proteinData = data[protein].dropna()    
 
-            if len(proteinData) > thresh:
+            if len(proteinData) >= thresh:
+                print(proteinData)
                 stat, pVal = shapiro(proteinData)
                 testCounter += 1
             
@@ -437,7 +444,6 @@ class ProteinsMatrix(MatrixData):
             shapiroResults[protein] = {'stat': stat, 'pValue': pVal}
         
         shapiroResults = pd.DataFrame(shapiroResults).T
-        print(shapiroResults.shape[0])
         self.normTest = shapiroResults
         relativePVal = globalPVal / testCounter
         shapiroResults = shapiroResults.dropna(axis=0)
@@ -449,6 +455,66 @@ class ProteinsMatrix(MatrixData):
             self.normSummary = set()
             self.normSummary.add((globalPVal,  thresh, ratioNonNormal))
 
+    def whiteTest(self, thresh: int = 5, globalPVal:float = 0.05) -> None:
+        """Executes  the White test (where H_0 is the homoskedasticity of the residuals, thence if the residuals are invariant to the change of x, 
+        meaning that for y~x, x explains most of the variability, leaving no confounding factor out of the regression equation), for a global pValue, and with PPIs with at leats thresh samples
+
+        Args:
+            thresh (int, optional): The minimum number of samples required to calculate the test. Defaults to 5.
+            globalPVal (float, optional): p-value subject to the bonferroni correction. Defaults to 0.01.
+
+        Returns:
+            Nonetype: None
+        """
+
+        data = self.data.copy()
+        allPosiblePPIs: permutations[tuple[str, str]] = permutations(data.columns, 2)
+        whiteResults = {}
+
+        for x,y in allPosiblePPIs:
+
+
+            #Getting and Processing Data
+            xData = data[x].dropna()
+            yData = data[y].dropna()
+            samplesCommon = xData.index.intersection(yData.index)
+
+            if len(samplesCommon) >= thresh:
+                
+                xData = xData.loc[samplesCommon]
+                yData = yData.loc[samplesCommon]
+                
+                #Fitting the model (Classical Linear regression)
+                regressor = LinearRegression()
+                regressor.fit(xData.values.reshape(-1,1), yData.values.reshape(-1,1)) 
+                yPred = regressor.predict(xData.values.reshape(-1,1))
+                #Calculating the residuals
+                residuals = yData.values.reshape(-1,1) - yPred
+                #Add intercept to the data
+                xData = pd.DataFrame({'x':xData, 'intercept':np.ones(len(xData))})
+
+                #Calculating the White test
+                stat, pValue,_,_ = het_white(residuals, xData)
+
+                whiteResults[(x,y)] = {'stat': stat, 'pValue': pValue}
+        
+        whiteResults = pd.DataFrame(whiteResults).T.reset_index(names=['proteinA', 'proteinB']) # This allows for a compatible merging with PaiwiseCorrMatrix objects
+        self.homoskeTest = whiteResults
+        numPPIs = whiteResults.shape[0]
+        relativePVal = globalPVal / numPPIs
+        whiteResults = whiteResults.dropna(axis=0)
+
+        ratioHeteroske = (whiteResults.query('pValue < @relativePVal').shape[0]/whiteResults.shape[0]) * 100 # The smaller the pValue the more likely it is that the residuals are heteroskedastic, we thence reject the null hypothesis that the residuals are invariant when regressed with x, homoskedastic
+        try: # If the atribute doesn't exist we create it
+            self.homoskeSummary.add((globalPVal,  thresh, ratioHeteroske))
+        except:
+            self.homoskeSummary = set()
+            self.homoskeSummary.add((globalPVal,  thresh, ratioHeteroske, numPPIs))
+
+
+
+
+        
 
         
 

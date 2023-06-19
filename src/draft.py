@@ -15,9 +15,9 @@ if __name__ == '__main__':
     proteomics: ProteinsMatrix = read(PATH + '/internal/ProteinsMatrix/ogProteomics.pickle.gz')
     vaeProteomics: ProteinsMatrix = read(PATH + '/internal/ProteinsMatrix/proteomicsVAE.pickle.gz')
     meanProteomics: ProteinsMatrix = read(PATH + '/internal/ProteinsMatrix/meanProteomics.pickle.gz')
-    proteomics.shapiroWilksTest(5)
-    vaeProteomics.shapiroWilksTest(5)
-    meanProteomics.shapiroWilksTest(5)
+    proteomics.whiteTest(5)
+    vaeProteomics.whiteTest(5)
+    meanProteomics.whiteTest(5)
     print(proteomics)
 
 
