@@ -12,13 +12,13 @@ if __name__ == '__main__':
 
 
 
-    proteomics: ProteinsMatrix = read(PATH + '/internal/ProteinsMatrix/ogProteomics.pickle.gz')
-    vaeProteomics: ProteinsMatrix = read(PATH + '/internal/ProteinsMatrix/proteomicsVAE.pickle.gz')
-    meanProteomics: ProteinsMatrix = read(PATH + '/internal/ProteinsMatrix/meanProteomics.pickle.gz')
+    proteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
+    vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
+    meanProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/meanProteomics.pickle.gz')
     # add noise to dataframe
-    meanProteomics.shapiroWilksTest()
-    print(meanProteomics.normTest.query('pValue == 0'))
-    wrapedProteomics, _ = ProteinsMatrix.whitening(meanProteomics.data, np.cov(meanProteomics.data), True)
+    vaeProteomics.shapiroWilksTest()
+    print(vaeProteomics.normTest.query('pValue == 0'))
+    wrapedProteomics, _ = ProteinsMatrix.whitening(vaeProteomics.data, np.cov(vaeProteomics.data), True)
     ProteinsMatrix(None, wrapedProteomics).shapiroWilksTest()
     # vaeProteomics.whiteTest(5)
     # meanProteomics.whiteTest(5)
