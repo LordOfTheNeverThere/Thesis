@@ -455,7 +455,7 @@ class ProteinsMatrix(MatrixData):
             self.normSummary = set()
             self.normSummary.add((globalPVal,  thresh, ratioNonNormal))
 
-    def whiteTest(self, thresh: int = 5, globalPVal:float = 0.05) -> None:
+    def whiteTest(self, ppis:set = None , thresh: int = 5, globalPVal:float = 0.05) -> None:
         """Executes  the White test (where H_0 is the homoskedasticity of the residuals, thence if the residuals are invariant to the change of x, 
         meaning that for y~x, x explains most of the variability, leaving no confounding factor out of the regression equation), for a global pValue, and with PPIs with at leats thresh samples
 
@@ -468,10 +468,12 @@ class ProteinsMatrix(MatrixData):
         """
 
         data = self.data.copy()
-        allPosiblePPIs: permutations[tuple[str, str]] = permutations(data.columns, 2)
+        if ppis is None:
+            ppis: permutations[tuple[str, str]] = permutations(data.columns, 2)
+            
         whiteResults = {}
 
-        for x,y in allPosiblePPIs:
+        for x,y in ppis:
 
 
             #Getting and Processing Data
