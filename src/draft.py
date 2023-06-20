@@ -14,29 +14,17 @@ if __name__ == '__main__':
 
     proteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
     vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
-    meanProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75%PVProteomics.pickle.gz')
-    # add noise to dataframe
+    meanProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/mean80%PVProteomics.pickle.gz')
+
+
     proteomics.shapiroWilksTest()
-    before = proteomics.normTest.sort_values(by='pValue', ascending=True)
-    wrapedProteomics, _ = ProteinsMatrix.whitening(meanProteomics.data, np.cov(meanProteomics.data), True)
-    plt.close()
-    plt.hist([proteomics.data['YWHAH'], wrapedProteomics['YWHAH']], bins=100, label=['Original', 'Whitened'])
-    plt.xlabel('Protein Abundance')
-    plt.ylabel('Frequency')
-    plt.legend()
-    # show figure without cutting off labels
-    plt.tight_layout()
-    plt.show()
+    vaeProteomics.shapiroWilksTest()
+    meanProteomics.shapiroWilksTest()
 
-    withenedProte = ProteinsMatrix(None, wrapedProteomics)
-    withenedProte.shapiroWilksTest()
-    after = withenedProte.normTest.sort_values(by='pValue', ascending=True)
-    comaparison = before.merge(after, suffixes=('Before', 'After'), how='inner', left_index=True, right_index=True)   
-    comaparison['deltaPValue'] = comaparison['pValueAfter'] - comaparison['pValueBefore']
-    comaparison.sort_values(by='deltaPValue', ascending=False, inplace=True)
-
-    # vaeProteomics.whiteTest(5)
-    # meanProteomics.whiteTest(5)
+    whitened,_=ProteinsMatrix.whitening(vaeProteomics, vaeProteomics, saveIndexes=True)
+    whitened = ProteinsMatrix(None, whitened)
+    whitened.data.describe().loc['std'].describe()
+    whitened.shapiroWilksTest()
     # print(proteomics)
 
 

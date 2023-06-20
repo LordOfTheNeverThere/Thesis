@@ -265,27 +265,41 @@ class ProteinsMatrix(MatrixData):
         print('Statistical Description of the Pearson Correlation between TLS and Mahalanobis distance \n' + str(pd.DataFrame(correlationsTLSMahal).describe())) 
         tlsResData = tlsResData.join(tlsResList, how='outer')
         return ResiduesMatrix(None,tlsResData)
+    
+
     @classmethod
-    def whitening(cls, proteinData, covMatrix, saveIndexes:bool= False) -> tuple[Any, Any]:
+    def whitening(cls, proteinData:ProteinsMatrix, covMatrix:ProteinsMatrix, saveIndexes:bool= False) -> tuple[Any, Any]:
         """Whitten the proteinData, so that each covariate has the same variance, which is equal to one
 
         Args:
-            covMatrix (_type_):The covariance Matrix to withen the data
+            covMatrix (_type_):The Protein Data to calculate the covariance Matrix in order to withen the data
 
         Returns:
             tuple[Any, Any]: the warped X to be used in the linear regression and the intercept, which is the mean of the variances of a sample across all gene symbols
         """        
         #invert it the covariance matrix
+        proteinData = proteinData.data
+        covMatrix = covMatrix.data
+        samplesCommon = proteinData.index.intersection(covMatrix.index)
+        print(len(samplesCommon))
+        if len(samplesCommon) < len(proteinData.index):
+            print(f"We have lost {len(proteinData.index) - len(samplesCommon)} samples ")
+
+        proteinData = proteinData.loc[samplesCommon]
+        covMatrix = covMatrix.loc[samplesCommon]
+        
+        covMatrix = np.cov(covMatrix)
         covMatrix = np.linalg.inv(covMatrix)
 
         # Decompose it with Cholesky, returning the lower triangular matrix of the positive definite matrix covMatrix, because cov(x1,x2) == cov(x2,x1)
         cholsigmainvMean = np.linalg.cholesky(covMatrix)
 
+
         # Whittening transformation, we codify our data into a space where each the variance of each covariate is the same and equal to one, 
         # so we are kind like normalising it, in fact that's exactly what we are doing ~ N(0,I) As they call it warping...
         warpedProteinsMean = proteinData.T.values @ cholsigmainvMean
 
-        # The Mean of the variances of a sample across all gene symbols is used as a beta0 for linear regression
+        # The intercept is the sum of the choleski decomposition matrix, when the sum equals to one that sample is independent from all the others
         warpedIntereceptMean = cholsigmainvMean.T.sum(axis=0)
 
         if saveIndexes:
