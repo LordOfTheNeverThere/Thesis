@@ -17,10 +17,10 @@ if __name__ == '__main__':
     meanProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75%PVProteomics.pickle.gz')
     # add noise to dataframe
     proteomics.shapiroWilksTest()
-    print(proteomics.normTest.sort_values(by='pValue', ascending=True).head(10))
+    before = proteomics.normTest.sort_values(by='pValue', ascending=True)
     wrapedProteomics, _ = ProteinsMatrix.whitening(meanProteomics.data, np.cov(meanProteomics.data), True)
     plt.close()
-    plt.hist([proteomics.data['H1-5'], wrapedProteomics['H1-5']], bins=50, label=['Original', 'Whitened'])
+    plt.hist([proteomics.data['YWHAH'], wrapedProteomics['YWHAH']], bins=100, label=['Original', 'Whitened'])
     plt.xlabel('Protein Abundance')
     plt.ylabel('Frequency')
     plt.legend()
@@ -28,8 +28,12 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.show()
 
-    ProteinsMatrix(None, wrapedProteomics).shapiroWilksTest()
-    
+    withenedProte = ProteinsMatrix(None, wrapedProteomics)
+    withenedProte.shapiroWilksTest()
+    after = withenedProte.normTest.sort_values(by='pValue', ascending=True)
+    comaparison = before.merge(after, suffixes=('Before', 'After'), how='inner', left_index=True, right_index=True)   
+    comaparison['deltaPValue'] = comaparison['pValueAfter'] - comaparison['pValueBefore']
+    comaparison.sort_values(by='deltaPValue', ascending=False, inplace=True)
 
     # vaeProteomics.whiteTest(5)
     # meanProteomics.whiteTest(5)
