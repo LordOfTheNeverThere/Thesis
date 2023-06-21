@@ -4,12 +4,25 @@ import matplotlib.pyplot as plt
 from resources import *
 import numpy as np
 from sklearn.linear_model import LinearRegression
-from scipy.stats import shapiro, pearsonr
+from scipy.stats import shapiro, pearsonr, chi2_contingency
 from statsmodels.stats.diagnostic import het_white, het_breuschpagan
 
 
 if __name__ == '__main__':
 
+    # Create a sample matrix
+    def isCovIdentity(data) -> None:
+
+        covMatrix = np.cov(data)
+
+        # Create the expected identity matrix
+        expected_matrix = np.eye(covMatrix.shape[0])
+
+        # Perform the chi-square test
+        chi2, p_value, _, _ = chi2_contingency(covMatrix)
+
+        print("Chi-square statistic:", chi2)
+        print("P-value:", p_value)
 
 
     proteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
@@ -17,14 +30,20 @@ if __name__ == '__main__':
     meanProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/mean80%PVProteomics.pickle.gz')
 
 
-    proteomics.shapiroWilksTest()
-    vaeProteomics.shapiroWilksTest()
-    meanProteomics.shapiroWilksTest()
+    # proteomics.shapiroWilksTest()
+    # vaeProteomics.shapiroWilksTest()
+    # meanProteomics.shapiroWilksTest()
+    isCovIdentity(proteomics.data)
+    isCovIdentity(vaeProteomics.data)
+    isCovIdentity(meanProteomics.data)
 
-    whitened,_=ProteinsMatrix.whitening(vaeProteomics, vaeProteomics, saveIndexes=True)
-    whitened = ProteinsMatrix(None, whitened)
-    whitened.data.describe().loc['std'].describe()
-    whitened.shapiroWilksTest()
+    vaeProteomics,_=ProteinsMatrix.whitening(vaeProteomics, vaeProteomics, saveIndexes=True)
+    vaeProteomics = ProteinsMatrix(None, vaeProteomics)
+    isCovIdentity(vaeProteomics.data)
+
+    meanProteomics,_=ProteinsMatrix.whitening(meanProteomics, meanProteomics, saveIndexes=True)
+    meanProteomics = ProteinsMatrix(None, meanProteomics)
+    isCovIdentity(meanProteomics.data)
     # print(proteomics)
 
 
