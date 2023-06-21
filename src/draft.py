@@ -13,7 +13,7 @@ if __name__ == '__main__':
     # Create a sample matrix
     def isCovIdentity(data) -> None:
 
-        covMatrix = np.cov(data)
+        covMatrix = abs(np.cov(data))
 
         # Create the expected identity matrix
         expected_matrix = np.eye(covMatrix.shape[0])
