@@ -15,8 +15,8 @@ if __name__ == '__main__':
     # get data to run lienar model with TLS residuals and plot significant associations with proteomics data
     drugRes = read(PATH + '/internal/drugResponse.pickle.gz')
     samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
-    ogProteomics: ProteinsMatrix = read(PATH + '/internal/ogProteomics.pickle.gz')
-    vaeProteomics:ProteinsMatrix= read(PATH + '/internal/proteomicsVAE.pickle.gz') 
+    ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
+    vaeProteomics:ProteinsMatrix= read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz') 
 
 
     #Fit and test linear model for associations from VAE proteomics data's residuals
