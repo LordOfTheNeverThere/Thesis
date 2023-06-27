@@ -12,45 +12,28 @@ from resources import ResidualsLinearModel, ResiduesMatrix, read, PATH, Proteins
 
 if __name__ == '__main__':
 
+    # get data to run lienar model with TLS residuals and plot significant associations with proteomics data
     drugRes = read(PATH + '/internal/drugResponse.pickle.gz')
     samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
-    
-
-
-    # regressionRes: ResidualsLinearModel = read(PATH + '/internal/regressionGlSGreater0.65MeanProteomics.pickle.gz')
-
-
     ogProteomics: ProteinsMatrix = read(PATH + '/internal/ogProteomics.pickle.gz')
-    # meanProteomics = read(PATH + '/internal/meanProteomics.pickle.gz') 
     vaeProteomics:ProteinsMatrix= read(PATH + '/internal/proteomicsVAE.pickle.gz') 
 
 
-    # regressionRes.plotSignificantAssociation(meanProteomics, drugRes, 'pxpyTestingEffectSizeOfResidualsGLSGreater0.65ProteinMean.png')^
-
-    vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/VAEGLSPairCorr.pickle.gz')
-
-    # ppisOfInterest = set(vaeGLSPairwise.data.query("pValue < 0.001 & corum == 1").copy().index)
-    # residuals = vaeProteomics.calculateResidues(ppisOfInterest)
-    # residuals.write(PATH + '/internal/residuals/GLSPValueLess0.001VAEProteomics/residuals.pickle.gz')
-
+    #Fit and test linear model for associations from VAE proteomics data's residuals
     residuals:ResiduesMatrix = read(PATH + '/internal/residuals/GLSPValueLess0.001VAEProteomics/residuals.pickle.gz')
 
-    regressor = residuals.getLinearModel(drugRes, samplesheet, 'malahanobis')
+    regressor = residuals.getLinearModel(drugRes, samplesheet)
 
     print(regressor.data['beta'].describe())
     regressor.plotSignificantAssociation(vaeProteomics, drugRes, 'pxpyTestingEffectSizeOfResidualsGLSPValueLess0.001VAEProteomics.png')
     regressor.write(PATH + '/internal/residuals/GLSPValueLess0.001VAEProteomics/regressionMalahanobis.pickle.gz')
 
+    #Fit and test linear model for associations from OG proteomics data's residuals
 
-    baseModel :PairwiseCorrMatrix = read(PATH + '/internal/baseModelFiltered.pickle.gz')
-    ppisOfInterest = set(baseModel.data.query("pValue < 0.001 & corum == 1").copy().index)
-    print(len(ppisOfInterest))
+    pearsonResiduals = read(PATH + '/internal/residuals/pearsonPValueLess0.001OgProteomics/residuals.pickle.gz')
 
-    pearsonResiduals: ResiduesMatrix = ogProteomics.calculateResidues(ppisOfInterest)
-    pearsonResiduals.write(PATH + '/internal/residuals/pearsonPValueLess0.001OgProteomics/residuals.pickle.gz')
+    pearsonrRegressor = pearsonResiduals.getLinearModel(drugRes, samplesheet)
 
-    pearsonrRegressor = pearsonResiduals.getLinearModel(drugRes, samplesheet, 'malahanobis')
-
-    print(pearsonrRegressor.data.iloc[:,-11:-1])
+    print(pearsonrRegressor.data['beta'].describe())
     pearsonrRegressor.plotSignificantAssociation(ogProteomics, drugRes, 'pxpyTestingEffectSizeOfResidualsPearsonPValueLess0.001OgProteomics.png')
     pearsonrRegressor.write(PATH + '/internal/residuals/pearsonPValueLess0.001OgProteomics/regressionMalahanobis.pickle.gz')

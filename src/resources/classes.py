@@ -747,15 +747,13 @@ class ResiduesMatrix(MatrixData):
     def __init__(self, filepath: str=None, data: pd.DataFrame=None, **readerKwargs):
         super().__init__(filepath, data, **readerKwargs)
 
-    def getLinearModel(self, drugResponse: DrugResponseMatrix, samplesheet:pd.DataFrame, residualsType:str)->ResidualsLinearModel:
+    def getLinearModel(self, drugResponse: DrugResponseMatrix, samplesheet:pd.DataFrame, residualsType:str='TLS')->ResidualsLinearModel:
 
         X = self.data.copy()
         Y: pd.DataFrame = drugResponse.data.copy().T # Samples should be rows and not columns
         Y = Y.fillna(Y.mean(axis=0))
-        print(Y)
         
         confoundingFactors = samplesheet[['tissue', 'growth_properties']].dropna(axis=0, how='any')
-        confoundingFactors['hymCellLine'] = (confoundingFactors['tissue'] == 'Haematopoietic and Lymphoid').astype(int)
         confoundingFactors['lung'] = (confoundingFactors['tissue'] == 'lung').astype(int)
         confoundingFactors = pd.get_dummies(confoundingFactors, columns=['growth_properties'], prefix='', prefix_sep='')
         confoundingFactors = confoundingFactors.drop(columns=['tissue'])
