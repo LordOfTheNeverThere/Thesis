@@ -11,7 +11,7 @@ from scipy.stats import pearsonr
 from statsmodels.stats.diagnostic import het_breuschpagan, het_white
 from statsmodels.stats.multitest import multipletests
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize, QuantileTransformer
 from scipy.stats import chi2, shapiro
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -19,6 +19,7 @@ import time as t
 from typing import Iterable,Any
 from resources import *
 
+quantileNorm = QuantileTransformer(output_distribution='normal')
 
 def calcMahalanobis(y:pd.DataFrame, data: pd.DataFrame, cov:pd.DataFrame=None):
 
@@ -433,7 +434,8 @@ class ProteinsMatrix(MatrixData):
 
         data = pd.DataFrame({'px': px, 'py': py, 'drugResponse': drugResponse})
         colors = {0: 'green', 1: 'red'}
-
+        #change dot size onm the scatter plot
+        plt.figure(figsize=(15, 15))	
         plt.scatter(data['px'], data['py'], c=data['drugResponse'].map(colors), label=[colors.values(), colors.keys()])
         plt.title('Protein expression \n with Drug Response, >50% [drugMax]')
         plt.xlabel(str(pxName))
@@ -753,9 +755,8 @@ class ResiduesMatrix(MatrixData):
         Y: pd.DataFrame = drugResponse.data.copy().T # Samples should be rows and not columns
         Y = Y.fillna(Y.mean(axis=0))
         
-        confoundingFactors = samplesheet[['tissue', 'growth_properties']].dropna(axis=0, how='any')
+        confoundingFactors = samplesheet[['tissue']].dropna(axis=0, how='any')
         confoundingFactors['lung'] = (confoundingFactors['tissue'] == 'lung').astype(int)
-        confoundingFactors = pd.get_dummies(confoundingFactors, columns=['growth_properties'], prefix='', prefix_sep='')
         confoundingFactors = confoundingFactors.drop(columns=['tissue'])
 
         regressor = ResidualsLinearModel(Y, X, confoundingFactors, residualsType=residualsType)
@@ -800,7 +801,12 @@ class GeneralLinearModel(MatrixData):
         self.X_ma = np.ma.masked_invalid(self.X.values)
 
         self.Y = Y.loc[self.samples]
+        print(self.Y.shape)
         self.Y = self.Y.loc[:, self.Y.std() > 0]
+        print(self.Y.shape)
+        print(self.Y)
+        self.Y = pd.DataFrame(quantileNorm.fit_transform(self.Y), columns=self.Y.columns, index=self.Y.index)
+        print(self.Y)
 
         self.M = M.loc[self.samples]
 
