@@ -77,6 +77,27 @@ class MatrixData:
         right: pd.DataFrame = other.query(queryOther).copy()
 
         return left.merge(right, on=key)
+    
+    def getUniqueSetValues(self, feature: str):
+        """Returns a set of unique values from a feature of a dataframe
+
+        Args:
+            feature (str): The column name to extract the unique set of values
+
+        Returns:
+            set: The uniqye set of values in a column of a Dataframe
+            dict: Dictionary with the keys are the unique values in a column and the values(of the dict) as the number of
+            occurances in of each value(of the feature)
+        """
+
+    
+        data = self.data.copy()
+        setOfValues = data[feature].unique()
+        setOfValues = set(setOfValues)
+        # occurancesDict = data.groupby(feature).count().to_dict()[feature]
+
+        return setOfValues, None
+
 class ppiDataset(MatrixData):
 
     def __init__(self, filepath:str = None, data: pd.DataFrame = None, proteinLabels: list = [], **readerKwargs):
@@ -445,6 +466,60 @@ class ProteinsMatrix(MatrixData):
         plt.savefig(filepath)
 
         
+        plt.close()
+    
+    def plotPxPySample(self, ppis: list[str], filepath: str, sampleProp: str) -> None:
+        """Plots the px against py proteins for each ppi in ppis, and colors the samples according to the sampleProp
+        """
+
+        data = self.data.copy()
+        samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
+        samplesCommon = data.index.intersection(samplesheet.index)
+        if len(samplesCommon) < data.shape[0]:
+            print('We have lost samples for proteomics since the samplesheet did not completely overlap with our samples, check for an updated samplesheet')
+        data = data.loc[samplesCommon, :]
+        samplesheet = samplesheet.loc[samplesCommon, :]
+        uniquePropValues = list(MatrixData(None, samplesheet).getUniqueSetValues(sampleProp)[0])
+        if len(uniquePropValues) > 150:
+            print(
+                f'There are more than 150 unique values for {sampleProp}, which is not very informative, please choose a different sampleProp')
+            return None
+        colors = {value: color for value, color in zip(uniquePropValues, sns.color_palette('hls', len(uniquePropValues)))}
+        numPPIs = len(ppis)
+
+        # Setting up plot axes
+
+        fig, ax = plt.subplots(numPPIs, 1, figsize=(15, 15*numPPIs))
+
+        for index, ppi in enumerate(ppis):
+
+            pxpyNames = ppi.split(';')
+            pxName, pyName = pxpyNames[0], pxpyNames[1]
+            px, py = data[pxName], data[pyName]
+            samplesCommon = px.index.intersection(py.index)
+            # Get only relevant samples and data
+            px, py = px.loc[samplesCommon], py.loc[samplesCommon]
+            
+            try:
+                samplePropData =  samplesheet.loc[samplesCommon, sampleProp].fillna('NaN')
+            except:
+                print("No Samples in Commmon between pxpy and feature")
+                continue
+            
+
+            plottingData = pd.DataFrame(
+                {'px': px, 'py': py, sampleProp: samplePropData})
+
+            ax[index].scatter(plottingData['px'], plottingData['py'], c=plottingData[sampleProp].map(
+                colors), label=[colors.values(), colors.keys()])
+            ax[index].set_title('test')
+            ax[index].set_xlabel(pxName)
+            ax[index].set_ylabel(pyName)
+            legend = [plt.Line2D([0], [0], marker='.', color=colors[key], label=f'{sampleProp} = ' + str(key)) for key in colors]
+            ax[index].legend(handles=legend, fontsize=8, framealpha=0.2)
+
+        # Save
+        fig.savefig(filepath)
         plt.close()
 
     def shapiroWilksTest(self, thresh: int = 5, globalPVal:float = 0.01) -> None:

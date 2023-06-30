@@ -8,8 +8,6 @@ import gzip
 from resources import *
 
 
-
-
 # def getPairwiseCorrData(data: pd.DataFrame, columnName :str ='correlation') -> pd.Series:
 #     """ DEPRECATED
 #     Gets a series of a pairwise correlations from all pairs of proteins
@@ -88,7 +86,7 @@ from resources import *
 #     return data
 
 
-def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str, counting:bool = True) -> pd.DataFrame:
+def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str, counting: bool = True) -> pd.DataFrame:
     """_summary_
 
     Args:
@@ -101,38 +99,41 @@ def getPairwiseCorrelation(data: pd.DataFrame, fileName: str, columnName: str, c
     data = data.copy()
     # Correlation Matrix
     pearsonCorrMatrix = data.corr(method='pearson').round(decimals=4)
-    
-    pairwiseCorrData = pearsonCorrMatrix.where(np.triu(np.ones(pearsonCorrMatrix.shape), k=1).astype(bool)).stack().reset_index()
-    pairwiseCorrData['PPI'] = pairwiseCorrData['level_0'] +";" + pairwiseCorrData['level_1']
+
+    pairwiseCorrData = pearsonCorrMatrix.where(np.triu(
+        np.ones(pearsonCorrMatrix.shape), k=1).astype(bool)).stack().reset_index()
+    pairwiseCorrData['PPI'] = pairwiseCorrData['level_0'] + \
+        ";" + pairwiseCorrData['level_1']
     pairwiseCorrData.drop(columns=['level_0', 'level_1'], inplace=True)
     pairwiseCorrData = pairwiseCorrData.set_index('PPI')
-    pairwiseCorrData.columns=[columnName]
-    
+    pairwiseCorrData.columns = [columnName]
+
     if counting:
-        
+
         # Co-occorance Matrix
-        coOccuranceMatrix = (data/data).fillna(0).astype(int) #Get 1 and 0 depending on if there is a value or not in a specific spot
-        coOccuranceMatrix = coOccuranceMatrix.T.dot(coOccuranceMatrix)  #Simple linear algebra to get the co-occurance values
-        coOccuranceData = coOccuranceMatrix.where(np.triu( np.ones(coOccuranceMatrix.shape), k=1).astype(bool)).stack().reset_index()
-        coOccuranceData['PPI'] = coOccuranceData['level_0'] +";" + coOccuranceData['level_1']
+        # Get 1 and 0 depending on if there is a value or not in a specific spot
+        coOccuranceMatrix = (data/data).fillna(0).astype(int)
+        # Simple linear algebra to get the co-occurance values
+        coOccuranceMatrix = coOccuranceMatrix.T.dot(coOccuranceMatrix)
+        coOccuranceData = coOccuranceMatrix.where(np.triu(
+            np.ones(coOccuranceMatrix.shape), k=1).astype(bool)).stack().reset_index()
+        coOccuranceData['PPI'] = coOccuranceData['level_0'] + \
+            ";" + coOccuranceData['level_1']
         coOccuranceData.drop(columns=['level_0', 'level_1'], inplace=True)
         coOccuranceData = coOccuranceData.set_index('PPI')
         coOccuranceData.columns = ['counts']
         pairwiseCorrData = pairwiseCorrData.merge(
             coOccuranceData, on='PPI', how='left')
 
+    pairwiseCorrData.sort_values(by=columnName, ascending=False, inplace=True)
 
-    
-    
-    pairwiseCorrData.sort_values(by=columnName,ascending=False, inplace=True)
-    
     if fileName:
         pairwiseCorrData.to_csv(PATH + '/internal/' + fileName + '.csv')
 
     return pairwiseCorrData
 
 
-def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, filename:str = None):
+def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, filename: str = None):
     """Append the binary values of a putative PPI, from an external dataset (e.g Corum), to our pairwise correlation Dataframe
 
     Args:
@@ -150,23 +151,24 @@ def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, file
 
         found = 0
         [proteinA, proteinB] = model.name.split(';')
-        ppiAB: tuple = (proteinA, proteinB) #In my implementation the ppis have (A,B) but not (B,A), they are combinations
+        # In my implementation the ppis have (A,B) but not (B,A), they are combinations
+        ppiAB: tuple = (proteinA, proteinB)
         ppiBA: tuple = (proteinB, proteinA)
-        
+
         if ppiAB in ppis or ppiBA in ppis:
             found = 1
-            
+
         model[externalDatasetName] = found
 
         return model[externalDatasetName]
 
     data[externalDatasetName] = data.apply(
-        axis=1, func= lambda model: addExternalTrueY(model))
-    
+        axis=1, func=lambda model: addExternalTrueY(model))
+
     if filename:
 
         data.to_csv(PATH + '/internal/' + filename + '.csv')
-    
+
     return data
 
 
@@ -191,24 +193,24 @@ def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, file
 #         found = 0
 #         index = 0
 #         [proteinA, proteinB] = model.name.split(';')
-        
+
 
 #         proteinANode :TreeNode  = ppiTree.getNodeFirstLayer(proteinA)
-        
+
 #         if proteinANode and proteinB in proteinANode.getChildrenValue():
 #             found = 1
-            
+
 #         model[externalDatasetName] = found
 
 #         return model[externalDatasetName]
 
 #     data[externalDatasetName] = data.apply(
 #         axis=1, func= lambda model: addExternalTrueY(model))
-    
+
 #     if filename:
 
 #         data.to_csv(PATH + '/internal/' + filename + '.csv')
-    
+
 #     return data
 
 
@@ -239,9 +241,7 @@ def addGroundTruth(ppis: set, data: pd.DataFrame, externalDatasetName: str, file
 #     return listOfSets
 
 
-
-
-def getModelsByQuery(datasetToQuery: MatrixData, featureToQuery:str, valueToQuery)->set:
+def getModelsByQuery(datasetToQuery: MatrixData, featureToQuery: str, valueToQuery) -> set:
     """This func does a query on 3 of possible datasets (samplesheet, drugresponse, CRISPR) and returns a list of the models that
     abide by this query
 
@@ -253,13 +253,13 @@ def getModelsByQuery(datasetToQuery: MatrixData, featureToQuery:str, valueToQuer
     Returns:
         set: Returns a set composed of all models abiding by the query
     """
-        
 
     queriedDataset = datasetToQuery.query(f"{featureToQuery} == @valueToQuery")
 
     return set(queriedDataset.index)
 
-def getUniqueSetValues(filepath: str, feature: str):
+
+def getUniqueSetValues(data: pd.DataFrame, feature: str):
     """Returns a set of unique values from a feature of a dataframe
 
     Args:
@@ -272,17 +272,15 @@ def getUniqueSetValues(filepath: str, feature: str):
         occurances in of each value(of the feature)
     """
 
-    
-    data = pd.read_csv(index_col='model_id', filepath_or_buffer=filepath)
     setOfValues = data[feature].unique()
     setOfValues = set(setOfValues)
     occurancesDict = data.groupby(
-        feature).count().to_dict()['model_name']
-
+        feature).count().to_dict()[feature]
 
     return setOfValues, occurancesDict
 
-def drawRecallCurves(paiwiseMatrices : list[PairwiseCorrMatrix], colours: list, filename: str, proxyColumn:str):
+
+def drawRecallCurves(paiwiseMatrices: list[PairwiseCorrMatrix], colours: list, filename: str, proxyColumn: str):
 
     _, ax = plt.subplots(1, 1, figsize=(4, 3), dpi=600)
 
@@ -304,6 +302,7 @@ def drawRecallCurves(paiwiseMatrices : list[PairwiseCorrMatrix], colours: list, 
     plt.savefig('../images/' + filename, bbox_inches="tight")
     plt.close("all")
 
+
 def read(filepath: str):
     """Load one of the pickled objects stored in filepath
 
@@ -322,7 +321,7 @@ def read(filepath: str):
     return object
 
 
-def pxPyScatterPlots(other:PairwiseCorrMatrix, limitsR: tuple[float], limitsMetricOther:tuple[ﬂoat], corum:int, lung:bool,sortingColum:str, ascending:bool)->None:
+def pxPyScatterPlots(other: PairwiseCorrMatrix, limitsR: tuple[float], limitsMetricOther: tuple[ﬂoat], corum: int, lung: bool, sortingColum: str, ascending: bool) -> None:
     """Creates a scatter plot with top 5 PPI according with queries done to the 
 
     Args:
@@ -334,7 +333,7 @@ def pxPyScatterPlots(other:PairwiseCorrMatrix, limitsR: tuple[float], limitsMetr
         ascending (bool): _description_
     """
 
-    #Dissect Code And Restructure
+    # Dissect Code And Restructure
 
     """    limitsR = (-0.01,0.01)
     limitsGLS = (-0.5,0.5)

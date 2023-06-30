@@ -1,6 +1,7 @@
 # Imports
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 from resources import *
 import numpy as np
 from sklearn.linear_model import LinearRegression
@@ -10,42 +11,17 @@ from statsmodels.stats.diagnostic import het_white, het_breuschpagan
 
 if __name__ == '__main__':
 
-    # Create a sample matrix
-    def isCovIdentity(data) -> None:
 
-        covMatrix = abs(np.cov(data))
+    proteomicsOG: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
+    vaeGLSPearson = read(PATH + '/internal/pairwiseCorrs/VAE/glsPearsonPairCorr.pickle.gz')
+    setPPISOfInterest = list(vaeGLSPearson.data.sort_values(by='pValuePearson-GLS', ascending=False).query('corum == 1').head(5).index)
 
-        # Create the expected identity matrix
-        expected_matrix = np.eye(covMatrix.shape[0])
-
-        # Perform the chi-square test
-        chi2, p_value, _, _ = chi2_contingency(covMatrix)
-
-        print("Chi-square statistic:", chi2)
-        print("P-value:", p_value)
+    featuresOfInterest = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0).columns[2:-1]
 
 
-    proteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
-    vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
-    meanProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/mean80%PVProteomics.pickle.gz')
-
-
-    # proteomics.shapiroWilksTest()
-    # vaeProteomics.shapiroWilksTest()
-    # meanProteomics.shapiroWilksTest()
-    isCovIdentity(proteomics.data)
-    isCovIdentity(vaeProteomics.data)
-    isCovIdentity(meanProteomics.data)
-
-    vaeProteomics,_=ProteinsMatrix.whitening(vaeProteomics, vaeProteomics, saveIndexes=True)
-    vaeProteomics = ProteinsMatrix(None, vaeProteomics)
-    isCovIdentity(vaeProteomics.data)
-
-    meanProteomics,_=ProteinsMatrix.whitening(meanProteomics, meanProteomics, saveIndexes=True)
-    meanProteomics = ProteinsMatrix(None, meanProteomics)
-    isCovIdentity(meanProteomics.data)
-    # print(proteomics)
-
+    for feature in featuresOfInterest:
+        print(feature)
+        proteomicsOG.plotPxPySample(setPPISOfInterest, f'scatterPxPyAND{feature}.png', feature)
 
     # proteomics.write(PATH + '/internal/ProteinsMatrix/ogProteomics.pickle.gz')
     # vaeProteomics.write(PATH + '/internal/ProteinsMatrix/proteomicsVAE.pickle.gz')
@@ -59,7 +35,7 @@ if __name__ == '__main__':
     # pearsonr(x,y)
 
     # regressor = LinearRegression()
-    # regressor.fit(x.values.reshape(-1,1), y.values.reshape(-1,1)) 
+    # regressor.fit(x.values.reshape(-1,1), y.values.reshape(-1,1))
     # regressor.score(x.values.reshape(-1,1), y.values.reshape(-1,1))
 
     # residuals = y.values.reshape(-1,1) - regressor.predict(x.values.reshape(-1,1))
@@ -72,8 +48,3 @@ if __name__ == '__main__':
     # plt.close()
     # plt.scatter(x, residuals)
     # plt.show()
-    
-
-
-
-    
