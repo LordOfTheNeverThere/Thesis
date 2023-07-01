@@ -36,6 +36,7 @@ def calcMahalanobis(y:pd.DataFrame, data: pd.DataFrame, cov:pd.DataFrame=None):
 class MatrixData:
     def __init__(self, filepath: str = None, data: pd.DataFrame = None, **readerKwargs):
         self.data = data
+        self.filepath = filepath
 
         if filepath:
             self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
@@ -638,7 +639,7 @@ class ProteinsMatrix(MatrixData):
 
 class PairwiseCorrMatrix(MatrixData):
 
-    def __init__(self, filepath: str = None, data: pd.DataFrame = None, ** readerKwargs):
+    def __init__(self, proteomicsType:str, filepath: str = None, data: pd.DataFrame = None, proxies:list[str] = [], ascendings:list[bool] = [], yColumn:str ='corum',** readerKwargs):
         """_summary_
 
         Args:
@@ -652,6 +653,13 @@ class PairwiseCorrMatrix(MatrixData):
         self.indexes = {}
         self.aucs = {} 
         self.labels = {}
+        self.yColumn = yColumn
+        self.proxies:list[str] = proxies
+        self.ascendings:list[bool] = ascendings
+        self.proteomicsType = proteomicsType
+
+
+
 
     def __str__(self):
 
@@ -686,7 +694,7 @@ class PairwiseCorrMatrix(MatrixData):
 
         return data
     
-    def aucCalculator(self, yColumnName:str, label:str, proxyColumn:str, ascending:bool ):
+    def aucCalculator(self, yColumnName:str, proteomicsType:str, proxyColumn:str, ascending:bool ):
         """Adds the value of AUC of the Recall curve using a specified external PPI dataset with yColumnName
 
         Args:
@@ -705,15 +713,15 @@ class PairwiseCorrMatrix(MatrixData):
             pairwiseCorr.shape[0]
         self.aucs[proxyColumn] = auc(self.indexes[proxyColumn], self.corrCumSums[proxyColumn]) # update aucs dict to have a new auc for a specific proxy column
 
-        if not label: #if the user did not insert any label default it
-            self.labels[proxyColumn] = f"(AUC {proxyColumn} {self.aucs[proxyColumn]:.2f})"
+        # if not label: #if the user did not insert any label default it
+        #     self.labels[proxyColumn] = f"(AUC {proxyColumn} {self.aucs[proxyColumn]:.2f})"
         
-        self.labels[proxyColumn] =  label + f" (AUC {proxyColumn} {self.aucs[proxyColumn]:.2f})"
+        self.labels[proxyColumn] =  f" ({proteomicsType} proteomics using {proxyColumn} ⇒ AUC:{self.aucs[proxyColumn]:.2f})"
 
-    def aucsCalculator(self, yColumnNameList:list[str], label:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None ):
+    def aucsCalculator(self, yColumnName:str, proteomicsType:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None ):
 
         for aucIndex in range(len(yColumnNameList)):
-            self.aucCalculator(yColumnNameList[aucIndex],label,proxyColumnList[aucIndex], ascendingList[aucIndex])
+            self.aucCalculator(yColumnName, proteomicsType, proxyColumnList[aucIndex], ascendingList[aucIndex])
         
     
         if filepath is not None:
@@ -793,6 +801,13 @@ class PairwiseCorrMatrix(MatrixData):
         plt.savefig(filepath.split('.')[0] + '#PPIs' + filepath.split('.')[1])
         
         return heatmapData, heatmapNumPPIs            
+
+    @classmethod
+    def getAllAucs(cls,instances:Iterable[PairwiseCorrMatrix]):
+
+        for instance in instances:
+            instance.aucsCalculator(self.yColumn, self.proteomicsType, self.proxies, self.ascendings, self.filepath)
+
 
     
 class DrugResponseMatrix(MatrixData):
