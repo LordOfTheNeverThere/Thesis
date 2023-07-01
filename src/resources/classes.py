@@ -721,7 +721,7 @@ class PairwiseCorrMatrix(MatrixData):
 
     def aucsCalculator(self, yColumnName:str, proteomicsType:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None ):
 
-        for aucIndex in range(len(yColumnNameList)):
+        for aucIndex in range(len(proxyColumnList)):
             self.aucCalculator(yColumnName, proteomicsType, proxyColumnList[aucIndex], ascendingList[aucIndex])
         
     
