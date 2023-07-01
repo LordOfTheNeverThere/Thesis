@@ -1,4 +1,5 @@
 # Imports
+from typing import Iterable
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -10,18 +11,6 @@ from statsmodels.stats.diagnostic import het_white, het_breuschpagan
 
 
 if __name__ == '__main__':
-
-
-    proteomicsOG: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
-    vaeGLSPearson = read(PATH + '/internal/pairwiseCorrs/VAE/glsPearsonPairCorr.pickle.gz')
-    setPPISOfInterest = list(vaeGLSPearson.data.sort_values(by='pValuePearson-GLS', ascending=False).query('corum == 1').head(5).index)
-
-    featuresOfInterest = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0).columns[2:-1]
-
-
-    for feature in ["age_at_sampling", "cancer_type", "cancer_type_detail", "tumour_grade", "sample_site", "mutational_burden" ,"cancer_type_ncit_id", "gender", "ethnicity", "growth_properties", "ploidy", "sampling_year", "supplier", "suppliers", "tissue", "tissue_status"]:
-        print(feature)
-        proteomicsOG.plotPxPySample(setPPISOfInterest, f'scatterPxPyAND{feature}.png', feature)
 
     # proteomics.write(PATH + '/internal/ProteinsMatrix/ogProteomics.pickle.gz')
     # vaeProteomics.write(PATH + '/internal/ProteinsMatrix/proteomicsVAE.pickle.gz')
