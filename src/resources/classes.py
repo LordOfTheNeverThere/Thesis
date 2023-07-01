@@ -38,7 +38,7 @@ class MatrixData:
         self.data = data
         self.filepath = filepath
 
-        if filepath:
+        if filepath is not None:
             self.data: pd.DataFrame = pd.read_csv(filepath, **readerKwargs)
             
         elif data is not None:
@@ -47,10 +47,12 @@ class MatrixData:
     def __str__(self) -> str:
         return str(self.data)
 
-    def write(self, filepath:str):
+    def write(self, filepath:str = None):
 
         if self.filepath is not None:
             filepath = self.filepath
+
+        assert filepath is not None, 'No filepath provided'
 
         with gzip.open(filepath, 'wb') as f:
             pickle.dump(self,f)
@@ -186,11 +188,12 @@ class ProteinsMatrix(MatrixData):
         except:
             return string
 
-    def pearsonCorrelations(self, columnName: str, thresholdInteraction:int = 5) -> PairwiseCorrMatrix:
+    def pearsonCorrelations(self, columnName: str, proteomicsType:str,thresholdInteraction:int = 5) -> PairwiseCorrMatrix:
         """Calculate the pearson correlations and corresponding p-value, displaying them in a pairwise manner, returning an instance of the PairwiseCorrMatrix class
 
         Args:
             columnName (str): Name given to the df column with the correlation metric
+            proteomicsType (str): The type of proteomics data to use to create the pearson correlation matrix
             thresholdInteraction (int, optional): The minimum number of coincident samples for it to be considered a putative PPI
 
         Returns:
@@ -222,7 +225,7 @@ class ProteinsMatrix(MatrixData):
             pairwiseCorr['counts'].append(count)
 
         index = pairwiseCorr.pop('PPI')
-        return PairwiseCorrMatrix(None, pd.DataFrame(pairwiseCorr, index=index))
+        return PairwiseCorrMatrix(proteomicsType, None, pd.DataFrame(pairwiseCorr, index=index), ['pearsonR', 'pValue'], [False, True])
       
     def calculateResidues(self, ppis: Iterable(set[str])) -> ResiduesMatrix:
     
@@ -335,7 +338,7 @@ class ProteinsMatrix(MatrixData):
 
         return warpedProteinsMean, warpedIntereceptMean
 
-    def getGLSCorr(self, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
+    def getGLSCorr(self, proteomicsType:str, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
         """Get the GLS coeficents between each Protein X and Y, where X != Y, these will measure the correlation between each protein. 
         But this method differs from the pearsonCorrelations since it has underneath a GLM where the covariance matrix can be any specified.
         This covariance matrix will transform both X and y of the proteinData.data. By default this covariance matrix is calculated with proteinData.data
@@ -343,6 +346,7 @@ class ProteinsMatrix(MatrixData):
         correlate with X, meaning we are not in the normal OLS case.
 
         Args:
+            proteomicsType (str): The type of proteomics data to used to calculate the GLS Coefficients
             pValues (bool, optional): Add the pValues of each gls Coefficient to the output data. Defaults to True.
             listCovMatrix (list[pd.DataFrame], optional):List of matrices to use to calculate covariance, if only one is required insert [matrix]. Defaults to None.
             coefColumnName (str, optional): Name to appear on the Dataframe' Column of glsCoefs. Defaults to 'glsCoefficient'.
@@ -395,7 +399,7 @@ class ProteinsMatrix(MatrixData):
         proteinNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
 
 
-        warpedProteinsMean, warpedIntereceptMean = ProteinsMatrix.whitening(proteinDataMean, covMatrix)
+        warpedProteinsMean, warpedIntereceptMean = ProteinsMatrix.whitening(self, self)
 
 
         def linear_regression(warped_screens, warped_intercept):
@@ -434,7 +438,7 @@ class ProteinsMatrix(MatrixData):
             pairwiseCorrData = pd.DataFrame(
                 {coefColumnName: glsCoefs}, index=proteinNames)
         
-        pairwiseCorrData = PairwiseCorrMatrix(None, pairwiseCorrData)
+        pairwiseCorrData = PairwiseCorrMatrix(proteomicsType,None, pairwiseCorrData, [coefColumnName, 'pValue'], [False, True])
         pairwiseCorrData.data.index.name = 'PPI'
 
         return pairwiseCorrData

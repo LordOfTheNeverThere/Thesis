@@ -318,6 +318,8 @@ def read(filepath: str):
         object = pickle.load(f)
     f.close()
 
+    object.filepath = filepath
+
     return object
 
 
