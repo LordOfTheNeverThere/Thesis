@@ -478,13 +478,13 @@ class ProteinsMatrix(MatrixData):
         if len(samplesCommon) < data.shape[0]:
             print('We have lost samples for proteomics since the samplesheet did not completely overlap with our samples, check for an updated samplesheet')
         data = data.loc[samplesCommon, :]
-        samplesheet = samplesheet.loc[samplesCommon, :]
+        samplesheet = samplesheet.loc[samplesCommon, :].fillna('NaN')
         uniquePropValues = list(MatrixData(None, samplesheet).getUniqueSetValues(sampleProp)[0])
-        if len(uniquePropValues) > 150:
-            print(
-                f'There are more than 150 unique values for {sampleProp}, which is not very informative, please choose a different sampleProp')
-            return None
-        colors = {value: color for value, color in zip(uniquePropValues, sns.color_palette('hls', len(uniquePropValues)))}
+        # if len(uniquePropValues) > 400:
+        #     print(
+        #         f'There are more than 400 unique values for {sampleProp}, which is not very informative, please choose a different sampleProp')
+        #     return None
+        colors = {value: color for value, color in zip(uniquePropValues, sns.color_palette('dark', len(uniquePropValues)))}
         numPPIs = len(ppis)
 
         # Setting up plot axes
@@ -501,7 +501,7 @@ class ProteinsMatrix(MatrixData):
             px, py = px.loc[samplesCommon], py.loc[samplesCommon]
             
             try:
-                samplePropData =  samplesheet.loc[samplesCommon, sampleProp].fillna('NaN')
+                samplePropData =  samplesheet.loc[samplesCommon, sampleProp]
             except:
                 print("No Samples in Commmon between pxpy and feature")
                 continue

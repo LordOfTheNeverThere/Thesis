@@ -19,7 +19,7 @@ if __name__ == '__main__':
     featuresOfInterest = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0).columns[2:-1]
 
 
-    for feature in featuresOfInterest:
+    for feature in ["age_at_sampling", "cancer_type", "cancer_type_detail", "tumour_grade", "sample_site", "mutational_burden" ,"cancer_type_ncit_id", "gender", "ethnicity", "growth_properties", "ploidy", "sampling_year", "supplier", "suppliers", "tissue", "tissue_status"]:
         print(feature)
         proteomicsOG.plotPxPySample(setPPISOfInterest, f'scatterPxPyAND{feature}.png', feature)
 
