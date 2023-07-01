@@ -722,7 +722,19 @@ class PairwiseCorrMatrix(MatrixData):
 
     @classmethod    
     def heatmap(cls, insts:list[PairwiseCorrMatrix], columns: list[str], bins:int, proteomics:ProteinsMatrix, filepath:str, title:str):
+        """Creates a heatmap of the pairwise correlation between two columns of two PairwiseCorrMatrix objects, in order to see the order of missing values in a specifc range of both Pairwse Proxy correlation range
 
+        Args:
+            insts (list[PairwiseCorrMatrix]): Two PairwiseCorrMatrix objects
+            columns (list[str]): Names of the proxy columns for each PairwiseCorrMatrix object
+            bins (int):     Number of bins to use for the heatmap
+            proteomics (ProteinsMatrix): Proteomics object to get the msv values
+            filepath (str): Path to save the heatmap
+            title (str): Title of the heatmap
+
+        Returns:
+            _type_: Dataframe with the values of the heatmap, and the number of PPIs in each bin
+        """                
         dfs = [instance.data[column].copy() for instance, column in zip(insts, columns)]
         df = pd.concat(dfs, join='inner', axis=1)
 
