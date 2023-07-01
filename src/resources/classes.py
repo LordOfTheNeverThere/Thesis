@@ -49,6 +49,9 @@ class MatrixData:
 
     def write(self, filepath:str):
 
+        if self.filepath is not None:
+            filepath = self.filepath
+
         with gzip.open(filepath, 'wb') as f:
             pickle.dump(self,f)
         f.close()
