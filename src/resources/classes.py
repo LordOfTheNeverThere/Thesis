@@ -680,7 +680,7 @@ class PairwiseCorrMatrix(MatrixData):
             ppis (ppiDataset): ppiDataset of the external ppi dataset used
             data (pd.DataFrame): Pairwise correlation dataframe
             externalDatasetName (str): Name to give to the binary column holding the truth value of an PPI is seen in that external Dataset
-            filepath (str): The name to give to the final file, with the added binary column
+
 
         Returns:
             _type_: Data with added column
@@ -691,6 +691,7 @@ class PairwiseCorrMatrix(MatrixData):
 
 
         self.data = data
+
 
         return data
     
@@ -803,10 +804,14 @@ class PairwiseCorrMatrix(MatrixData):
         return heatmapData, heatmapNumPPIs            
 
     @classmethod
-    def getAllAucs(cls,instances:Iterable[PairwiseCorrMatrix]):
+    def getAucs(cls,instances:Iterable[PairwiseCorrMatrix]):
+        """Calculates the Aucs for a list of PairwiseCorrMatrix objects
 
+        Args:
+            instances (Iterable[PairwiseCorrMatrix]): List of PairwiseCorrMatrix objects
+        """ 
         for instance in instances:
-            instance.aucsCalculator(self.yColumn, self.proteomicsType, self.proxies, self.ascendings, self.filepath)
+            instance.aucsCalculator(instance.yColumn, instance.proteomicsType, instance.proxies, instance.ascendings, instance.filepath)
 
 
     
