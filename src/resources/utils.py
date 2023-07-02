@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 import gzip
-from resources import *
+from resources import PATH, MatrixData, PairwiseCorrMatrix
 
 
 # def getPairwiseCorrData(data: pd.DataFrame, columnName :str ='correlation') -> pd.Series:

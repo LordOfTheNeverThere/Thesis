@@ -1,16 +1,28 @@
-# Imports
-from typing import Iterable
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from resources import *
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from scipy.stats import shapiro, pearsonr, chi2_contingency
-from statsmodels.stats.diagnostic import het_white, het_breuschpagan
+    # Imports
+    from typing import Iterable
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from resources import read, PairwiseCorrMatrix ,ProteinsMatrix, PATH, drawRecallCurves
+    import numpy as np
+    from sklearn.linear_model import LinearRegression
+    from scipy.stats import shapiro, pearsonr, chi2_contingency
+    from statsmodels.stats.diagnostic import het_white, het_breuschpagan
 
 
 if __name__ == '__main__':
+
+
+    vae:ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
+    corum =read(PATH + '/external/ppiDataset/corum.pickle.gz')
+    ppis = corum.ppis
+    vae.data = vae.data.iloc[0:100,0:400]
+    vae1 = vae.getGLSR('VAE')
+    vae2 = vae.getGLSCorr('VAE')
+    vae1.addGroundTruth(ppis, 'corum')
+    vae2.addGroundTruth(ppis, 'corum')
+    PairwiseCorrMatrix.getAucs([vae1, vae2])
+    drawRecallCurves([vae1, vae2], ['red', 'blue'], 'dummynewR.png', 'pValue')
 
     # proteomics.write(PATH + '/internal/ProteinsMatrix/ogProteomics.pickle.gz')
     # vaeProteomics.write(PATH + '/internal/ProteinsMatrix/proteomicsVAE.pickle.gz')
