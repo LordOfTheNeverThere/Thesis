@@ -12,28 +12,48 @@
 
 if __name__ == '__main__':
 
-    proteomics.write(PATH + '/internal/ProteinsMatrix/ogProteomics.pickle.gz')
-    vaeProteomics.write(PATH + '/internal/ProteinsMatrix/proteomicsVAE.pickle.gz')
-    meanProteomics.write(PATH + '/internal/ProteinsMatrix/meanProteomics.pickle.gz')
-    # x = proteomics.iloc[:,10].dropna()
-    # y = proteomics.iloc[:,15].dropna()
-    # samplesCommon = x.index.intersection(y.index)
-    # x = x.loc[samplesCommon]
-    # X = pd.DataFrame({'x':x, 'intercept':np.ones(len(x))})
-    # y = y.loc[samplesCommon]
-    # pearsonr(x,y)
+    #To create Images for Article
 
-    # regressor = LinearRegression()
-    # regressor.fit(x.values.reshape(-1,1), y.values.reshape(-1,1))
-    # regressor.score(x.values.reshape(-1,1), y.values.reshape(-1,1))
+    proteomics  :ProteinsMatrix= read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
+    vaeProteomics :ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
+    meanProteomicsLib :ProteinsMatrix = read(PATH + '/internal/proteomics/mean75PVProteomics.pickle.gz')
+    meanProteomicsConser :ProteinsMatrix = read(PATH + '/internal/proteomics/mean80PVProteomics.pickle.gz')
+    instances = [vaeProteomics, meanProteomicsLib, meanProteomicsConser]
 
-    # residuals = y.values.reshape(-1,1) - regressor.predict(x.values.reshape(-1,1))
-    # het_breuschpagan(residuals, X)
-    # het_white(residuals, X)
+    for inst in instances:
 
-    # plt.close()
-    # plt.scatter(x, y)
-    # plt.show()
-    # plt.close()
-    # plt.scatter(x, residuals)
-    # plt.show()
+        inst.shapiroWilksTest()
+        whitened ,_ =ProteinsMatrix.whitening(inst, inst, True)
+        whitened = ProteinsMatrix(None, whitened)
+        whitened.shapiroWilksTest()
+
+
+
+    for inst in instances:
+    
+        cov = np.cov(inst.data)
+        upperTriangular = np.triu(cov, k=1)
+        upperTriangular = upperTriangular.flatten()
+        nonDiagonalNum = len(upperTriangular)
+        nonDiagonalSum = upperTriangular.sum()
+        nonDiagonalMean = nonDiagonalSum / nonDiagonalNum
+        #I only did for the upper triangular because the covariance matrix is symmetric
+        diagonal = np.diag(cov)
+        diagonalNum = len(diagonal)
+        diagonalSum = diagonal.sum()
+        diagonalMean = diagonalSum / diagonalNum
+        print(nonDiagonalMean, diagonalMean)
+
+        whitened ,_ =ProteinsMatrix.whitening(inst, inst, True)
+        cov = np.cov(whitened)
+        upperTriangular = np.triu(cov, k=1)
+        upperTriangular = upperTriangular.flatten()
+        nonDiagonalNum = len(upperTriangular)
+        nonDiagonalSum = upperTriangular.sum()
+        nonDiagonalMean = nonDiagonalSum / nonDiagonalNum
+        #I only did for the upper triangular because the covariance matrix is symmetric
+        diagonal = np.diag(cov)
+        diagonalNum = len(diagonal)
+        diagonalSum = diagonal.sum()
+        diagonalMean = diagonalSum / diagonalNum
+        print(nonDiagonalMean, diagonalMean)

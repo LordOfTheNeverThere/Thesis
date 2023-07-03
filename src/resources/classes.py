@@ -23,6 +23,28 @@ from resources import *
 
 quantileNorm = QuantileTransformer(output_distribution='normal')
 
+
+def covMatrixAnalysis(data:pd.DataFrame)-> tuple[float, float]:
+    """Gives a summary of the covariance matrix in terms of the mean of the diagonal and the mean of the non diagonal elements,
+    useful to see if the observations are independent or not, if the mean of the non diagonal elements is close to zero and 
+    that of the diagonal is close to 1 then the observations are independent
+
+    Args:
+        data (pd.DataFrame): Dataframe from which the covariance matrix will be calculated
+
+    Returns:
+        tuple[float, float]: (Mean of the diagonal, mean of the non diagonal elements of the covariance matrix)
+    """
+        cov = np.cov(inst.data)
+        upperTriangular = np.triu(cov, k=1)
+        upperTriangular = upperTriangular.flatten()
+        nonDiagonalMean:float = upperTriangular.mean()
+        #I only did for the upper triangular because the covariance matrix is symmetric
+        diagonal = np.diag(cov)
+        diagonalMean:float = diagonal.mean()
+
+        return diagonalMean, nonDiagonalMean
+
 def calcR(XY) -> tuple[float, float]:
     X,Y = XY
     corr, pValue = pearsonr(X, Y)
