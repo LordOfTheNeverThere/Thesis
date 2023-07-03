@@ -16,7 +16,6 @@ if __name__ == '__main__':
     vae:ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
     corum =read(PATH + '/external/ppiDataset/corum.pickle.gz')
     ppis = corum.ppis
-    vae.data = vae.data.iloc[0:100,0:400]
     vae1 = vae.getGLSR('VAE')
     vae2 = vae.getGLSCorr('VAE')
     vae1.addGroundTruth(ppis, 'corum')
