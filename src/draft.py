@@ -12,20 +12,9 @@
 
 if __name__ == '__main__':
 
-
-    vae:ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
-    corum =read(PATH + '/external/ppiDataset/corum.pickle.gz')
-    ppis = corum.ppis
-    vae1 = vae.getGLSR('VAE')
-    vae2 = vae.getGLSCorr('VAE')
-    vae1.addGroundTruth(ppis, 'corum')
-    vae2.addGroundTruth(ppis, 'corum')
-    PairwiseCorrMatrix.getAucs([vae1, vae2])
-    drawRecallCurves([vae1, vae2], ['red', 'blue'], 'dummynewR.png', 'pValue')
-
-    # proteomics.write(PATH + '/internal/ProteinsMatrix/ogProteomics.pickle.gz')
-    # vaeProteomics.write(PATH + '/internal/ProteinsMatrix/proteomicsVAE.pickle.gz')
-    # meanProteomics.write(PATH + '/internal/ProteinsMatrix/meanProteomics.pickle.gz')
+    proteomics.write(PATH + '/internal/ProteinsMatrix/ogProteomics.pickle.gz')
+    vaeProteomics.write(PATH + '/internal/ProteinsMatrix/proteomicsVAE.pickle.gz')
+    meanProteomics.write(PATH + '/internal/ProteinsMatrix/meanProteomics.pickle.gz')
     # x = proteomics.iloc[:,10].dropna()
     # y = proteomics.iloc[:,15].dropna()
     # samplesCommon = x.index.intersection(y.index)

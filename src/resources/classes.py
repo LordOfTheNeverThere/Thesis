@@ -485,13 +485,6 @@ class ProteinsMatrix(MatrixData):
         return pairwiseCorr
 
 
-
-
-
-
-
-
-
         
 
     def shapiroWilksTest(self, thresh: int = 5, globalPVal:float = 0.01) -> None:
@@ -509,7 +502,6 @@ class ProteinsMatrix(MatrixData):
         data = self.data.copy()
         
         shapiroResults = {}
-        testCounter = 0
 
 
         for protein in data:
@@ -517,7 +509,6 @@ class ProteinsMatrix(MatrixData):
             proteinData = data[protein].dropna()    
 
             if len(proteinData) >= thresh:
-                testCounter += 1
                 stat, pVal = shapiro(proteinData)
                 
             
@@ -528,9 +519,11 @@ class ProteinsMatrix(MatrixData):
         
         shapiroResults = pd.DataFrame(shapiroResults).T
         self.normTest = shapiroResults
-        relativePVal = globalPVal / testCounter
         shapiroResults = shapiroResults.dropna(axis=0)
-        ratioNonNormal = (shapiroResults.query('pValue < @relativePVal').shape[0]/shapiroResults.shape[0]) * 100 # The smaller the pValue the more likely it is that the data is not normally distributed, we thence reject the null hypothesis that the data is normally distributed
+        pValues = shapiroResults['pValue']
+        rejected, correctedPVals, _, _ = multipletests(pValues, alpha=globalPVal, method='fdr_bh')
+        numNonNormal = np.sum(rejected)
+        ratioNonNormal = (numNonNormal/shapiroResults.shape[0]) * 100 # The smaller the pValue the more likely it is that the data is not normally distributed, we thence reject the null hypothesis that the data is normally distributed
 
         try: # If the atribute doesn't exist we create it
             self.normSummary.add((globalPVal,  thresh, ratioNonNormal))
@@ -588,10 +581,12 @@ class ProteinsMatrix(MatrixData):
         whiteResults = pd.DataFrame(whiteResults).T.reset_index(names=['proteinA', 'proteinB']) # This allows for a compatible merging with PaiwiseCorrMatrix objects
         self.homoskeTest = whiteResults
         numPPIs = whiteResults.shape[0]
-        relativePVal = globalPVal / numPPIs
         whiteResults = whiteResults.dropna(axis=0)
-
-        ratioHeteroske = (whiteResults.query('pValue < @relativePVal').shape[0]/whiteResults.shape[0]) * 100 # The smaller the pValue the more likely it is that the residuals are heteroskedastic, we thence reject the null hypothesis that the residuals are invariant when regressed with x, homoskedastic
+        pValues = whiteResults['pValue']
+        rejected, _, _, _ = multipletests(pValues, alpha=globalPVal, method='fdr_bh')
+        numHeteroske = np.sum(rejected)
+    
+        ratioHeteroske = (numHeteroske/numPPIs) * 100 # The smaller the pValue the more likely it is that the residuals are heteroskedastic, we thence reject the null hypothesis that the residuals are invariant when regressed with x, homoskedastic
         try: # If the atribute doesn't exist we create it
             self.homoskeSummary.add((globalPVal,  thresh, ratioHeteroske))
         except:
