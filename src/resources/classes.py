@@ -25,7 +25,7 @@ quantileNorm = QuantileTransformer(output_distribution='normal')
 
 
 def covMatrixAnalysis(data:pd.DataFrame)-> tuple[float, float]:
-    """Gives a summary of the covariance matrix in terms of the mean of the diagonal and the mean of the non diagonal elements,
+    """Gives a summary of the covariance matrix in terms of the % of  and the mean of the non diagonal elements,
     useful to see if the observations are independent or not, if the mean of the non diagonal elements is close to zero and 
     that of the diagonal is close to 1 then the observations are independent
 
@@ -35,15 +35,18 @@ def covMatrixAnalysis(data:pd.DataFrame)-> tuple[float, float]:
     Returns:
         tuple[float, float]: (Mean of the diagonal, mean of the non diagonal elements of the covariance matrix)
     """
-        cov = np.cov(inst.data)
-        upperTriangular = np.triu(cov, k=1)
-        upperTriangular = upperTriangular.flatten()
-        nonDiagonalMean:float = upperTriangular.mean()
-        #I only did for the upper triangular because the covariance matrix is symmetric
-        diagonal = np.diag(cov)
-        diagonalMean:float = diagonal.mean()
+    cov = np.cov(data)
+    upperTriangular = np.triu(cov, k=1)
+    upperTriangular = upperTriangular.flatten()
+    upperTriangular = [round(x, 8)==0 for x in upperTriangular]
+    nonDiagonalMetric:float = ((sum(upperTriangular))/len(upperTriangular)) * 100
+    #I only did for the upper triangular because the covariance matrix is symmetric
+    diagonal = np.diag(cov)
+    diagonalMetric = [round(x, 4)==1 for x in diagonal]
 
-        return diagonalMean, nonDiagonalMean
+    diagonalMetric = ((sum(diagonalMetric))/len(diagonalMetric)) * 100  
+
+    return diagonalMetric, nonDiagonalMetric
 
 def calcR(XY) -> tuple[float, float]:
     X,Y = XY
@@ -616,7 +619,19 @@ class ProteinsMatrix(MatrixData):
             self.homoskeSummary.add((globalPVal,  thresh, ratioHeteroske, numPPIs))
 
         print(self.homoskeSummary)
-  
+
+
+    def independenceSamples(self) -> None:
+
+        data = self.data.copy()
+
+        diagonalMean, nonDiagonalMean = covMatrixAnalysis(data)
+        whitenedData, _ = ProteinsMatrix.whitening(self, self, True)
+        whiteDiagonalMean, whiteNonDiagonalMean = covMatrixAnalysis(whitenedData)
+
+        self.samplesIndep = f"Percentage of 1's in Diagonal: {diagonalMean}\nPercentage of 0's in non diagonal: {nonDiagonalMean}\nPercentage of 1's in Diagonal, after whitening: {whiteDiagonalMean}\nPercentage of 0's in non diagonal, after whitening: {whiteNonDiagonalMean}"
+        print(self.samplesIndep)
+
     def plotPxPyDrug(self, drug:str, ppi:str, drugResponse: DrugResponseMatrix, filepath:str):
 
 

@@ -30,30 +30,4 @@ if __name__ == '__main__':
 
 
     for inst in instances:
-    
-        cov = np.cov(inst.data)
-        upperTriangular = np.triu(cov, k=1)
-        upperTriangular = upperTriangular.flatten()
-        nonDiagonalNum = len(upperTriangular)
-        nonDiagonalSum = upperTriangular.sum()
-        nonDiagonalMean = nonDiagonalSum / nonDiagonalNum
-        #I only did for the upper triangular because the covariance matrix is symmetric
-        diagonal = np.diag(cov)
-        diagonalNum = len(diagonal)
-        diagonalSum = diagonal.sum()
-        diagonalMean = diagonalSum / diagonalNum
-        print(nonDiagonalMean, diagonalMean)
-
-        whitened ,_ =ProteinsMatrix.whitening(inst, inst, True)
-        cov = np.cov(whitened)
-        upperTriangular = np.triu(cov, k=1)
-        upperTriangular = upperTriangular.flatten()
-        nonDiagonalNum = len(upperTriangular)
-        nonDiagonalSum = upperTriangular.sum()
-        nonDiagonalMean = nonDiagonalSum / nonDiagonalNum
-        #I only did for the upper triangular because the covariance matrix is symmetric
-        diagonal = np.diag(cov)
-        diagonalNum = len(diagonal)
-        diagonalSum = diagonal.sum()
-        diagonalMean = diagonalSum / diagonalNum
-        print(nonDiagonalMean, diagonalMean)
+        inst.independenceSamples()
