@@ -1183,6 +1183,9 @@ class TLSRegression():
         samples = list(X.index)
         assert samples == list(Y.index), "X and Y must have the same samples"
 
+        X = X.to_numpy() # Convert to numpy array
+        Y = Y.to_numpy() # Convert to numpy array
+
         if fitIntercept:
             ones = np.ones((X.shape[0], 1))
             X = np.concatenate((ones, X), axis=1)
@@ -1356,9 +1359,13 @@ class UnbiasedResidualsLinModel():
     
 
     def twoFits(self):
-        """ It fits the two regressions using our initial Linear Model Structure, first the regression between X and Y, 
+        """  It fits the two regressions using our initial Linear Model Structure, first the regression between X and Y, 
         and then the regression between the residuals of the first regression and the drug response.
-        """
+
+
+        Returns:
+            Results of both Models: firstModelResiduals,  firstModelBetas, firstModelPredY,  firstModelPredX,  secondModelResults
+        """        """"""
         
         # Get the residuals of the first fit
 
@@ -1366,7 +1373,11 @@ class UnbiasedResidualsLinModel():
 
         # Fit the second model using the residuals of the first model as the new predictor for drug response
 
-        self.secondModel = GeneralLinearModel(self.drugRes, self.firstModelResiduals, self.M, fitIntercept=self.fitIntercept, copy_X=self.copy_X)
+        self.secondModel:GeneralLinearModel = GeneralLinearModel(self.drugRes, self.firstModelResiduals, self.M, fitIntercept=self.fitIntercept, copy_X=self.copy_X)
+
+        self.secondModelResults = self.secondModel.fit_matrix()
+
+        return self.firstModelResiduals, self.firstModelBetas, self.firstModelPredY, self.firstModelPredX, self.secondModelResults
 
 
     def fitPxPy(self):
