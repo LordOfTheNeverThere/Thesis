@@ -1143,6 +1143,114 @@ class GeneralLinearModel(MatrixData):
 
         return residuals
     
+class TLSRegression():
+    """Implements Total Least Squares Regression.
+    """
+    def __init__(self, Y:pd.DataFrame, X:pd.DataFrame, copy_X = True, fitIntercept=False):
+
+        self.Y = Y
+        self.X = X
+        self.samples = set.intersection(
+            set(Y.index),
+            set(X.index),
+        )
+        self.samples = list(self.samples) # make sure it's a list, because indexing by sets is deprecated
+        self.X = X.loc[self.samples]
+        self.X_ma = np.ma.masked_invalid(self.X.values)
+
+        self.Y = Y.loc[self.samples]
+        self.Y = self.Y.loc[:, self.Y.std() > 0]
+        self.Y = pd.DataFrame(quantileNorm.fit_transform(self.Y), columns=self.Y.columns, index=self.Y.index)
+
+        self.fitIntercept = fitIntercept
+
+        
+    
+    @staticmethod
+    def tlsRegression(X:pd.Series|pd.DataFrame, Y:pd.Series|pd.DataFrame, fitIntercept=False):
+        """Calculates the TLS regression of X on Y.
+
+        Args:
+            X (_type_): Covariates, excluding intercept
+            Y (_type_): Response variable
+
+        Returns:
+           residuals, betas, predY, predX _type_: 
+           (The regression's Residuals calculated with Forbenious norm of the errors of both X and Y, regression coefficients (includes beta0), predicted Y values, predicted X Values)
+        """
+
+        features = list(X.column)
+        samples = list(X.index)
+        assert samples == list(Y.index), "X and Y must have the same samples"
+
+        if fitIntercept:
+            ones = np.ones((X.shape[0], 1))
+            X = np.concatenate((ones, X), axis=1)
+
+        n = X.ndim # Get number of covariates
+        XY = np.concatenate([X, Y], axis=1) # Join X and Y
+
+        # Calculate the SVD of XY
+        _, _, VT_XY = np.linalg.svd(XY)
+        V_XY = VT_XY.T
+        Vxy = V_XY[0:n, n:] 
+        Vyy = V_XY[n:, n:] 
+
+        #Calculate the TLS estimator, and predictions
+        betas = -Vxy / Vyy # The regression coefficients of TLS regression
+        errorsXY = (-XY @ V_XY[:, n:] @ V_XY[:, n:].T) # The matrix of errors of X and Y
+        errorX:np.ndarray = errorsXY[:, 0:n]
+        errorY:np.ndarray = errorsXY[:, n:]
+        predX = (X + errorX.T).T
+        predY = predX @ betas
+        residuals = np.linalg.norm(errorsXY, axis=1)# Given by the frobenius Norm of the matrix of error of X and Y
+
+        # print( f"residuals: \n {residuals}\n β_n:\n {betas}\n predictedY:\n {predY} \n predictedX:\n {predX} ")
+
+        residuals = pd.DataFrame(residuals, index=samples, columns=['residualsTLS'])
+        betas = pd.DataFrame(betas, index=features, columns=['betasTLS'])
+        predY = pd.DataFrame(predY, index=samples, columns=['predYTLS'])
+        predX = pd.DataFrame(predX, index=samples, columns=[f"{feature}_predXTLS"for feature in features])
+        
+        return residuals, betas, predY, predX
+    
+
+    def fit(self):
+        """Fits the TLS regression model.
+
+        Returns:
+            self.residuals, self.betas, self.predY, self.predX
+        """     
+        self.residuals, self.betas, self.predY, self.predX = self.tlsRegression(self.X, self.Y)
+        return self.residuals, self.betas, self.predY, self.predX   
+
+
+    
+    # def logLikelihoodTest(self):
+
+    #     X = self.X.to_numpy() # Load Data
+    #     Y = self.Y.to_numpy()
+    #     M = self.M.to_numpy()
+
+    #     # large Model
+
+    #     if self.M2 is not None: # Use M2 if it exists as confounding factor
+    #         M2 = self.M2.to_numpy()
+    #         M = np.concatenate([M, M2], axis=1)
+
+    #     largeModel = np.concatenate([M, X], axis=1) # Join all covariates
+
+    #     # Small Model
+
+    #     if self.M2 is not None: # Use M2 if it exists as confounding factor
+    #         M2 = self.M2.to_numpy()
+    #         M = np.concatenate([M, M2], axis=1)
+    #     smallModel = M
+
+    #     #TODO: Understand how to calculate the logLikelihoodTest when in TLS regression
+
+
+
 
 
 
@@ -1157,9 +1265,9 @@ class ResidualsLinearModel(GeneralLinearModel):
             residualsCols = [col for col in X.columns if col[1] == residualsType]
             X = X.loc[:, residualsCols]
             X.columns = ['-'.join(col) for col in X.columns]
-        
         super().__init__(Y, X, M, M2, fit_intercept, copy_X, n_jobs, verbose)
-    
+
+
     def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.10, pValHzLine:float = 0.001):
         """
         Volcano plot in order to find statisticall relevant relationships.
@@ -1207,5 +1315,74 @@ class ResidualsLinearModel(GeneralLinearModel):
         proteomics.plotPxPyDrug(drug, ppi, drugResponse,filepath)
 
     
+class UnbiasedResidualsLinModel():
+    """This class is a Linear Model that uses the residuals of the linear regression between X and Y as the new predictor for Drug response.
+    But it does it by taking into consideration some confounding factors M, in our case growth props.
+
+    Args:
+        GeneralLinearModel (_type_): Base Linear Model Class
+    """
+
+    def __init__(self, Y:pd.Series, X:pd.Series, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=False, copy_X=True):
+        """Will create linear model, that will be used for the two fits.
+
+        Args:
+            Y (_type_): Protein A expression
+            X (_type_): Protein B expression
+            M (_type_): Confounding Factors in Dataframe
+            drugRes (DrugResponseMatrix): Drug Response Object
+            fitIntercept (bool, optional): Does the Linear Model have an intercept parameter. Defaults to False.
+            copy_X (bool, optional): _description_. Defaults to True.
+
+        """
+        self.Y = Y
+        self.X = X
+        self.M = M
+        self.fitIntercept = fitIntercept
+        self.copy_X = copy_X
+        self.drugRes = drugRes
 
 
+        self.firstX = pd.merge(X, M, how='inner') # deals with missing values
+
+        self.firstModel:TLSRegression = TLSRegression(Y, self.firstX, copy_X=copy_X, fitIntercept=False)
+
+        samplesCommon:set[pd.Index] = set.intersection(self.firstModel.samples,set(drugRes.data.index))
+
+        assert len(samplesCommon) >= 50, "Not enough samples in common between X, Y and drug response matrices \n Aborting!"
+
+        self.drugRes = drugRes.data.loc[samplesCommon,:]
+
+    
+
+    def twoFits(self):
+        """ It fits the two regressions using our initial Linear Model Structure, first the regression between X and Y, 
+        and then the regression between the residuals of the first regression and the drug response.
+        """
+        
+        # Get the residuals of the first fit
+
+        self.firstModelResiduals, self.firstModelBetas, self.firstModelPredY, self.firstModelPredX = self.firstModel.fit()
+
+        # Fit the second model using the residuals of the first model as the new predictor for drug response
+
+        self.secondModel = GeneralLinearModel(self.drugRes, self.firstModelResiduals, self.M, fitIntercept=self.fitIntercept, copy_X=self.copy_X)
+
+
+    def fitPxPy(self):
+        """It fits the regression between X and Y, using the initial Linear Model Structure.
+        Py ~ M + Px
+        """
+
+        # Get the residuals of the first fit
+
+        self.firstModelResiduals, self.firstModelBetas, self.firstModelPredY, self.firstModelPredX = self.firstModel.fit()
+
+        return self.firstModelResiduals, self.firstModelBetas, self.firstModelPredY, self.firstModelPredX
+
+    
+    
+        
+
+
+    
