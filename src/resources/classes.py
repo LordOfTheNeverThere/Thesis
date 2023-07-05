@@ -1326,7 +1326,7 @@ class UnbiasedResidualsLinModel():
         GeneralLinearModel (_type_): Base Linear Model Class
     """
 
-    def __init__(self, Y:pd.Series, X:pd.Series, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=False, copy_X=True):
+    def __init__(self, ppis:Iterable(tuple[str,str]), proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=False, copy_X=True):
         """Will create linear model, that will be used for the two fits.
 
         Args:
@@ -1338,38 +1338,77 @@ class UnbiasedResidualsLinModel():
             copy_X (bool, optional): _description_. Defaults to True.
 
         """
-        self.Y = Y
-        self.X = X
+        self.ppis = ppis
+        self.proteomics = proteomics
         self.M = M
         self.fitIntercept = fitIntercept
         self.copy_X = copy_X
         self.drugRes = drugRes
 
 
-        self.firstX = pd.merge(X, M, how='inner') # deals with missing values
+    def checkCompleteObservations(self, X:pd.DataFrame, Y:pd.DataFrame):
+        """ Removes samples that are not in common between X, Y, M and drug response matrices, which won't be useful
 
-        self.firstModel:TLSRegression = TLSRegression(Y, self.firstX, copy_X=copy_X, fitIntercept=False)
+        Args:
+            X (pd.DataFrame): Protein A expression
+            Y (pd.DataFrame): Protein B expression
 
-        samplesCommon:set[pd.Index] = set.intersection(self.firstModel.samples,set(drugRes.data.index))
+        Returns:
+            _type_: (X, Y , self.M) with only common samples
+        """ 
+        X.dropna(axis=0, how='any', inplace=True)
+        Y.dropna(axis=0, how='any', inplace=True)
+        self.M.dropna(axis=0, how='any', inplace=True)
+        #Check if M is Categorical
+        if M.dtypes[0] == 'object':
+            M = pd.get_dummies(M.iloc[:,0])
+            M.drop(M.columns[0], axis=1, inplace=True)
 
-        assert len(samplesCommon) >= 50, "Not enough samples in common between X, Y and drug response matrices \n Aborting!"
+        self.samples = set.intersection(set(X.index), set(Y.index), set(self.M.index), set(self.drugRes.data.index)) # Get common samples
 
-        self.drugRes = drugRes.data.loc[samplesCommon,:]
+        assert len(self.samples) >= 50, f"Not enough samples, {len(self.samples)}, in common between X, Y, M and drug response matrices \n Aborting!"
+
+        X = X.loc[self.samples,:]
+        Y = Y.loc[self.samples,:]
+        M = self.M.loc[self.samples,:]
+
+        return X, Y, M
+
 
     
 
-    def twoFits(self):
-        """  It fits the two regressions using our initial Linear Model Structure, first the regression between X and Y, 
-        and then the regression between the residuals of the first regression and the drug response.
-
+    def twoFits(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        """ Performs two fits the first TLS Model with Py ~ M + Px and the second gLM with DrugResponse ~ M + residuals of the first fit
 
         Returns:
-            Results of both Models: firstModelResiduals,  firstModelBetas, firstModelPredY,  firstModelPredX,  secondModelResults
-        """        """"""
-        
+            tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: self.firstModelResiduals, self.firstModelBetas, self.secondModelResults
+        """
         # Get the residuals of the first fit
 
-        self.firstModelResiduals, self.firstModelBetas, self.firstModelPredY, self.firstModelPredX = self.firstModel.fit()
+        betas = {'proteinA':[], 'proteinB':[], 'betaX':[], 'betaM':[]}
+
+        for XName,YName in self.ppis:
+            X = self.proteomics.data.loc[:,XName]
+            Y = self.proteomics.data.loc[:,YName]
+
+            X, Y, M = self.checkCompleteObservations(X, Y)
+            X = pd.concat([X, M], axis=1)
+
+            model:TLSRegression = TLSRegression(Y, X, fitIntercept=self.fitIntercept, copy_X=self.copy_X)
+            residuals,betas,_,_ = model.fit()
+
+            try:# If residuals already exists, merge them
+                self.firstModelResiduals = pd.merge(self.firstModelResiduals, residuals, how='outer')
+            except NameError:
+                self.firstModelResiduals = residuals
+            # Save betas of first model
+            betas['proteinY'].append(YName)
+            betas['proteinX'].append(XName)
+            betas['betaX'].append(model.betas[0])
+            betas['betaM'].append(model.betas[1])
+        self.firstModelBetas = pd.DataFrame(betas)
+
+
 
         # Fit the second model using the residuals of the first model as the new predictor for drug response
 
@@ -1377,7 +1416,7 @@ class UnbiasedResidualsLinModel():
 
         self.secondModelResults = self.secondModel.fit_matrix()
 
-        return self.firstModelResiduals, self.firstModelBetas, self.firstModelPredY, self.firstModelPredX, self.secondModelResults
+        return self.firstModelResiduals, self.firstModelBetas, self.secondModelResults
 
 
     def fitPxPy(self):
