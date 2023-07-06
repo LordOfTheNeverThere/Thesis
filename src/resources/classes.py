@@ -11,7 +11,7 @@ from scipy.stats import pearsonr
 from statsmodels.stats.diagnostic import het_breuschpagan, het_white
 from statsmodels.stats.multitest import multipletests
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import normalize, QuantileTransformer
+from sklearn.preprocessing import normalize, QuantileTransformer, StandardScaler
 from scipy.stats import chi2, shapiro
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -33,6 +33,7 @@ TODO:
 """
 
 quantileNorm = QuantileTransformer(output_distribution='normal')
+
 
 
 def covMatrixAnalysis(data:pd.DataFrame)-> tuple[float, float]:
