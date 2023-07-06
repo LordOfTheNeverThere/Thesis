@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import time as t
-from resources import ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
+from resources import UnbiasedResidualsLinModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
 
 
 
@@ -17,6 +17,18 @@ if __name__ == '__main__':
     samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
     ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
     vaeProteomics:ProteinsMatrix= read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
+    # vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
+
+
+
+    # ppisOfInterest = set(vaeGLSPairwise.data.query("pValue < 0.001 & corum == 1").copy().index)
+    # ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
+
+    # #Get 5 elements from the set
+    ppisOfInterest = [('MRPL38', 'MRPL45'), ('DPY30', 'SAP18'), ('SNRPA', 'SYNCRIP'), ('HNRNPA1', 'HNRNPD'), ('PCBP2', 'SNRNP40')]
+    model1 = UnbiasedResidualsLinModel(ppisOfInterest, vaeProteomics, drugRes, samplesheet['growth_properties'])
+    model1.fitPxPy()
+    len(set.intersection(set(vaeProteomics.data[ppisOfInterest[0][0]].index), set(vaeProteomics.data[ppisOfInterest[0][1]].index)))
 
 
     #Fit and test linear model for associations from VAE proteomics data's residuals
@@ -39,27 +51,3 @@ if __name__ == '__main__':
     # pearsonrRegressor.write(PATH + '/internal/residuals/pearsonPValueLess0.001OgProteomics/regressionMalahanobis.pickle.gz')
 
 
-    #### Second Linear Model Py ~ M + Py and then D ~ M + residuals ####
-    X = vaeProteomics.data.iloc[:,1].dropna().to_numpy()
-    n = X.ndim
-    Y = vaeProteomics.data.iloc[:,0].dropna().to_numpy()
-    XY = np.vstack((X.T, Y)).T
-
-    
-    U_XY, S_XY, VT_XY = np.linalg.svd(XY)
-    if n > 1:
-        U_X, S_X, VT_X = np.linalg.svd(X)
-        assert S_XY[-1] < S_X[-1]
-    V_XY = VT_XY.T
-    Vxy = V_XY[0:n, n:]
-    Vyy = V_XY[n:, n:]
-
-    betas = -Vxy / Vyy # The regression coefficients of TLS regression
-    errorsXY = (-XY @ V_XY[:, n:] @ V_XY[:, n:].T) # The matrix of errors of X and Y
-    errorX:np.ndarray = errorsXY[:, 0:n]
-    errorY:np.ndarray = errorsXY[:, n:]
-    predY = (X + errorX.T).T @ betas
-    residuals = np.linalg.norm(errorsXY, axis=1)# Given by the frobenius Norm of the matrix of error of X and Y
-    
-
-    print( f"residuals: {residuals}\n β_n: {betas}\n predictedY: {predY} \n predictedX: {(X + errorX.T).T} ")

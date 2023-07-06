@@ -21,6 +21,17 @@ import multiprocessing as mp
 from resources import *
 
 
+
+"""
+TODO:
+    1. Zscore the X variable in all regressions
+    2. Always have intercept on all linear methods, otherwise we might be forcing a line whihc does not explain all the variability in data in the best way
+    3. In a linear model check if there is Normality and Homoscedasticity, (?independence of samples?), Optiona
+    4. Redo the dead residuals model, but You first must redo the TLS regression class, solve the problem with the -Vxy/Vzz
+    5. Focus then on the intercept term Linear Model
+    6. Recalculate the AUC for the various pairwise models
+"""
+
 quantileNorm = QuantileTransformer(output_distribution='normal')
 
 
@@ -1156,11 +1167,10 @@ class TLSRegression():
         )
         self.samples = list(self.samples) # make sure it's a list, because indexing by sets is deprecated
         self.X = X.loc[self.samples]
+        self.X = pd.DataFrame(quantileNorm.fit_transform(self.X), columns=self.X.columns, index=self.X.index)
         self.X_ma = np.ma.masked_invalid(self.X.values)
 
         self.Y = Y.loc[self.samples]
-        self.Y = self.Y.loc[:, self.Y.std() > 0]
-        self.Y = pd.DataFrame(quantileNorm.fit_transform(self.Y), columns=self.Y.columns, index=self.Y.index)
 
         self.fitIntercept = fitIntercept
 
@@ -1179,7 +1189,7 @@ class TLSRegression():
            (The regression's Residuals calculated with Forbenious norm of the errors of both X and Y, regression coefficients (includes beta0), predicted Y values, predicted X Values)
         """
 
-        features = list(X.column)
+        features = list(X.columns)
         samples = list(X.index)
         assert samples == list(Y.index), "X and Y must have the same samples"
 
@@ -1191,7 +1201,7 @@ class TLSRegression():
             X = np.concatenate((ones, X), axis=1)
 
         n = X.ndim # Get number of covariates
-        XY = np.concatenate([X, Y], axis=1) # Join X and Y
+        XY = np.column_stack((X, Y)) # Join X and Y
 
         # Calculate the SVD of XY
         _, _, VT_XY = np.linalg.svd(XY)
@@ -1200,7 +1210,7 @@ class TLSRegression():
         Vyy = V_XY[n:, n:] 
 
         #Calculate the TLS estimator, and predictions
-        betas = -Vxy / Vyy # The regression coefficients of TLS regression
+        betas = -np.divide(Vxy,Vyy) # The regression coefficients of TLS regression
         errorsXY = (-XY @ V_XY[:, n:] @ V_XY[:, n:].T) # The matrix of errors of X and Y
         errorX:np.ndarray = errorsXY[:, 0:n]
         errorY:np.ndarray = errorsXY[:, n:]
@@ -1326,7 +1336,7 @@ class UnbiasedResidualsLinModel():
         GeneralLinearModel (_type_): Base Linear Model Class
     """
 
-    def __init__(self, ppis:Iterable(tuple[str,str]), proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=False, copy_X=True):
+    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=False, copy_X=True):
         """Will create linear model, that will be used for the two fits.
 
         Args:
@@ -1344,6 +1354,7 @@ class UnbiasedResidualsLinModel():
         self.fitIntercept = fitIntercept
         self.copy_X = copy_X
         self.drugRes = drugRes
+        self.drugRes.data =drugRes.data.T #Because in this object samples are columns
 
 
     def checkCompleteObservations(self, X:pd.DataFrame, Y:pd.DataFrame):
@@ -1358,19 +1369,30 @@ class UnbiasedResidualsLinModel():
         """ 
         X.dropna(axis=0, how='any', inplace=True)
         Y.dropna(axis=0, how='any', inplace=True)
-        self.M.dropna(axis=0, how='any', inplace=True)
+        M :pd.DataFrame = self.M.dropna(axis=0, how='any')
         #Check if M is Categorical
-        if M.dtypes[0] == 'object':
-            M = pd.get_dummies(M.iloc[:,0])
-            M.drop(M.columns[0], axis=1, inplace=True)
+        try:
+            categoricalCols = M.select_dtypes(include=['object']).columns            
+            M = pd.get_dummies(M, columns=categoricalCols)
+            M.drop(columns=categoricalCols, inplace=True)
+            MSeries= False
+        except AttributeError as e:
+            print(f"{e} M is a pd.Series")
+            M = pd.get_dummies(M)
+            M = M.iloc[:,1:]
+            MSeries = True
 
-        self.samples = set.intersection(set(X.index), set(Y.index), set(self.M.index), set(self.drugRes.data.index)) # Get common samples
 
-        assert len(self.samples) >= 50, f"Not enough samples, {len(self.samples)}, in common between X, Y, M and drug response matrices \n Aborting!"
-
-        X = X.loc[self.samples,:]
-        Y = Y.loc[self.samples,:]
-        M = self.M.loc[self.samples,:]
+        self.samples = set.intersection(set(X.index), set(Y.index), set(M.index), set(self.drugRes.data.index)) # Get common samples
+        
+        if len(self.samples) < 50:
+            print(f"Not enough samples, {len(self.samples)}, in common between X, Y, M and drug response matrices \n Skipping")
+            return None
+        
+        X = X.loc[self.samples]
+        Y = Y.loc[self.samples]
+        M = M.loc[self.samples]
+        
 
         return X, Y, M
 
@@ -1385,13 +1407,38 @@ class UnbiasedResidualsLinModel():
         """
         # Get the residuals of the first fit
 
-        betas = {'proteinA':[], 'proteinB':[], 'betaX':[], 'betaM':[]}
+        self.firstModelResiduals, self.firstModelBetas = self.fitPxPy()
 
-        for XName,YName in self.ppis:
+        # Fit the second model using the residuals of the first model as the new predictor for drug response
+
+        self.secondModel:GeneralLinearModel = GeneralLinearModel(self.drugRes, self.firstModelResiduals, self.M, fitIntercept=self.fitIntercept, copy_X=self.copy_X)
+
+        self.secondModelResults = self.secondModel.fit_matrix()
+
+        return self.firstModelResiduals, self.firstModelBetas, self.secondModelResults
+
+
+    def fitPxPy(self):
+        """ Fits the first model Py ~ M + Px, recursively for every PPI in self.ppis.
+        It then returns the residuals of this recursion, for every PPI in self.ppis. Along with the coeficients of the regression.
+
+        Returns:
+           self.firstModelResiduals, self.firstModelBetas tuple[pd.DataFrame,pd.DataFrame]: Residuals of the first model and the coeficients of the regression
+        """
+        betas = {'proteinA':[], 'proteinB':[], 'betaX':[], 'betaM':[]}
+        
+
+        for XName, YName in self.ppis:
             X = self.proteomics.data.loc[:,XName]
             Y = self.proteomics.data.loc[:,YName]
 
-            X, Y, M = self.checkCompleteObservations(X, Y)
+            XYMComplete = self.checkCompleteObservations(X, Y)
+            if XYMComplete is None:
+                print(f"X is {XName} and Y is {YName}")
+                continue
+            else:
+                X, Y, M = XYMComplete
+            
             X = pd.concat([X, M], axis=1)
 
             model:TLSRegression = TLSRegression(Y, X, fitIntercept=self.fitIntercept, copy_X=self.copy_X)
@@ -1408,27 +1455,10 @@ class UnbiasedResidualsLinModel():
             betas['betaM'].append(model.betas[1])
         self.firstModelBetas = pd.DataFrame(betas)
 
+        assert self.firstModelResiduals is not None and self.firstModelBetas is not None, f"There are no Py ~ Px + M that has overlaping samples, so we can't build the first of the models"
 
+        return self.firstModelResiduals, self.firstModelBetas   
 
-        # Fit the second model using the residuals of the first model as the new predictor for drug response
-
-        self.secondModel:GeneralLinearModel = GeneralLinearModel(self.drugRes, self.firstModelResiduals, self.M, fitIntercept=self.fitIntercept, copy_X=self.copy_X)
-
-        self.secondModelResults = self.secondModel.fit_matrix()
-
-        return self.firstModelResiduals, self.firstModelBetas, self.secondModelResults
-
-
-    def fitPxPy(self):
-        """It fits the regression between X and Y, using the initial Linear Model Structure.
-        Py ~ M + Px
-        """
-
-        # Get the residuals of the first fit
-
-        self.firstModelResiduals, self.firstModelBetas, self.firstModelPredY, self.firstModelPredX = self.firstModel.fit()
-
-        return self.firstModelResiduals, self.firstModelBetas, self.firstModelPredY, self.firstModelPredX
 
     
     
