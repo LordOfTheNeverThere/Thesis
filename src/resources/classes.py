@@ -26,9 +26,9 @@ from resources import *
 TODO:
     1. Zscore the X variable in all regressions - DONE
     2. Always have intercept on all linear methods, otherwise we might be forcing a line whihc does not explain all the variability in data in the best way - Done
-    3. In a linear model check if there is Normality and Homoscedasticity, (?independence of samples?), Optiona
+    3. In a linear model check if there is Normality and Homoscedasticity, (?independence of samples?), Optional
     4. Redo the dead residuals model, but You first must redo the TLS regression class, solve the problem with the -Vxy/Vzz
-    5. Focus then on the intercept term Linear Model
+    5. Focus then on the interaction term Linear Model
     6. Recalculate the AUC for the various pairwise models
 """
 
@@ -962,9 +962,11 @@ class ResiduesMatrix(MatrixData):
         Y: pd.DataFrame = drugResponse.data.copy().T # Samples should be rows and not columns
         Y = Y.fillna(Y.mean(axis=0))
         
-        confoundingFactors = samplesheet[['tissue']].dropna(axis=0, how='any')
+        confoundingFactors = samplesheet[['tissue', 'growth_properties']].dropna(axis=0, how='any')
         confoundingFactors['lung'] = (confoundingFactors['tissue'] == 'lung').astype(int)
+        confoundingFactors = pd.get_dummies(confoundingFactors, columns=['growth_properties'], prefix='', prefix_sep='')
         confoundingFactors = confoundingFactors.drop(columns=['tissue'])
+
 
         regressor = ResidualsLinearModel(Y, X, confoundingFactors, residualsType=residualsType)
         regressor.fit_matrix()
