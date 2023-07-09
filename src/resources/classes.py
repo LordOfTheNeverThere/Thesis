@@ -1007,7 +1007,7 @@ class GeneralLinearModel(MatrixData):
         self.samples = list(self.samples) # make sure it's a list, because indexing by sets is deprecated
         self.X = X.loc[self.samples]
         self.X = self.X.loc[:, self.X.count() > (M.shape[1] + (1 if M2 is None else 2))]
-        self.X = StandardScaler().fit_transform(self.X)
+        self.X = pd.DataFrame(StandardScaler().fit_transform(self.X), index=self.X.index, columns=self.X.columns)
         self.X_ma = np.ma.masked_invalid(self.X.values)
         
 
