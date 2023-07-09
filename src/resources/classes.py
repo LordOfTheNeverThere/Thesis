@@ -24,12 +24,16 @@ from resources import *
 
 """
 TODO:
+Tasks:
     1. Zscore the X variable in all regressions - DONE
     2. Always have intercept on all linear methods, otherwise we might be forcing a line whihc does not explain all the variability in data in the best way - Done
     3. In a linear model check if there is Normality and Homoscedasticity, (?independence of samples?), Optional
     4. Redo the dead residuals model, but You first must redo the TLS regression class, solve the problem with the -Vxy/Vzz
     5. Focus then on the interaction term Linear Model
     6. Recalculate the AUC for the various pairwise models
+
+Doubts:
+    1. Should I add random normal noise to binary confoundind factors like we are doing in ResidualsLinearModel?
 """
 
 
@@ -960,7 +964,8 @@ class ResiduesMatrix(MatrixData):
 
         X = self.data.copy()
         Y: pd.DataFrame = drugResponse.data.copy().T # Samples should be rows and not columns
-        Y = Y.fillna(Y.mean(axis=0))
+        Y = Y.fillna(Y.mean())
+
         
         confoundingFactors = samplesheet[['tissue', 'growth_properties']].dropna(axis=0, how='any')
         confoundingFactors['lung'] = (confoundingFactors['tissue'] == 'lung').astype(int)
