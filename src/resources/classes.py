@@ -24,15 +24,13 @@ from resources import *
 
 """
 TODO:
-    1. Zscore the X variable in all regressions
+    1. Zscore the X variable in all regressions - DONE
     2. Always have intercept on all linear methods, otherwise we might be forcing a line whihc does not explain all the variability in data in the best way
     3. In a linear model check if there is Normality and Homoscedasticity, (?independence of samples?), Optiona
     4. Redo the dead residuals model, but You first must redo the TLS regression class, solve the problem with the -Vxy/Vzz
     5. Focus then on the intercept term Linear Model
     6. Recalculate the AUC for the various pairwise models
 """
-
-quantileNorm = QuantileTransformer(output_distribution='normal')
 
 
 
@@ -1007,11 +1005,12 @@ class GeneralLinearModel(MatrixData):
         self.samples = list(self.samples) # make sure it's a list, because indexing by sets is deprecated
         self.X = X.loc[self.samples]
         self.X = self.X.loc[:, self.X.count() > (M.shape[1] + (1 if M2 is None else 2))]
+        self.X = StandardScaler().fit_transform(self.X)
         self.X_ma = np.ma.masked_invalid(self.X.values)
+        
 
         self.Y = Y.loc[self.samples]
         self.Y = self.Y.loc[:, self.Y.std() > 0]
-        self.Y = pd.DataFrame(quantileNorm.fit_transform(self.Y), columns=self.Y.columns, index=self.Y.index)
 
 
         self.M = M.loc[self.samples]
@@ -1168,7 +1167,7 @@ class TLSRegression():
         )
         self.samples = list(self.samples) # make sure it's a list, because indexing by sets is deprecated
         self.X = X.loc[self.samples]
-        self.X = pd.DataFrame(quantileNorm.fit_transform(self.X), columns=self.X.columns, index=self.X.index)
+        self.X = pd.DataFrame(StandardScaler().fit_transform(self.X), columns=self.X.columns, index=self.X.index) # Standardize X
         self.X_ma = np.ma.masked_invalid(self.X.values)
 
         self.Y = Y.loc[self.samples]
@@ -1178,7 +1177,7 @@ class TLSRegression():
         
     
     @staticmethod
-    def tlsRegression(X:pd.Series|pd.DataFrame, Y:pd.Series|pd.DataFrame, fitIntercept=False):
+    def tlsRegression(X:pd.Series|pd.DataFrame, Y:pd.Series|pd.DataFrame, fitIntercept=True):
         """Calculates the TLS regression of X on Y.
 
         Args:
@@ -1270,7 +1269,6 @@ class TLSRegression():
 
 class ResidualsLinearModel(GeneralLinearModel):
 
-
     def __init__(self, Y, X, M, M2=None, fit_intercept=True, copy_X=True, n_jobs=4, verbose=1, residualsType:str = "TLS"):
 
         assert residualsType in ["TLS", "malahanobis", None], "residualsType must be either TLS, None or malahanobis"
@@ -1332,12 +1330,9 @@ class ResidualsLinearModel(GeneralLinearModel):
 class UnbiasedResidualsLinModel():
     """This class is a Linear Model that uses the residuals of the linear regression between X and Y as the new predictor for Drug response.
     But it does it by taking into consideration some confounding factors M, in our case growth props.
-
-    Args:
-        GeneralLinearModel (_type_): Base Linear Model Class
     """
 
-    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=False, copy_X=True):
+    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=True, copy_X=True):
         """Will create linear model, that will be used for the two fits.
 
         Args:
@@ -1435,7 +1430,7 @@ class UnbiasedResidualsLinModel():
 
             XYMComplete = self.checkCompleteObservations(X, Y)
             if XYMComplete is None:
-                print(f"X is {XName} and Y is {YName}")
+                print(f"X is {XName} and Y is {YName}, and there are no common samples between them, Drug Response and M \n Skipping")
                 continue
             else:
                 X, Y, M = XYMComplete
