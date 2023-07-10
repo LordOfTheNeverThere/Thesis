@@ -1125,7 +1125,6 @@ class GeneralLinearModel(MatrixData):
             # Fit full model: covariates + feature
             lm_full_x = np.concatenate([m, x], axis=1)
             lm_full = self.model_regressor().fit(lm_full_x, y)
-            print(lm_full.score(lm_full_x, y))
             betasFeature =  lm_full.coef_[:,-1]
             meanBetasCovariates = lm_full.coef_[:, 0:-1]
 
@@ -1134,6 +1133,10 @@ class GeneralLinearModel(MatrixData):
             # Log-ratio test
             lr = 2 * (lm_full_ll - lm_small_ll)
             lr_pval = chi2(1).sf(lr)
+            rSquared = lm_full.score(lm_full_x, y)
+            #if Rsquared is significant print the association that is significant
+            if rSquared > 0.65:
+                print(f"Association: {x_var} and {y.columns} is significant with R^2 = {rSquared}")
 
             # Assemble + append results
             res = pd.DataFrame(
@@ -1146,6 +1149,7 @@ class GeneralLinearModel(MatrixData):
                     covs=m.shape[1],
                     pval=lr_pval,
                     fdr=multipletests(lr_pval, method="fdr_bh")[1],
+                    rSquared = rSquared
                 )
             )
             
@@ -1187,7 +1191,7 @@ class GeneralLinearModel(MatrixData):
 class TLSRegression():
     """Implements Total Least Squares Regression.
     """
-    def __init__(self, Y:pd.DataFrame, X:pd.DataFrame, copy_X = True, fitIntercept=False):
+    def __init__(self, Y:pd.DataFrame, X:pd.DataFrame, copy_X = True, fitIntercept=False, standardise:bool = True):
 
         self.Y = Y
         self.X = X
@@ -1197,7 +1201,8 @@ class TLSRegression():
         )
         self.samples = list(self.samples) # make sure it's a list, because indexing by sets is deprecated
         self.X = X.loc[self.samples]
-        self.X = pd.DataFrame(StandardScaler().fit_transform(self.X), columns=self.X.columns, index=self.X.index) # Standardize X
+        if standardise:
+            self.X = pd.DataFrame(StandardScaler().fit_transform(self.X), columns=self.X.columns, index=self.X.index) # Standardize X
         self.X_ma = np.ma.masked_invalid(self.X.values)
 
         self.Y = Y.loc[self.samples]
@@ -1219,18 +1224,20 @@ class TLSRegression():
            (The regression's Residuals calculated with Forbenious norm of the errors of both X and Y, regression coefficients (includes beta0), predicted Y values, predicted X Values)
         """
 
-        features = list(X.columns)
+        features = ['intercept'] + list(X.columns)
         samples = list(X.index)
         assert samples == list(Y.index), "X and Y must have the same samples"
 
         X = X.to_numpy() # Convert to numpy array
         Y = Y.to_numpy() # Convert to numpy array
 
+
         if fitIntercept:
             ones = np.ones((X.shape[0], 1))
             X = np.concatenate((ones, X), axis=1)
 
-        n = X.ndim # Get number of covariates
+        n = X.shape[1] # Get number of covariates
+        
         XY = np.column_stack((X, Y)) # Join X and Y
 
         # Calculate the SVD of XY
@@ -1239,12 +1246,13 @@ class TLSRegression():
         Vxy = V_XY[0:n, n:] 
         Vyy = V_XY[n:, n:] 
 
+
         #Calculate the TLS estimator, and predictions
         betas = -np.divide(Vxy,Vyy) # The regression coefficients of TLS regression
         errorsXY = (-XY @ V_XY[:, n:] @ V_XY[:, n:].T) # The matrix of errors of X and Y
         errorX:np.ndarray = errorsXY[:, 0:n]
         errorY:np.ndarray = errorsXY[:, n:]
-        predX = (X + errorX.T).T
+        predX = (X + errorX)
         predY = predX @ betas
         residuals = np.linalg.norm(errorsXY, axis=1)# Given by the frobenius Norm of the matrix of error of X and Y
 
@@ -1362,7 +1370,7 @@ class UnbiasedResidualsLinModel():
     But it does it by taking into consideration some confounding factors M, in our case growth props.
     """
 
-    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=True, copy_X=True):
+    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=True, copy_X=True, standardisePx = True):
         """Will create linear model, that will be used for the two fits.
 
         Args:
@@ -1381,6 +1389,7 @@ class UnbiasedResidualsLinModel():
         self.copy_X = copy_X
         self.drugRes = drugRes
         self.drugRes.data =drugRes.data.T #Because in this object samples are columns
+        self.standardisePx = standardisePx
 
 
     def checkCompleteObservations(self, X:pd.DataFrame, Y:pd.DataFrame):
@@ -1433,11 +1442,13 @@ class UnbiasedResidualsLinModel():
         """
         # Get the residuals of the first fit
 
-        self.firstModelResiduals, self.firstModelBetas = self.fitPxPy()
+        self.firstModelResiduals, self.firstModelBetas, M = self.fitPxPy() # This will give the coufounding factors M dummified
 
         # Fit the second model using the residuals of the first model as the new predictor for drug response
+        Y = self.drugRes.data
+        Y.fillna(Y.mean(), inplace=True)
 
-        self.secondModel:GeneralLinearModel = GeneralLinearModel(self.drugRes, self.firstModelResiduals, self.M, fitIntercept=self.fitIntercept, copy_X=self.copy_X)
+        self.secondModel:GeneralLinearModel = GeneralLinearModel(self.drugRes.data, self.firstModelResiduals, M, fitIntercept=self.fitIntercept, copy_X=self.copy_X)
 
         self.secondModelResults = self.secondModel.fit_matrix()
 
@@ -1451,11 +1462,15 @@ class UnbiasedResidualsLinModel():
         Returns:
            self.firstModelResiduals, self.firstModelBetas tuple[pd.DataFrame,pd.DataFrame]: Residuals of the first model and the coeficients of the regression
         """
-        betas = {'proteinA':[], 'proteinB':[], 'betaX':[], 'betaM':[]}
         
 
         for XName, YName in self.ppis:
             X = self.proteomics.data.loc[:,XName]
+            X = X.rename('proteinX')
+
+            if self.standardisePx:
+                X = (X - X.mean()) / X.std() # Standardise X
+
             Y = self.proteomics.data.loc[:,YName]
 
             XYMComplete = self.checkCompleteObservations(X, Y)
@@ -1467,23 +1482,29 @@ class UnbiasedResidualsLinModel():
             
             X = pd.concat([X, M], axis=1)
 
-            model:TLSRegression = TLSRegression(Y, X, fitIntercept=self.fitIntercept, copy_X=self.copy_X)
+            model:TLSRegression = TLSRegression(Y, X, fitIntercept=self.fitIntercept, copy_X=self.copy_X, standardise=False)
             residuals,betas,_,_ = model.fit()
+            residuals.columns = [f"{YName}:{XName}"] # Rename columns to match the PPI
+            betas.columns = pd.MultiIndex.from_product([[YName], [XName]]) # Rename columns to match the PPI
+            betas = betas.T
+            residuals.index.name = "sample"
+            betas.index.name = "sample"
 
             try:# If residuals already exists, merge them
-                self.firstModelResiduals = pd.merge(self.firstModelResiduals, residuals, how='outer')
-            except NameError:
+                self.firstModelResiduals = pd.merge(self.firstModelResiduals, residuals, how='outer', on='sample')
+            except AttributeError:
                 self.firstModelResiduals = residuals
-            # Save betas of first model
-            betas['proteinY'].append(YName)
-            betas['proteinX'].append(XName)
-            betas['betaX'].append(model.betas[0])
-            betas['betaM'].append(model.betas[1])
-        self.firstModelBetas = pd.DataFrame(betas)
+
+            try:# If betas already exists, concatenate them
+                self.firstModelBetas = pd.concat([self.firstModelBetas, betas], axis=0)
+            except AttributeError:
+                self.firstModelBetas = betas
+
+
 
         assert self.firstModelResiduals is not None and self.firstModelBetas is not None, f"There are no Py ~ Px + M that has overlaping samples, so we can't build the first of the models"
 
-        return self.firstModelResiduals, self.firstModelBetas   
+        return self.firstModelResiduals, self.firstModelBetas, M
 
 
     

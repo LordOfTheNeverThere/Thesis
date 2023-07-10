@@ -1,4 +1,3 @@
-
 # Imports
 import pandas as pd
 import numpy as np
@@ -12,23 +11,25 @@ from resources import UnbiasedResidualsLinModel, ResidualsLinearModel, ResiduesM
 
 if __name__ == '__main__':
 
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.width', None)
+    pd.set_option('display.max_colwidth', -1)
+
     # get data to run lienar model with TLS residuals and plot significant associations with proteomics data
     drugRes = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz')
     samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
     ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
     vaeProteomics:ProteinsMatrix= read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
-    # vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
+    vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
 
 
 
-    # ppisOfInterest = set(vaeGLSPairwise.data.query("pValue < 0.001 & corum == 1").copy().index)
-    # ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
+    ppisOfInterest = set(vaeGLSPairwise.data.query("pValue < 0.001 & corum == 1").copy().index)
+    ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
 
-    # #Get 5 elements from the set
-    ppisOfInterest = [('MRPL38', 'MRPL45'), ('DPY30', 'SAP18'), ('SNRPA', 'SYNCRIP'), ('HNRNPA1', 'HNRNPD'), ('PCBP2', 'SNRNP40')]
-    model1 = UnbiasedResidualsLinModel(ppisOfInterest, vaeProteomics, drugRes, samplesheet['growth_properties'])
-    model1.fitPxPy()
-    len(set.intersection(set(vaeProteomics.data[ppisOfInterest[0][0]].index), set(vaeProteomics.data[ppisOfInterest[0][1]].index)))
+    
+    model1 = UnbiasedResidualsLinModel(ppisOfInterest, vaeProteomics, drugRes, samplesheet['growth_properties'], standardisePx=True)
+    fit = model1.twoFits()
 
 
     #Fit and test linear model for associations from VAE proteomics data's residuals
