@@ -29,9 +29,10 @@ Tasks:
     1. Zscore the X variable in all regressions - DONE
     2. Always have intercept on all linear methods, otherwise we might be forcing a line whihc does not explain all the variability in data in the best way - Done
     3. In a linear model check if there is Normality and Homoscedasticity, (?independence of samples?), Optional
-    4. Redo the dead residuals model, but You first must redo the TLS regression class, solve the problem with the -Vxy/Vzz
-    5. Focus then on the interaction term Linear Model
-    6. Recalculate the AUC for the various pairwise models
+    4. Redo the dead residuals model -  DONE (no major improvements, not adding growth_props increases R^2 to 0.11 with Lung and Heamo)
+    5. Redo the TLS regression class, solve the problem with the -Vxy/Vzz
+    6. Focus then on the interaction term Linear Model
+    7. Recalculate the AUC for the various pairwise models
 
 Doubts:
     1. Should I add random normal noise to binary confoundind factors like we are doing in ResidualsLinearModel?
@@ -1043,7 +1044,6 @@ class GeneralLinearModel(MatrixData):
 
         self.M2 = M2.loc[self.samples, self.X.columns] if M2 is not None else M2
 
-        self.normalize = normalize
         self.fit_intercept = fit_intercept
         self.copy_X = copy_X
         self.n_jobs = n_jobs
