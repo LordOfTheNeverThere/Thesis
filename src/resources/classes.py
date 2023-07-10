@@ -8,6 +8,7 @@ import pickle
 import gzip
 from scipy.special import stdtr
 from scipy.stats import pearsonr
+import statsmodels.api as sm
 from statsmodels.stats.diagnostic import het_breuschpagan, het_white
 from statsmodels.stats.multitest import multipletests
 from sklearn.linear_model import LinearRegression
@@ -36,7 +37,25 @@ Doubts:
     1. Should I add random normal noise to binary confoundind factors like we are doing in ResidualsLinearModel?
 """
 
+def ols(Y,X):
+    """Give the OLS regression results for a given set of features and a response variable, like R Summary
 
+    Args:
+        Y (_type_): Data with dependent variables
+        X (_type_): Data with independent variables
+
+    Returns:
+        OLS: Regressor object, used for predictions for example
+        RegressionResultsWrapper:  Results of the regression, like betas and all types of test statistics
+    """
+    X = sm.add_constant(X)
+    print(X)
+    print(Y)
+    regressor = sm.OLS(Y, X)
+    results = regressor.fit()
+    print(results.summary())
+
+    return regressor, results
 
 def covMatrixAnalysis(data:pd.DataFrame)-> tuple[float, float]:
     """Gives a summary of the covariance matrix in terms of the % of  and the mean of the non diagonal elements,
@@ -967,11 +986,10 @@ class ResiduesMatrix(MatrixData):
         Y = Y.fillna(Y.mean())
 
         
-        confoundingFactors = samplesheet[['tissue', 'growth_properties']].dropna(axis=0, how='any')
-        confoundingFactors['lung'] = (confoundingFactors['tissue'] == 'lung').astype(int)
-        confoundingFactors = pd.get_dummies(confoundingFactors, columns=['growth_properties'], prefix='', prefix_sep='')
+        confoundingFactors = samplesheet[['tissue']].dropna(axis=0, how='any')
+        confoundingFactors['lung'] = (confoundingFactors['tissue'] == 'Lung').astype(int)
+        confoundingFactors['hymCellLine'] = (confoundingFactors['tissue'] == 'Haematopoietic and Lymphoid').astype(int)
         confoundingFactors = confoundingFactors.drop(columns=['tissue'])
-
 
         regressor = ResidualsLinearModel(Y, X, confoundingFactors, residualsType=residualsType)
         regressor.fit_matrix()
@@ -998,6 +1016,7 @@ class GeneralLinearModel(MatrixData):
         copy_X=True,
         n_jobs=4,
         verbose=1,
+        addNoise:bool = False,
         filepath: str=None, 
         data: pd.DataFrame=None, 
         **readerKwargs
@@ -1030,6 +1049,7 @@ class GeneralLinearModel(MatrixData):
         self.n_jobs = n_jobs
 
         self.verbose = verbose
+        self.addNoise = addNoise
         # self.log = logging.getLogger("Crispy")
 
     def model_regressor(self):
@@ -1094,7 +1114,9 @@ class GeneralLinearModel(MatrixData):
                 m2 = self.M2.iloc[~x_ma.mask.any(axis=1), [x_idx]]
                 m = pd.concat([m2, m], axis=1)
             # m = m.loc[:, m.std(numeric_only = True) > 0]
-            m += np.random.normal(0, 1e-6, m.shape)
+            if self.addNoise:
+                m += np.random.normal(0, 1e-6, m.shape)
+
 
             # Fit covariate model
             lm_small = self.model_regressor().fit(m, y)
@@ -1103,6 +1125,7 @@ class GeneralLinearModel(MatrixData):
             # Fit full model: covariates + feature
             lm_full_x = np.concatenate([m, x], axis=1)
             lm_full = self.model_regressor().fit(lm_full_x, y)
+            print(lm_full.score(lm_full_x, y))
             betasFeature =  lm_full.coef_[:,-1]
             meanBetasCovariates = lm_full.coef_[:, 0:-1]
 
