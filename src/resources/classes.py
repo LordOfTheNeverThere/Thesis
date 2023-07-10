@@ -82,7 +82,7 @@ def covMatrixAnalysis(data:pd.DataFrame)-> tuple[float, float]:
     nonDiagonalMetric:float = ((sum(upperTriangular))/len(upperTriangular)) * 100
     #I only did for the upper triangular because the covariance matrix is symmetric
     diagonal = np.diag(cov)
-    diagonalMetric = [round(x, 4)==1 for x in diagonal]
+    diagonalMetric = [round(x, 4) == 1 for x in diagonal]
 
     diagonalMetric = ((sum(diagonalMetric))/len(diagonalMetric)) * 100  
 
@@ -1195,8 +1195,7 @@ class GeneralLinearModel(MatrixData):
         return residuals
     
 class TLSRegression():
-    """Implements Total Least Squares Regression.
-    """
+    """Implements Total Least Squares Regression"""
     def __init__(self, Y:pd.DataFrame, X:pd.DataFrame, copy_X = True, fitIntercept=False, standardise:bool = True):
 
         self.Y = Y
