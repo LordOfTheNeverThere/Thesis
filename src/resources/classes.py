@@ -32,9 +32,9 @@ Tasks:
     4. Redo the dead residuals model -  DONE (no major improvements, not adding growth_props increases R^2 to 0.11 with Lung and Heamo)
     5. Redo the TLS regression class, solve the problem with the -Vxy/Vzz -DONE
     6. Focus then on the interaction term Linear Model
-        1. Save the number of common samples, n
-        2. Save the effectsize of the interaction term, how much drug response alters the explanatory power of Px 
-        3. Do Log ratio test to see if the interaction term and Drug Response term are significant py ~ M + px + drug + px*drug
+        1. Save the number of common samples, n - DONE
+        2. Save the effectsize of the interaction term, how much drug response alters the explanatory power of Px -DONE
+        3. Do Log ratio test to see if the interaction term and Drug Response term are significant py ~ M + px + drug + px*drug -DONE
         4. Do a volcano Plot and then a scatter plot of the samples with highest interaction term in abs and highest Y axis coordinate
     7. Recalculate the AUC for the various pairwise models
     8. Do the subsampling convergence tests for protein mean, pearson'r pval vs gls' pval
@@ -683,8 +683,7 @@ class ProteinsMatrix(MatrixData):
 
         if len(ppi.split('-')) > 0:
             ppi = ppi.split('-')[0]
-        else:
-            print('ppi should be in format px;py-residual')
+
         pxName = ppi.split(';')[0]
         px = proteinData[pxName]
         pyName = ppi.split(';')[1]
@@ -1370,7 +1369,7 @@ class ResidualsLinearModel(GeneralLinearModel):
         proteomics.plotPxPyDrug(drug, ppi, drugResponse,filepath)
 
     
-class UnbiasedResidualsLinModel():
+class UnbiasedResidualsLinModel(MatrixData):
     """This class is a Linear Model that uses the residuals of the linear regression between X and Y as the new predictor for Drug response.
     But it does it by taking into consideration some confounding factors M, in our case growth props.
     """
@@ -1415,12 +1414,10 @@ class UnbiasedResidualsLinModel():
             categoricalCols = M.select_dtypes(include=['object']).columns            
             M = pd.get_dummies(M, columns=categoricalCols)
             M.drop(columns=categoricalCols, inplace=True)
-            MSeries= False
         except AttributeError as e:
             print(f"{e} M is a pd.Series")
             M = pd.get_dummies(M)
             M = M.iloc[:,1:]
-            MSeries = True
 
 
         self.samples = set.intersection(set(X.index), set(Y.index), set(M.index), set(self.drugRes.data.index)) # Get common samples
@@ -1489,7 +1486,7 @@ class UnbiasedResidualsLinModel():
 
             model:TLSRegression = TLSRegression(Y, X, fitIntercept=self.fitIntercept, copy_X=self.copy_X, standardise=False)
             residuals,betas,_,_ = model.fit()
-            residuals.columns = [f"{YName}:{XName}"] # Rename columns to match the PPI
+            residuals.columns = [f"{YName};{XName}"] # Rename columns to match the PPI
             betas.columns = pd.MultiIndex.from_product([[YName], [XName]]) # Rename columns to match the PPI
             betas = betas.T
             residuals.index.name = "sample"
@@ -1510,6 +1507,20 @@ class UnbiasedResidualsLinModel():
         assert self.firstModelResiduals is not None and self.firstModelBetas is not None, f"There are no Py ~ Px + M that has overlaping samples, so we can't build the first of the models"
 
         return self.firstModelResiduals, self.firstModelBetas, M
+    
+
+    def plotSignificantAssociation(self, proteomics:ProteinsMatrix, drugResponse:DrugResponseMatrix, filepath:str):
+
+        results = self.secondModelResults.copy()
+
+        results = results.sort_values(by='pval', ascending=True)
+        drug = results['y_id'].iloc[0]
+        ppi  = results['x_id'].iloc[0]
+        if len(ppi.split(':')) > 0:
+            ppi = ppi.split(':')[0] + ';' + ppi.split(':')[1]
+
+        proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
+
 
 
     

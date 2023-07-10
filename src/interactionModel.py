@@ -4,13 +4,12 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from typing import Iterable
 from statsmodels.regression.linear_model import RegressionResultsWrapper
+from statsmodels.stats.multitest import multipletests
 import time as t
 
 class DRInteractionPxModel():
 
     def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=True, copy_X=True, standardisePx = True):
-        
-
 
         self.ppis = ppis
         self.proteomics = proteomics.data
@@ -57,7 +56,7 @@ class DRInteractionPxModel():
 
         commonDF = pd.concat([Y, X, M, drugRes], axis=1) #concatenate dataframes to build formula
         commonDF.columns = ['Py', 'Px'] + list(M.columns) + ['dR'] #rename columns to build formula
-        print(commonDF.columns)
+
         #build formula containing all the M vars as independent variables, separately
         largeFormula = "Py ~ Px + " + " + ".join(list(M.columns)) + " + dR + dR:Px"
         smallForumla = "Py ~ Px + " + " + ".join(list(M.columns))
@@ -97,7 +96,8 @@ class DRInteractionPxModel():
             'drugResBeta':[], 
             'interactionBeta':[], 
             'logLikePValue':[],
-            'llStatistic':[]}
+            'llStatistic':[], 
+            'fdr':[]}
 
         for ppi in self.ppis:
             for index,drugName in enumerate(list(self.drugRes.columns)):
@@ -125,6 +125,7 @@ class DRInteractionPxModel():
                 res['interactionBeta'].append(largeModel.params['dR:Px'])
                 res['logLikePValue'].append(logLikelihoodpValue)
                 res['llStatistic'].append(llStatistic)
+                res['fdr'].append(multipletests(logLikelihoodpValue, method="fdr_bh")[1])
 
                 if index == 0:
                     end = t.time()
@@ -148,13 +149,17 @@ ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pi
 # ppisOfInterest = set(vaeGLSPairwise.data.query("pValue < 0.001 & corum == 1").copy().index)
 # ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
 
-ppisOfInterest = [('MRPL38', 'MRPL45')]
+ppisOfInterest = [('MRPL38', 'MRPL45'), ('MRPL45', 'MRPL38')]
 drugRes.data = drugRes.data.iloc[:,0:1]
 
 M = pd.get_dummies(samplesheet['growth_properties'])
 M = M.rename(columns={'Semi-Adherent': 'SemiAdherent'})
 
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', -1)
+
 
 model = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, M, standardisePx=False)
-
+model.fit()
 
