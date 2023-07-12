@@ -9,6 +9,8 @@ import gzip
 from scipy.special import stdtr
 from scipy.stats import pearsonr
 import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from statsmodels.regression.linear_model import RegressionResultsWrapper
 from statsmodels.stats.diagnostic import het_breuschpagan, het_white
 from statsmodels.stats.multitest import multipletests
 from sklearn.linear_model import LinearRegression
@@ -42,6 +44,7 @@ Tasks:
 
 Doubts:
     1. Should I add random normal noise to binary confoundind factors like we are doing in ResidualsLinearModel?
+    2. In the intercept Linear Model, should I have a regression for each drug and PPI and not account for all the drugs simultaneously? The meaning of the wilk's test is not very meaningful
 """
 
 def ols(Y,X):
@@ -1521,7 +1524,190 @@ class UnbiasedResidualsLinModel(MatrixData):
 
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
+def processPPIWrapper(self, ppi:tuple[str, str]) -> pd.DataFrame:
+    print(ppi)
+    for drugName in self.drugRes:
+        start = t.time()
+        YName = ppi[0]
+        XName = ppi[1]
+        _, _, res= self.getLinearModels(YName, XName, drugName)
 
+
+        try:
+            results = pd.concat([results, res], axis=0)
+        except:
+            results = res
+
+
+        # invert Px and Py to understand if there are one way relationships
+        YName = ppi[1]
+        XName = ppi[0]
+        _, _, res= self.getLinearModels(YName, XName, drugName)
+
+
+        try:
+            results = pd.concat([results, res], axis=0)
+        except:
+            results = res
+
+
+    return results
+
+
+class DRInteractionPxModel(MatrixData):
+    """Linear Model Designed to find interactions between drug response and proteomics data, so the goal is to see what Drug Responses are impacted by a certain ppi (pY, pX)
+
+    Args:
+        MatrixData (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """    """"""
+    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=True, copyX=True, standardisePx = True, nJobs:int=4):
+
+        self.ppis = ppis
+        self.proteomics = proteomics.data
+        self.drugRes = drugRes.data
+        self.M = M
+        self.fitIntercept = fitIntercept
+        self.copyX = copyX
+        self.standardisePx = standardisePx
+        self.nJobs = nJobs
+        self.drugResLen = drugRes.data.shape[1]
+        self.lenM =  M.shape[1]
+    
+    def modelRegressor(self):
+        regressor = LinearRegression(
+            fit_intercept=self.fitIntercept,
+            copy_X=self.copyX,
+            n_jobs=self.nJobs,
+        )
+        return regressor
+    
+
+    @staticmethod
+    def loglike(y_true, y_pred):
+        nobs = len(y_true)
+        nobs2 = nobs / 2.0
+
+        ssr = np.power(y_true - y_pred, 2).sum()
+
+        llf = -nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) - nobs2
+
+        return llf
+
+
+
+    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, pd.DataFrame, pd.DataFrame]:
+        """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
+        It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
+        And then builds the OLS models from statsmodels.api library.
+
+        Args:
+            YName (str): Protein Y name
+            XName (str): Protein X name
+            drugName (str): Drug name
+
+        Returns:
+            sm.OLS: larger Linear Model from statsmodels.api library
+            sm.OLS: Smaller Linear Model from statsmodels.api library
+            pd.DataFrame: Results dataframe with all the effect sizes and the following extra columns:
+            n   : number of samples         loglikePValue   : loglikelikelihood p-value   fdr: False Discovery Rate   llStatistic : loglikelihood statistic    intercept  : intercept value
+        """
+        
+        Py = self.proteomics.loc[:,YName]
+        Py = Py.dropna()
+        Px = self.proteomics.loc[:,XName]
+        Px = Px.dropna()
+        M = self.M
+        M = M.dropna(axis=0)
+        drugRes = self.drugRes.loc[:,drugName]
+        drugRes = drugRes.fillna(drugRes.mean())
+
+        #get samples common to all dataframes
+        samplesCommon = list(set.intersection(
+            set(Py.index), set(Px.index), set(drugRes.index), set(M.index)
+            ))# samples common to all dataframes
+        
+        #number of samples in common, n
+        n = len(samplesCommon)
+
+
+        #subset dataframes to common samples
+        Py = Py.loc[samplesCommon]
+        Px = Px.loc[samplesCommon]
+        drugRes = drugRes.loc[samplesCommon]
+        M = M.loc[samplesCommon]
+
+
+        
+        if self.standardisePx: # Zscore Px if standardisePx is True
+            Px = (Px - Px.mean()) / Px.std()
+
+        pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
+
+
+        #reordering of expressions to build the smaller and larger models
+        # Small Model: Py ~ (Px + M) 
+        # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
+        
+        X = pd.concat([drugRes, pxInteractionDR], axis=1) 
+        M = pd.concat([Px, M], axis=1)
+
+        # Fit Confounding, small model
+        lmSmall = self.modelRegressor().fit(M, Py)
+        lmSmallLogLike = self.loglike(Py, lmSmall.predict(M))
+
+        # Fit Confounding + features, Large model
+        xLarge = pd.concat([M, X], axis=1)
+        #make sure all columns are strings
+        xLarge.columns = xLarge.columns.astype(str)
+        lmLarge = self.modelRegressor().fit(xLarge, Py)
+        lmLargeLogLike = self.loglike(Py, lmLarge.predict(xLarge))
+
+        # Log-ratio test
+        lr = 2 * (lmLargeLogLike - lmSmallLogLike)
+        LogLikeliRatioPVal = chi2(X.shape[1]).sf(lr)
+
+        coefs = lmLarge.coef_
+        columns = ['Px'] + self.M.columns.tolist() + [drugName] + ['interaction']
+        columns = [('effectSize', col) for col in columns]
+
+        res = pd.DataFrame(coefs, index=pd.MultiIndex.from_tuples(columns)).T
+        res['Py'] = YName
+        res['Px'] = XName
+        res['drug'] = drugName
+        res['n'] = n
+        res['logLikePValue'] = LogLikeliRatioPVal
+        res['llStatistic'] = lr
+        res['intercept'] = lmLarge.intercept_
+        print(res)
+        return lmLarge, lmSmall, res
+    
+
+    def fit(self)->pd.DataFrame:
+        """Fit each Px and Py pair towards every drug in the drugRes dataframe.
+            Calculate the Log likelihood p-value for the null hypothesis that the smaller model is correct, so the larger model does not add any covariate which is statistically significant.
+            Or so to say the wilk's or likelihood ratio test.
+
+        Returns:
+            pd.DataFrame: The results of the fitting process, with the following columns: 
+                Py, Px, drug, n, intercept, PxBeta, adherentBeta, semiAdherentBeta, suspensionBeta, unknownBeta, drugResBeta, interactionBeta, logLikePValue, llStatistic
+        """        
+
+
+
+        pararelList =  zip(repeat(self), self.ppis)
+        with mp.Pool(CPUS) as process:
+            pararelResults = process.starmap(processPPIWrapper, pararelList)
+            
+        results = pd.concat([result for result in pararelResults], axis=0)
+
+        correctedPValues = multipletests(results['logLikePValue'], method="fdr_bh")[1]
+        results['fdr'] = correctedPValues
+        self.data = results
+
+        return results
 
     
     
