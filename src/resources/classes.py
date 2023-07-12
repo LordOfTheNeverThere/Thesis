@@ -675,7 +675,7 @@ class ProteinsMatrix(MatrixData):
         self.samplesIndep = f"Percentage of 1's in Diagonal: {diagonalMean}\nPercentage of 0's in non diagonal: {nonDiagonalMean}\nPercentage of 1's in Diagonal, after whitening: {whiteDiagonalMean}\nPercentage of 0's in non diagonal, after whitening: {whiteNonDiagonalMean}"
         print(self.samplesIndep)
 
-    def plotPxPyDrug(self, drug:str, ppi:str, drugResponse: DrugResponseMatrix, filepath:str):
+    def plotPxPyDrug(self, drug:str, ppi:str, drugResponse: DrugResponseMatrix, filepath:str, **annotationArgs):
 
 
         drugResponse = drugResponse.binrise(inplace=False).T # The drug response matrix is binarised
@@ -700,11 +700,12 @@ class ProteinsMatrix(MatrixData):
         plt.title('Protein expression \n with Drug Response, >50% [drugMax]')
         plt.xlabel(str(pxName))
         plt.ylabel(str(pyName))
-        legend = [plt.Line2D([0], [0], marker='.', color=colors[key], label='Drug Response = ' + str(key)) for key in colors]
-        plt.legend(handles = legend, fontsize=8, framealpha=0.2)
+        if annotationArgs is not None:
+            plt.annotate(**annotationArgs)
+        legend = [plt.Line2D([0], [0], marker='o', color=colors[key], label='Drug Response = ' + str(key)) for key in colors]
+        plt.legend(handles = legend, fontsize=20, framealpha=0.2)
         plt.savefig(filepath)
 
-        
         plt.close()
     
     def plotPxPySample(self, ppis: list[str], filepath: str, sampleProp: str) -> None:
@@ -1700,6 +1701,82 @@ class DRInteractionPxModel(MatrixData):
         self.data = results
 
         return results
+    
+    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.10, pValHzLine:float = 0.001):
+        """
+        Volcano plot in order to find statisticall relevant relationships.
+        """
+        data = self.data.copy()
+        data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
+        yValues = -np.log10(data['info']['logLikePValue'])
+        xValues = data['effectSize']['interaction']
+
+        # Plot
+        plt.scatter(
+            xValues,
+            yValues,
+            c="k",
+            s=5,
+            alpha=0.5,
+            rasterized=True,
+        )
+
+        # Labels
+        plt.xlabel(r"$\beta$")
+        plt.ylabel(r"$-\log_{10}(p-value)$")
+
+        # Grid
+        plt.axvline(0, c="k", lw=0.5, ls="--")
+        plt.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
+
+        # Title
+        plt.title("Volcano plot")
+        plt.legend()
+        self.volcanoPath = filepath
+        plt.savefig(filepath, bbox_inches="tight")
+        plt.close()
+
+        
+    
+    def scatterTheTop2Volcano(self, filepath:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10):
+        
+        data = self.data.copy()
+        data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
+        data = data.sort_values(by=[('info','logLikePValue'), ('effectSize','interaction')], ascending=[True, False])
+        #Selecting top 2
+        first = data.iloc[0:1,:]
+        second = data.iloc[1:2,:]
+        #Anotation
+        pValue = first['info']['logLikePValue'].values[0]
+        effectSize = first['effectSize']['interaction'].values[0]
+        drugfirst = first['info']['drug'].values[0]
+        anotationFirst = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \n drug: {drugfirst} '
+        anotationFirst = {'text':anotationFirst, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':25}
+        pValue = second['info']['logLikePValue'].values[0]
+        effectSize = second['effectSize']['interaction'].values[0]
+        drugsecond = second['info']['drug'].values[0]
+        anotationSecond = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \n drug: {drugsecond}'
+        anotationSecond = {'text':anotationSecond, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':25}
+        
+
+        #Filepath and drug and ppi
+        filepathfirst = filepath.split('.png')[0] + '1st.png'
+        filepathsecond = filepath.split('.png')[0] + '2nd.png'	
+        ppifirst = first['info']['Py'].values[0] + ';' + first['info']['Px'].values[0]
+        ppisecond = second['info']['Py'].values[0] + ';' + second['info']['Px'].values[0]
+        
+        print(drugfirst, ppifirst)
+        print(drugsecond, ppisecond)
+
+        # Plot
+        proteomics.plotPxPyDrug(drugfirst, ppifirst, drugRes, filepathfirst, **anotationFirst)
+        proteomics.plotPxPyDrug(drugsecond, ppisecond, drugRes, filepathsecond, **anotationSecond)
+
+
+
+
+
+
 
     
     
