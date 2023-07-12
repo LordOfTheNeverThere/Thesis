@@ -19,11 +19,10 @@ if __name__ == '__main__':
     ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
     # using only corum ppis that we were able to recall, with high confidence
     vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
-    ppisOfInterest = set(vaeGLSPairwise.data.query("pValue < 0.00000001 & corum == 1").copy().index)
+    ppisOfInterest = set(vaeGLSPairwise.data.query("corum == 1").sort_values(by='pValue', ascending=True).head(300).index)
     ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
 
-    drugRes.data = drugRes.data.iloc[:, 0:1]
-    ppisOfInterest = [('MRPL38', 'MRPL45')]
+
 
     M = pd.get_dummies(samplesheet['growth_properties'])
     M = M.rename(columns={'Semi-Adherent': 'SemiAdherent'})
@@ -34,6 +33,6 @@ if __name__ == '__main__':
 
 
     dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, M)
-    dummy.fit()
+    fit = dummy.fit()
     # dummy.write(PATH + '/internal/interactionModel/GLSPValueLessE-8VAEProteomics/regressor.pickle.gz')
 

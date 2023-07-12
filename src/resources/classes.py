@@ -1,6 +1,6 @@
 from __future__ import annotations #  postpone evaluation of annotations
 import pandas as pd
-from itertools import combinations, product, permutations, repeat
+from itertools import combinations, product, permutations, repeat, chain
 import numpy as np
 import math
 from sklearn.metrics import auc
@@ -1524,32 +1524,23 @@ class UnbiasedResidualsLinModel(MatrixData):
 
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
-def processPPIWrapper(self, ppi:tuple[str, str]) -> pd.DataFrame:
-    print(ppi)
+def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
+
+    results = [] # List of results for each drug
     for drugName in self.drugRes:
-        start = t.time()
+        
         YName = ppi[0]
         XName = ppi[1]
         _, _, res= self.getLinearModels(YName, XName, drugName)
 
-
-        try:
-            results = pd.concat([results, res], axis=0)
-        except:
-            results = res
-
+        results.append(res)
 
         # invert Px and Py to understand if there are one way relationships
         YName = ppi[1]
         XName = ppi[0]
         _, _, res= self.getLinearModels(YName, XName, drugName)
 
-
-        try:
-            results = pd.concat([results, res], axis=0)
-        except:
-            results = res
-
+        results.append(res)
 
     return results
 
@@ -1562,7 +1553,7 @@ class DRInteractionPxModel(MatrixData):
 
     Returns:
         _type_: _description_
-    """    """"""
+    """
     def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=True, copyX=True, standardisePx = True, nJobs:int=4):
 
         self.ppis = ppis
@@ -1598,7 +1589,7 @@ class DRInteractionPxModel(MatrixData):
 
 
 
-    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, pd.DataFrame, pd.DataFrame]:
+    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, dict]:
         """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
         It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
         And then builds the OLS models from statsmodels.api library.
@@ -1611,8 +1602,7 @@ class DRInteractionPxModel(MatrixData):
         Returns:
             sm.OLS: larger Linear Model from statsmodels.api library
             sm.OLS: Smaller Linear Model from statsmodels.api library
-            pd.DataFrame: Results dataframe with all the effect sizes and the following extra columns:
-            n   : number of samples         loglikePValue   : loglikelikelihood p-value   fdr: False Discovery Rate   llStatistic : loglikelihood statistic    intercept  : intercept value
+            dict: Results dataframe with all the effect sizes and the following extra columns:
         """
         
         Py = self.proteomics.loc[:,YName]
@@ -1670,18 +1660,19 @@ class DRInteractionPxModel(MatrixData):
         LogLikeliRatioPVal = chi2(X.shape[1]).sf(lr)
 
         coefs = lmLarge.coef_
-        columns = ['Px'] + self.M.columns.tolist() + [drugName] + ['interaction']
+        columns = ['Px'] + self.M.columns.tolist() + ['drug'] + ['interaction']
         columns = [('effectSize', col) for col in columns]
 
-        res = pd.DataFrame(coefs, index=pd.MultiIndex.from_tuples(columns)).T
-        res['Py'] = YName
-        res['Px'] = XName
-        res['drug'] = drugName
-        res['n'] = n
-        res['logLikePValue'] = LogLikeliRatioPVal
-        res['llStatistic'] = lr
-        res['intercept'] = lmLarge.intercept_
-        print(res)
+        res = {col:coefs[index] for index,col in enumerate(columns)}
+        res[('info', 'Py')] = YName
+        res[('info', 'Px')] = XName
+        res[('info', 'drug')] = drugName
+        res[('info', 'n')] = n
+        res[('info', 'logLikePValue')] = LogLikeliRatioPVal
+        res[('info', 'llStatistic')] = lr
+        res[('info', 'intercept')] = lmLarge.intercept_
+
+
         return lmLarge, lmSmall, res
     
 
@@ -1700,11 +1691,12 @@ class DRInteractionPxModel(MatrixData):
         pararelList =  zip(repeat(self), self.ppis)
         with mp.Pool(CPUS) as process:
             pararelResults = process.starmap(processPPIWrapper, pararelList)
-            
-        results = pd.concat([result for result in pararelResults], axis=0)
+        results = list(chain.from_iterable(pararelResults))
 
-        correctedPValues = multipletests(results['logLikePValue'], method="fdr_bh")[1]
-        results['fdr'] = correctedPValues
+        results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results[0].keys()))
+
+        correctedPValues = multipletests(results['info']['logLikePValue'], method="fdr_bh")[1]
+        results[('info', 'fdr')] = correctedPValues
         self.data = results
 
         return results
