@@ -21,9 +21,9 @@ Doubts:
 
 12/7/23
 Tasks:
-    ~~1. Send the 60 head of the results of the interaction linear model~~
-    2. Normalise the drug in the interaction linear model
-    3. Remove the black border in the alrealdy translucent dots of the volcano plot
+    1. ~~Send the 60 head of the results of the interaction linear model~~
+    2. ~~Normalise the drug in the interaction linear model~~
+    3. ~~Remove the black border in the alrealdy translucent dots of the volcano plot~~
     4. Remove the 3 dots in the top 2 of the model, that have a high value for x and low for y and drugRes = 1, redo the linear model, see if the interaction effect size decreases (Those points were creating a relationship where there was none)
     5. Criar um PPI set com Corum == 1 e fdr < 1%, mandar nº para o Emanuel. Tens de utilizar os arrays dos pValues com multipletesting e voilá, fazer o mesmo para o pearson pvals correlation matrices não vá o diabo tecê-las
     6. De forma ao scatter plot ser mais palpável, e para perceber melhor as respostas extremas de certas cell lines a drogas, fazer um joint kernel plot? Ou um scatter com com as cores em contínuo, ou seja a resposta à droga não binarizada

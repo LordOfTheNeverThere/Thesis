@@ -1610,6 +1610,7 @@ class DRInteractionPxModel(MatrixData):
         
         if self.standardisePx: # Zscore Px if standardisePx is True
             Px = (Px - Px.mean()) / Px.std()
+            drugRes = (drugRes - drugRes.mean()) / drugRes.std()
 
         pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
 
