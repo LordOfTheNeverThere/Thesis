@@ -1694,6 +1694,7 @@ class DRInteractionPxModel(MatrixData):
             c="k",
             s=5,
             alpha=0.5,
+            edgecolors="none",
             rasterized=True,
         )
 
