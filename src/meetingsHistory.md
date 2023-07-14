@@ -21,7 +21,7 @@ Doubts:
 
 12/7/23
 Tasks:
-    1. Send the 60 head of the results of the interaction linear model
+    ~~1. Send the 60 head of the results of the interaction linear model~~
     2. Normalise the drug in the interaction linear model
     3. Remove the black border in the alrealdy translucent dots of the volcano plot
     4. Remove the 3 dots in the top 2 of the model, that have a high value for x and low for y and drugRes = 1, redo the linear model, see if the interaction effect size decreases (Those points were creating a relationship where there was none)

@@ -36,8 +36,6 @@ def ols(Y,X):
         RegressionResultsWrapper:  Results of the regression, like betas and all types of test statistics
     """
     X = sm.add_constant(X)
-    print(X)
-    print(Y)
     regressor = sm.OLS(Y, X)
     results = regressor.fit()
     print(results.summary())
@@ -1532,8 +1530,9 @@ class DRInteractionPxModel(MatrixData):
     Returns:
         _type_: _description_
     """
-    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=True, copyX=True, standardisePx = True, nJobs:int=4):
-
+    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=True, copyX=True, standardisePx = True, nJobs:int=4, filepath:str=None, data:pd.DataFrame=None, **readerKwargs):
+        
+        super().__init__(filepath, data, **readerKwargs)
         self.ppis = ppis
         self.proteomics = proteomics.data
         self.drugRes = drugRes.data
