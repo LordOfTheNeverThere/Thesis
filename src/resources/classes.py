@@ -1628,7 +1628,7 @@ class DRInteractionPxModel(MatrixData):
 
         # Fit Confounding + features, Large model
         xLarge = pd.concat([M, X], axis=1)
-        #make sure all columns are strings
+        # Make sure all columns are strings
         xLarge.columns = xLarge.columns.astype(str)
         lmLarge = self.modelRegressor().fit(xLarge, Py)
         lmLargeLogLike = self.loglike(Py, lmLarge.predict(xLarge))
@@ -1664,8 +1664,6 @@ class DRInteractionPxModel(MatrixData):
                 Py, Px, drug, n, intercept, PxBeta, adherentBeta, semiAdherentBeta, suspensionBeta, unknownBeta, drugResBeta, interactionBeta, logLikePValue, llStatistic
         """        
 
-
-
         pararelList =  zip(repeat(self), self.ppis)
         with mp.Pool(CPUS) as process:
             pararelResults = process.starmap(processPPIWrapper, pararelList)
@@ -1679,7 +1677,7 @@ class DRInteractionPxModel(MatrixData):
 
         return results
     
-    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.10, pValHzLine:float = 0.001):
+    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.01, pValHzLine:float = 0.001):
         """
         Volcano plot in order to find statisticall relevant relationships.
         """
@@ -1688,13 +1686,15 @@ class DRInteractionPxModel(MatrixData):
         yValues = -np.log10(data['info']['logLikePValue'])
         xValues = data['effectSize']['interaction']
 
+
+        plt.figure(figsize=(10, 10), dpi=300)
         # Plot
         plt.scatter(
             xValues,
             yValues,
             c="k",
-            s=5,
-            alpha=0.5,
+            s=4,
+            alpha=0.3,
             edgecolors="none",
             rasterized=True,
         )
