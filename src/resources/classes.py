@@ -682,6 +682,55 @@ class ProteinsMatrix(MatrixData):
         plt.savefig(filepath)
 
         plt.close()
+
+    def plotPxPyDrugContinous(self, drug:str, ppi:str, drugResponse: DrugResponseMatrix, filepath:str, **annotationArgs):
+        """Scatter Plot with the protein expression of two proteins and the drug response of a drug, in a continous manner, unlike plotPxPyDrug.
+        Additionally, the plot can be annotated with the arguments passed to the function. And the Drug Response will be represented with a colorbar and
+        and an overlaying Kernel Distribution Estimation.
+
+        Args:
+            drug (str): name of the drug
+            ppi (str): Protein-Protein Interaction (Px;Py)
+            drugResponse (DrugResponseMatrix): Drug Response Matrix
+            filepath (str): filepath to save the plot
+        """
+        drugResponse = drugResponse.data.T # The drug response matrix is binarised
+        samplesCommon = self.data.index.intersection(drugResponse.index) # We only want to plot the samples that are in both matrices
+        assert len(samplesCommon) > 0, 'There are no samples in common between the protein data and the drug response data'
+        drugResponse = drugResponse.loc[samplesCommon, drug]
+        proteinData = self.data.loc[samplesCommon, :]
+
+        if len(ppi.split('-')) > 0:
+            ppi = ppi.split('-')[0]
+
+        pxName = ppi.split(';')[0]
+        pyName = ppi.split(';')[1]
+        plottingData = proteinData[[pxName, pyName]]
+        plottingData = plottingData.join(drugResponse, how = 'inner')
+        #standardize the data 
+        plottingData = pd.DataFrame(StandardScaler().fit_transform(plottingData) ,columns=plottingData.columns, index=plottingData.index)
+
+
+        plt.figure(figsize=(10, 10))
+        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, palette="flare", alpha=0.5, edgecolor='none')
+        # Add Colour Map
+        sm = plt.cm.ScalarMappable(cmap="flare")
+        sm.set_array([])
+        scatter.get_legend().remove()
+        scatter.figure.colorbar(sm)
+
+        plt.title('Protein expression \n with Drug Response')
+        plt.xlabel(str(pxName))
+        plt.ylabel(str(pyName))
+
+        if annotationArgs is not None:
+            plt.annotate(**annotationArgs)
+
+        plt.savefig(filepath)
+        plt.close()
+
+
+
     
     def plotPxPySample(self, ppis: list[str], filepath: str, sampleProp: str) -> None:
         """Plots the px against py proteins for each ppi in ppis, and colors the samples according to the sampleProp
@@ -1716,39 +1765,27 @@ class DRInteractionPxModel(MatrixData):
 
         
     
-    def scatterTheTop2Volcano(self, filepath:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10):
+    def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10, topNumber:int=2):
         
         data = self.data.copy()
         data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
         data = data.sort_values(by=[('info','logLikePValue'), ('effectSize','interaction')], ascending=[True, False])
-        #Selecting top 2
-        first = data.iloc[0:1,:]
-        second = data.iloc[1:2,:]
-        #Anotation
-        pValue = first['info']['logLikePValue'].values[0]
-        effectSize = first['effectSize']['interaction'].values[0]
-        drugfirst = first['info']['drug'].values[0]
-        anotationFirst = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \n drug: {drugfirst} '
-        anotationFirst = {'text':anotationFirst, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':25}
-        pValue = second['info']['logLikePValue'].values[0]
-        effectSize = second['effectSize']['interaction'].values[0]
-        drugsecond = second['info']['drug'].values[0]
-        anotationSecond = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \n drug: {drugsecond}'
-        anotationSecond = {'text':anotationSecond, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':25}
-        
+        #Selecting top
+        top = data.iloc[0:topNumber,:]
+        #reseting index
+        top = top.reset_index(drop=True)
+        #iterate samples
+        for index, row in top.iterrows():
 
-        #Filepath and drug and ppi
-        filepathfirst = filepath.split('.png')[0] + '1st.png'
-        filepathsecond = filepath.split('.png')[0] + '2nd.png'	
-        ppifirst = first['info']['Py'].values[0] + ';' + first['info']['Px'].values[0]
-        ppisecond = second['info']['Py'].values[0] + ';' + second['info']['Px'].values[0]
-        
-        print(drugfirst, ppifirst)
-        print(drugsecond, ppisecond)
+            pValue = row['info']['logLikePValue']
+            effectSize = row['effectSize']['interaction']
+            drug = row['info']['drug']
+            anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \n drug: {drug} '
+            anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
+            filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
+            ppi = row['info']['Py'] + ';' + row['info']['Px']
+            proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
 
-        # Plot
-        proteomics.plotPxPyDrug(drugfirst, ppifirst, drugRes, filepathfirst, **anotationFirst)
-        proteomics.plotPxPyDrug(drugsecond, ppisecond, drugRes, filepathsecond, **anotationSecond)
 
 
 
