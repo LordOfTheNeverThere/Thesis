@@ -1687,14 +1687,14 @@ class DRInteractionPxModel(MatrixData):
         xValues = data['effectSize']['interaction']
 
 
-        plt.figure(figsize=(10, 10), dpi=300)
+        plt.figure(figsize=(20, 20), dpi=600)
         # Plot
         plt.scatter(
             xValues,
             yValues,
             c="k",
-            s=4,
-            alpha=0.3,
+            s=15,
+            alpha=0.8,
             edgecolors="none",
             rasterized=True,
         )
