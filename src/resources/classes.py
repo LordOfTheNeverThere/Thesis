@@ -712,7 +712,7 @@ class ProteinsMatrix(MatrixData):
 
 
         plt.figure(figsize=(10, 10))
-        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, palette="flare", alpha=0.5, edgecolor='none')
+        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, palette="flare", alpha=1, edgecolor='none', s=10)
         # Add Colour Map
         sm = plt.cm.ScalarMappable(cmap="flare")
         sm.set_array([])
@@ -1350,7 +1350,7 @@ class ResidualsLinearModel(GeneralLinearModel):
         super().__init__(Y, X, M, M2, fit_intercept, copy_X, n_jobs, verbose)
 
 
-    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.10, pValHzLine:float = 0.001):
+    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.01, pValHzLine:float = 0.001):
         """
         Volcano plot in order to find statisticall relevant relationships.
         """
