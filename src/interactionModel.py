@@ -39,12 +39,12 @@ if __name__ == '__main__':
 
 
     dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, M)
-    fit = dummy.fit()
-    dummy.filepath = PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/Removing$PointsTestregressor.pickle.gz'
-    dummy.write()
+    # fit = dummy.fit()
+    # dummy.filepath = PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/Removing4PointsTestregressor.pickle.gz'
+    # dummy.write()
 
-    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/regressor.pickle.gz')    
+    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/regressor.pickle.gz')    
     dummy.volcanoPlot('volcanoPlotDrInteractionPxModel.png') # 142393 points
-    drugRes.data = drugRes.data.T
-    dummy.scatterTheTop2Volcano('topVolcanoPlotScatter.png', ogProteomics, drugRes)
+    # drugRes.data = drugRes.data.T
+    # dummy.scatterTheTop2Volcano('topVolcanoPlotScatter.png', ogProteomics, drugRes)
 
