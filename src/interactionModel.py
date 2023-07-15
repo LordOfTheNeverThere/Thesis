@@ -18,9 +18,9 @@ if __name__ == '__main__':
     samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
     ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
 
-    #Localizing samples to delete and rerun the script
-    samplesToRemove = ogProteomics.data.loc[:, ['PSMD11','PSMD14']].query("PSMD11 < 7 and PSMD11 > 5.5 and PSMD14 > 3 and PSMD14 < 4").index.to_list()
-    ogProteomics.data = ogProteomics.data.drop(samplesToRemove, axis=0)
+    # #Localizing samples to delete and rerun the script
+    # samplesToRemove = ogProteomics.data.loc[:, ['PSMD11','PSMD14']].query("PSMD11 < 7 and PSMD11 > 5.5 and PSMD14 > 3 and PSMD14 < 4").index.to_list()
+    # ogProteomics.data = ogProteomics.data.drop(samplesToRemove, axis=0)
 
 
     # using only corum ppis that we were able to recall, with high confidence
@@ -39,12 +39,12 @@ if __name__ == '__main__':
 
 
     dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, M)
-    # fit = dummy.fit()
-    # dummy.filepath = PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/Removing4PointsTestregressor.pickle.gz'
-    # dummy.write()
+    fit = dummy.fit()
+    dummy.filepath = PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/fdrPerPPIRegressor.pickle.gz'
+    dummy.write()
 
-    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/regressor.pickle.gz')    
+    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/regressor.pickle.gz')    
     # dummy.volcanoPlot('volcanoPlotDrInteractionPxModel.png') # 142393 points
-    drugRes.data = drugRes.data.T
-    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes)
+    # drugRes.data = drugRes.data.T
+    # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes)
 

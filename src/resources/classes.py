@@ -774,8 +774,7 @@ class ProteinsMatrix(MatrixData):
             plottingData = pd.DataFrame(
                 {'px': px, 'py': py, sampleProp: samplePropData})
 
-            ax[index].scatter(plottingData['px'], plottingData['py'], c=plottingData[sampleProp].map(
-                colors), label=[colors.values(), colors.keys()])
+            ax[index].scatter(plottingData['px'], plottingData['py'], c=plottingData[sampleProp].map(colors), label=[colors.values(), colors.keys()])
             ax[index].set_title('test')
             ax[index].set_xlabel(pxName)
             ax[index].set_ylabel(pyName)
@@ -788,10 +787,6 @@ class ProteinsMatrix(MatrixData):
 
 
 
-
-        
-
-        
 
 
 class PairwiseCorrMatrix(MatrixData):
@@ -1550,7 +1545,13 @@ class UnbiasedResidualsLinModel(MatrixData):
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
 def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
+    """Wrapper for fitting the 2 linear models of Py ~ Px and Px ~ Py, so that it can be used in a multiprocessing pool
 
+    Args:
+        ppi (tuple[str, str]): Names of Py and Px
+    Returns:
+        dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
+    """    
     results = [] # List of results for each drug
     for drugName in self.drugRes:
         
@@ -1558,14 +1559,18 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         XName = ppi[1]
         _, _, res= self.getLinearModels(YName, XName, drugName)
 
+        correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
+        res[('info', 'fdr')] = correctedPValues
         results.append(res)
 
         # invert Px and Py to understand if there are one way relationships
         YName = ppi[1]
         XName = ppi[0]
         _, _, res= self.getLinearModels(YName, XName, drugName)
-
+        correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
+        res[('info', 'fdr')] = correctedPValues
         results.append(res)
+
 
     return results
 
@@ -1628,7 +1633,7 @@ class DRInteractionPxModel(MatrixData):
         Returns:
             sm.OLS: larger Linear Model from statsmodels.api library
             sm.OLS: Smaller Linear Model from statsmodels.api library
-            dict: Results dataframe with all the effect sizes and the following extra columns:
+            dict: Results of the linear model in dictionary format, with keys being effect size, p-value and other general info
         """
         
         Py = self.proteomics.loc[:,YName]
