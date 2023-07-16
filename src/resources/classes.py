@@ -13,6 +13,7 @@ import statsmodels.formula.api as smf
 from statsmodels.regression.linear_model import RegressionResultsWrapper
 from statsmodels.stats.diagnostic import het_breuschpagan, het_white
 from statsmodels.stats.multitest import multipletests
+from statsmodels.multivariate.pca import PCA
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import normalize, QuantileTransformer, StandardScaler
 from scipy.stats import chi2, shapiro
@@ -717,7 +718,7 @@ class ProteinsMatrix(MatrixData):
         sm = plt.cm.ScalarMappable(cmap="flare")
         sm.set_array([])
         scatter.get_legend().remove()
-        scatter.figure.colorbar(sm)
+        scatter.figure.colorbar(sm, label='Drug Response')
 
         plt.title('Protein expression \n with Drug Response')
         plt.xlabel(str(pxName))
@@ -786,9 +787,42 @@ class ProteinsMatrix(MatrixData):
         plt.close()
 
     
-    def PCA(self, numPC:int):
+    def PCA(self, filepath:str='', numPC:int = 10, gls:bool = False, **pcaKwargs) -> PCA:
+        """Generate the PCA of the protein data
 
-        pass
+        Args:
+            filepath (str, optional): File name and directory where 
+            the scree and PC cumulative variance plot will be stored. Defaults to ''.
+            numPC (int, optional): number of principal components used. Defaults to 10.
+            gls (bool, optional): If the PCA class will use the gls parameter 
+            from the documentation it states that "Flag indicating to implement a two-step GLS 
+            estimator where in the first step principal components are used to estimate residuals, 
+            and then the inverse residual variance is used as a set of weights to estimate the final 
+            principal components. Setting gls to True requires ncomp to be less then the min of the 
+            number of rows or columns". Defaults to False.
+
+        Returns:
+            PCA: The returned object will be the PCA object with all the relevant atributes
+        """        
+        # Fit PCA
+        pca = PCA(self.data, ncomp=numPC, gls=gls, missing='drop-row', **pcaKwargs)
+
+        # Extract explained variance of each PC
+        explainedVar = pca.eigenvals / np.sum(pca.eigenvals)
+
+        # Calculate cumulative explained variance
+        cumulativeVar = np.cumsum(explainedVar)
+        
+        # Plot Scree plot along with cumulative explained variance
+        scree = sns.barplot(x=np.arange(1, nComps + 1), y=explainedVar, color='blue') # Scree plot, individual explained variance of PCA
+        sns.lineplot(x=np.arange(0, nComps), y=cumulativeVar, color='red', ax=scree) # Cumulative explained variance of PCA
+        # Change labels of axes
+        scree.set(xlabel='Principal Component', ylabel='Explained Variance')
+        # Save figure
+        plt.savefig(filepath, bbox_inches='tight')
+
+        return pca
+        
 
 
 
@@ -1790,7 +1824,7 @@ class DRInteractionPxModel(MatrixData):
             pValue = row['info']['logLikePValue']
             effectSize = row['effectSize']['interaction']
             drug = row['info']['drug']
-            anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \n drug: {drug} '
+            anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
             anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
             filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
             ppi = row['info']['Py'] + ';' + row['info']['Px']

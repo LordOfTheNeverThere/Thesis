@@ -37,15 +37,15 @@ if __name__ == '__main__':
     pd.set_option('display.width', None)
     pd.set_option('display.max_colwidth', -1)
 
-    start = t.time()
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, M)
-    fit = dummy.fit()
-    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz'
-    dummy.write()
-    print(t.time() - start)
 
-    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/regressor.pickle.gz')    
-    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModel.png') # 142393 points
-    # drugRes.data = drugRes.data.T
-    # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes)
+    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, M)
+    # fit = dummy.fit()
+    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz'
+    # dummy.write()
+
+
+    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/fdrPerPPIRegressor.pickle.gz')    
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModel.png') # 142393 points
+    drugRes.data = drugRes.data.T
+    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes)
 
