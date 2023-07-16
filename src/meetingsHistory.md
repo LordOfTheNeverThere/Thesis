@@ -30,7 +30,10 @@ Tasks:
     7. De forma a combater biases que estão relacionados com o número de vezes que o evento ocorre (nº de samples onde está presente aquelas duas proteínas), fazer multiple testing por ppi no interaction model, por exemplo as proteínas do proteosoma são bastante abundantes e é um complexo com imensos elemntos o que faz com que as suas correlações sejam muito pouco específicas e desinteressantes (this could be do to outliers which had a very high drugResponse, which were also outliers in the high drug response set)
     8. Outra forma de combater esses biases é regress out as 10 PC do PCA mais fortes na esperança de explicarem os confouding factors que estão a criar um interaction term onde ele não existe, colocariamos no modelo da interacção em vez das growth_props como . Fazer barplot de dos PC's (a sua variância explicada) e o cumulativo desta variãncia.
     9. (Outlook) Fazer versão deste modelo de interacção Linear Mixed Models com matrix de covariância da VAE Proteomics
-    10. See if Emanuel Likes the volcano plot as it is!!!
+    10. See if Emanuel Likes the volcano plot as it is along with the scatterPlot!!!
+    11. Update: Recalculate the AUC of the various Pairwise Models
+        1.  Redo the barplots
+        2.  Do an additional one, with the a grid like structure and multiple subplots one for each Dataset, inquery Emanuel on more details on this
     
     Carry Over:
        1. Recalculate the AUC for the various pairwise models

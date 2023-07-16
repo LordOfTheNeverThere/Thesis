@@ -785,6 +785,11 @@ class ProteinsMatrix(MatrixData):
         fig.savefig(filepath)
         plt.close()
 
+    
+    def PCA(self, numPC:int):
+
+        pass
+
 
 
 
