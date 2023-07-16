@@ -787,7 +787,7 @@ class ProteinsMatrix(MatrixData):
         plt.close()
 
     
-    def PCA(self, filepath:str='', numPC:int = 10, gls:bool = False, **pcaKwargs) -> PCA:
+    def PCA(self, filepath:str='', numPC:int = 10, gls:bool = False, factorsName:str='', **pcaKwargs) -> PCA:
         """Generate the PCA of the protein data
 
         Args:
@@ -814,12 +814,20 @@ class ProteinsMatrix(MatrixData):
         cumulativeVar = np.cumsum(explainedVar)
         
         # Plot Scree plot along with cumulative explained variance
-        scree = sns.barplot(x=np.arange(1, nComps + 1), y=explainedVar, color='blue') # Scree plot, individual explained variance of PCA
-        sns.lineplot(x=np.arange(0, nComps), y=cumulativeVar, color='red', ax=scree) # Cumulative explained variance of PCA
+        scree = sns.barplot(x=np.arange(1, numPC + 1), y=explainedVar, color='blue') # Scree plot, individual explained variance of PCA
+        sns.lineplot(x=np.arange(0, numPC), y=cumulativeVar, color='red', ax=scree) # Cumulative explained variance of PCA
         # Change labels of axes
         scree.set(xlabel='Principal Component', ylabel='Explained Variance')
+        #show figure
+        plt.show()
         # Save figure
-        plt.savefig(filepath, bbox_inches='tight')
+        if filepath != '':
+            plt.savefig(filepath, bbox_inches='tight')
+        if factorsName != '':
+            #Change the name of the columns of the factors and scores given by the PCA Object
+            newColumns = [f'{factorsName}{i}' for i in range(1, numPC + 1)]
+            pca.factors.columns = newColumns
+            pca.scores.columns = newColumns
 
         return pca
         
