@@ -280,15 +280,15 @@ def getUniqueSetValues(data: pd.DataFrame, feature: str):
     return setOfValues, occurancesDict
 
 
-def drawRecallCurves(paiwiseMatrices: list[PairwiseCorrMatrix], colours: list, filename: str, proxyColumn: str):
+def drawRecallCurves(paiwiseMatrices: list[PairwiseCorrMatrix], colours: list, filename: str, proxyColumn: str, yColumn: str):
 
     _, ax = plt.subplots(1, 1, figsize=(4, 3), dpi=600)
 
     for index, pairwiseCorr in enumerate(paiwiseMatrices):
         ax.plot(
-            pairwiseCorr.indexes[proxyColumn],
-            pairwiseCorr.corrCumSums[proxyColumn],
-            label=pairwiseCorr.labels[proxyColumn],
+            pairwiseCorr.indexes[proxyColumn][yColumn],
+            pairwiseCorr.corrCumSums[proxyColumn][yColumn],
+            label=pairwiseCorr.labels[proxyColumn][yColumn],
             c=colours[index],
         )
 

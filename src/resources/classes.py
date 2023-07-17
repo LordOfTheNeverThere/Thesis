@@ -158,11 +158,11 @@ class MatrixData:
 
 class ppiDataset(MatrixData):
 
-    def __init__(self, filepath:str = None, data: pd.DataFrame = None, proteinLabels: list = [], **readerKwargs):
+    def __init__(self, name:str, filepath:str = None, data: pd.DataFrame = None, **readerKwargs):
 
 
         super().__init__(filepath, data, **readerKwargs)
-        self.proteinLabels = proteinLabels
+        self.name = name
         self.ppis = set()
 
 
@@ -847,15 +847,13 @@ class PairwiseCorrMatrix(MatrixData):
             aucs (_type_, optional): dict with name of columns to which we calculate the auc and value. Defaults to None.
         """
         super().__init__(filepath, data, **readerKwargs)
-
-        self.corrCumSums = {}
-        self.indexes = {}
-        self.aucs = {} 
-        self.labels = {}
-        self.yColumn = yColumn
-        self.proxies:list[str] = proxies
-        self.ascendings:list[bool] = ascendings
-        self.proteomicsType = proteomicsType
+        self.yColumn = []
+        self.proxies= proxies
+        self.ascendings = ascendings
+        self.labels = {proxy:{} for proxy in self.proxies}
+        self.corrCumSums = {proxy:{} for proxy in self.proxies}
+        self.indexes = {proxy:{} for proxy in self.proxies}
+        self.aucs = {proxy:{} for proxy in self.proxies} 
 
 
 
@@ -863,9 +861,13 @@ class PairwiseCorrMatrix(MatrixData):
     def __str__(self):
 
         print = super().__str__()
-        for columnName, aucVal in self.aucs.items():
+        for proxy, proxyDict in self.aucs.items():
 
-            print = print + '\n' +str(aucVal) + ' ' +str(columnName) + '\n' + str(self.labels[columnName])
+            print = print + '\n' + str(proxy) + '\n'
+            
+            for yColumn, aucVal in proxyDict.items():
+
+                print = print + str(self.labels[proxy][yColumn])
         
 
         return print
@@ -890,11 +892,40 @@ class PairwiseCorrMatrix(MatrixData):
 
 
         self.data = data
-
+        self.yColumn.append(externalDatasetName)
 
         return data
+
+    @classmethod
+    def addGroundTruths(cls, insts:Iterable[PairwiseCorrMatrix]):
+
+        #get all ppis
+        corum:ppiDataset = read(PATH + '/external/ppiDataset/corum.pickle.gz')
+        biogrid:ppiDataset = read(PATH + '/external/ppiDataset/biogrid.pickle.gz')
+        stringLow:ppiDataset = read(PATH + '/external/ppiDataset/string150.pickle.gz')
+        stringMedium:ppiDataset = read(PATH + '/external/ppiDataset/string400.pickle.gz')
+        stringHigh:ppiDataset = read(PATH + '/external/ppiDataset/string700.pickle.gz')
+        stringHighest:ppiDataset = read(PATH + '/external/ppiDataset/string900.pickle.gz')
+
+        ppis = [corum, biogrid, stringLow, stringMedium, stringHigh, stringHighest]
+
+        for self in insts:
+
+            
+            self.yColumn = []
+            self.proxies= ["p-value", "coef"]
+            self.ascendings = [True, False]
+            self.labels = {proxy:{} for proxy in self.proxies}
+            self.corrCumSums = {proxy:{} for proxy in self.proxies}
+            self.indexes = {proxy:{} for proxy in self.proxies}
+            self.aucs = {proxy:{} for proxy in self.proxies} 
+            print(self.proteomicsType)
+
+            for ppi in ppis:
+                self.addGroundTruth(ppi.ppis, ppi.name)
+
     
-    def aucCalculator(self, yColumnName:str, proteomicsType:str, proxyColumn:str, ascending:bool ):
+    def aucCalculator(self, yColumnName:str, proteomicsType:str, proxyColumn:str, ascending:bool):
         """Adds the value of AUC of the Recall curve using a specified external PPI dataset with yColumnName
 
         Args:
@@ -907,22 +938,20 @@ class PairwiseCorrMatrix(MatrixData):
 
         
         pairwiseCorr.sort_values(by=proxyColumn, ascending=ascending, inplace=True) # We sort rows by the smallest to greatest pValues
-        self.corrCumSums[proxyColumn] = np.cumsum(
-            pairwiseCorr[yColumnName]) / np.sum(pairwiseCorr[yColumnName])
-        self.indexes[proxyColumn] = np.array(pairwiseCorr.reset_index().index) / \
-            pairwiseCorr.shape[0]
-        self.aucs[proxyColumn] = auc(self.indexes[proxyColumn], self.corrCumSums[proxyColumn]) # update aucs dict to have a new auc for a specific proxy column
+        self.corrCumSums[proxyColumn][yColumnName] = np.cumsum(pairwiseCorr[yColumnName]) / np.sum(pairwiseCorr[yColumnName])
+        self.indexes[proxyColumn][yColumnName] = np.array(pairwiseCorr.reset_index().index) / pairwiseCorr.shape[0]
+        self.aucs[proxyColumn][yColumnName] = auc(self.indexes[proxyColumn], self.corrCumSums[proxyColumn]) # update aucs dict to have a new auc for a specific proxy column
 
         # if not label: #if the user did not insert any label default it
         #     self.labels[proxyColumn] = f"(AUC {proxyColumn} {self.aucs[proxyColumn]:.2f})"
         
-        self.labels[proxyColumn] =  f" ({proteomicsType} proteomics using {proxyColumn} ⇒ AUC:{self.aucs[proxyColumn]:.2f})"
+        self.labels[proxyColumn][yColumnName] =  f" ({proteomicsType} proteomics using {proxyColumn} ⇒ AUC:{self.aucs[proxyColumn]:.2f})"
 
-    def aucsCalculator(self, yColumnName:str, proteomicsType:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None ):
+    def aucsCalculator(self, proteomicsType:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None ):
 
         for aucIndex in range(len(proxyColumnList)):
-            self.aucCalculator(yColumnName, proteomicsType, proxyColumnList[aucIndex], ascendingList[aucIndex])
-        
+            for yColumn in self.yColumn
+                self.aucCalculator(yColumnName, proteomicsType, proxyColumnList[aucIndex], ascendingList[aucIndex])
     
         if filepath is not None:
             self.write(filepath)
@@ -1010,7 +1039,7 @@ class PairwiseCorrMatrix(MatrixData):
             instances (Iterable[PairwiseCorrMatrix]): List of PairwiseCorrMatrix objects
         """ 
         for instance in instances:
-            instance.aucsCalculator(instance.yColumn, instance.proteomicsType, instance.proxies, instance.ascendings, instance.filepath)
+            instance.aucsCalculator(instance.proteomicsType, instance.proxies, instance.ascendings, instance.filepath)
 
 
     

@@ -8,4 +8,3 @@ from resources import ProteinsMatrix, PATH, drawRecallCurves, read, ppiDataset
 
 
 if __name__ == '__main__':
-    vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
