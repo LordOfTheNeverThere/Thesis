@@ -864,7 +864,7 @@ class PairwiseCorrMatrix(MatrixData):
         for proxy, proxyDict in self.aucs.items():
 
             print = print + '\n' + str(proxy) + '\n'
-            
+
             for yColumn, aucVal in proxyDict.items():
 
                 print = print + str(self.labels[proxy][yColumn])
@@ -922,6 +922,9 @@ class PairwiseCorrMatrix(MatrixData):
             print(self.proteomicsType)
 
             for ppi in ppis:
+                #if the ppi set was already added to the dataframe, skip it
+                if ppi.name in self.yColumn:
+                    continue
                 self.addGroundTruth(ppi.ppis, ppi.name)
 
     
