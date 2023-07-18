@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # dummy.write()
 
 
-    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/fdrPerPPIRegressor.pickle.gz')    
+    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')    
     dummy.volcanoPlot('volcanoPlotDrInteractionPxModel.png') # 142393 points
     drugRes.data = drugRes.data.T
     dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes)

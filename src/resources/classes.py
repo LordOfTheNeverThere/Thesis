@@ -716,9 +716,9 @@ class ProteinsMatrix(MatrixData):
 
 
         plt.figure(figsize=(10, 10))
-        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, palette="flare", alpha=1, edgecolor='none', s=10)
+        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, palette="viridis", alpha=1, edgecolor='none', s=15)
         # Add Colour Map
-        sm = plt.cm.ScalarMappable(cmap="flare")
+        sm = plt.cm.ScalarMappable(cmap="viridis")
         sm.set_array([])
         scatter.get_legend().remove()
         scatter.figure.colorbar(sm, label='Drug Response')
