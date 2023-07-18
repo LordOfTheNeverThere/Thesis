@@ -710,15 +710,17 @@ class ProteinsMatrix(MatrixData):
         pxName = ppi.split(';')[0]
         pyName = ppi.split(';')[1]
         plottingData = proteinData[[pxName, pyName]]
-        plottingData = plottingData.join(drugResponse, how = 'inner')
         #standardize the data 
         plottingData = pd.DataFrame(StandardScaler().fit_transform(plottingData) ,columns=plottingData.columns, index=plottingData.index)
 
+        #Add Drugresponse
+        plottingData = plottingData.join(drugResponse, how = 'inner')
+
 
         plt.figure(figsize=(10, 10))
-        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, palette="flare", alpha=1, edgecolor='none', s=10)
+        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, palette="viridis", alpha=1, edgecolor='none', s=15)
         # Add Colour Map
-        sm = plt.cm.ScalarMappable(cmap="flare")
+        sm = plt.cm.ScalarMappable(cmap="viridis")
         sm.set_array([])
         scatter.get_legend().remove()
         scatter.figure.colorbar(sm, label='Drug Response')
@@ -1864,11 +1866,13 @@ class DRInteractionPxModel(MatrixData):
 
         
     
-    def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10, topNumber:int=2):
+    def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0.98):
         
         data = self.data.copy()
         data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
-        data = data.sort_values(by=[('info','logLikePValue'), ('effectSize','interaction')], ascending=[True, False])
+        betaThresh = data['effectSize']['interaction'].quantile(threhsQuantile) # define a beta threshold based on a quantile given by the use
+        data = data.loc[abs(data['effectSize']['interaction']) > betaThresh] # subset data to only include betas above the threshold
+        data = data.sort_values(by=[('info','logLikePValue')], ascending=[True])
         #Selecting top
         top = data.iloc[0:topNumber,:]
         #reseting index

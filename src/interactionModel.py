@@ -21,7 +21,8 @@ if __name__ == '__main__':
            
     # using only corum ppis that we were able to recall, with high confidence
     vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
-    ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").head(3).index)
+    vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
+    ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").index)
     ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
 
     #Cofounding Factors, use The samplesheet's growth properties or the 10 PC of the vaeProteomics dataframe    
@@ -37,12 +38,18 @@ if __name__ == '__main__':
 
     dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, pcFactors)
     fit = dummy.fit()
-    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz'
-    # dummy.write()
+    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/PCARegressor.pickle.gz'
+    dummy.write()
 
 
-    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLSPValueVAEProteomicsHead300/fdrPerPPIRegressor.pickle.gz')    
-    dummy.volcanoPlot('volcanoPlotDrInteractionPxModel.png') # 142393 points
-    drugRes.data = drugRes.data.T
-    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes)
+    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
+    # data = dummy.data
+    # data = data.loc[data['info']['fdr'] < 0.01]
+    # betaThresh = data['effectSize']['interaction'].quantile(0.98) # define a beta threshold based on a quantile given by the use
+    # data = data.loc[abs(data['effectSize']['interaction']) > betaThresh] # subset data to only include betas above the threshold
+    # data = data.sort_values(by=[('info','logLikePValue')], ascending=[True])
+
+    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelFDRBuffer.png') # 3579956 points
+    # drugRes.data = drugRes.data.T
+    # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
 
