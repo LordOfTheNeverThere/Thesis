@@ -101,6 +101,9 @@ class MatrixData:
 
     def write(self, filepath:str = None):
 
+        if filepath is not None:
+            self.filepath = filepath
+
         if self.filepath is not None:
             filepath = self.filepath
 
@@ -253,7 +256,7 @@ class ProteinsMatrix(MatrixData):
         """
         data = self.data.copy()
         permutationsColumns = list(combinations(data.columns, 2))
-        pairwiseCorr:dict = {'PPI':[],'proteinA': [],'proteinB': [], columnName: [], 'pValue':[], 'counts':[]}
+        pairwiseCorr:dict = {'PPI':[],'proteinA': [],'proteinB': [], columnName: [], 'p-value':[], 'counts':[]}
         
         for (proteinAName, proteinBName) in permutationsColumns:
 
@@ -273,11 +276,11 @@ class ProteinsMatrix(MatrixData):
             pairwiseCorr['proteinA'].append(proteinAName)
             pairwiseCorr['proteinB'].append(proteinBName)
             pairwiseCorr['pearsonR'].append(corr)
-            pairwiseCorr['pValue'].append(pValue)
+            pairwiseCorr['p-value'].append(pValue)
             pairwiseCorr['counts'].append(count)
 
         index = pairwiseCorr.pop('PPI')
-        return PairwiseCorrMatrix(proteomicsType, None, pd.DataFrame(pairwiseCorr, index=index), ['pearsonR', 'pValue'], [False, True])
+        return PairwiseCorrMatrix(proteomicsType, None, pd.DataFrame(pairwiseCorr, index=index), ['pearsonR', 'p-value'], [False, True])
       
     def calculateResidues(self, ppis: Iterable[set[str]]) -> ResiduesMatrix:
     
@@ -480,12 +483,12 @@ class ProteinsMatrix(MatrixData):
             np.fill_diagonal(GLS_p, 1)
             glsPValues = GLS_p[np.triu_indices(GLS_p.shape[0], k=1)]
             pairwiseCorrData = pd.DataFrame(
-                {'proteinA':proteinsA, 'proteinB': proteinsB, coefColumnName: glsCoefs, 'pValue': glsPValues}, index=proteinNames)
+                {'proteinA':proteinsA, 'proteinB': proteinsB, coefColumnName: glsCoefs, 'p-value': glsPValues}, index=proteinNames)
         else:
             pairwiseCorrData = pd.DataFrame(
                 {'proteinA':proteinsA, 'proteinB': proteinsB, coefColumnName: glsCoefs}, index=proteinNames)
         
-        pairwiseCorrData = PairwiseCorrMatrix(proteomicsType,None, pairwiseCorrData, [coefColumnName, 'pValue'], [False, True])
+        pairwiseCorrData = PairwiseCorrMatrix(proteomicsType,None, pairwiseCorrData, [coefColumnName, 'p-value'], [False, True])
         pairwiseCorrData.data.index.name = 'PPI'
 
         return pairwiseCorrData
@@ -510,7 +513,7 @@ class ProteinsMatrix(MatrixData):
             'proteinA': proteinsA, 
             'proteinB':proteinsB,
             coefColumnName: [], 
-            'pValue': []}
+            'p-value': []}
 
 
         with mp.Pool(CPUS) as process:
@@ -519,12 +522,12 @@ class ProteinsMatrix(MatrixData):
         for corr, pValue in pararelResults:
 
             results[coefColumnName].append(corr)
-            results['pValue'].append(pValue)
+            results['p-value'].append(pValue)
 
         # Extract the results
         index = results.pop('PPI')
         pairwiseCorrData = pd.DataFrame(results, index=index)
-        pairwiseCorr = PairwiseCorrMatrix(proteomicsType, None, pairwiseCorrData, [coefColumnName, 'pValue'], [False, True])
+        pairwiseCorr = PairwiseCorrMatrix(proteomicsType, None, pairwiseCorrData, [coefColumnName, 'p-value'], [False, True])
 
         return pairwiseCorr
 
@@ -559,12 +562,12 @@ class ProteinsMatrix(MatrixData):
             else:
                 stat, pVal = np.nan, np.nan
 
-            shapiroResults[protein] = {'stat': stat, 'pValue': pVal}
+            shapiroResults[protein] = {'stat': stat, 'p-value': pVal}
         
         shapiroResults = pd.DataFrame(shapiroResults).T
         self.normTest = shapiroResults
         shapiroResults = shapiroResults.dropna(axis=0)
-        pValues = shapiroResults['pValue']
+        pValues = shapiroResults['p-value']
         rejected, correctedPVals, _, _ = multipletests(pValues, alpha=globalPVal, method='fdr_bh')
         numNonNormal = np.sum(rejected)
         ratioNonNormal = (numNonNormal/shapiroResults.shape[0]) * 100 # The smaller the pValue the more likely it is that the data is not normally distributed, we thence reject the null hypothesis that the data is normally distributed
@@ -620,13 +623,13 @@ class ProteinsMatrix(MatrixData):
                 #Calculating the White test
                 stat, pValue,_,_ = het_breuschpagan(residuals, xData)
 
-                whiteResults[(x,y)] = {'stat': stat, 'pValue': pValue}
+                whiteResults[(x,y)] = {'stat': stat, 'p-value': pValue}
         
         whiteResults = pd.DataFrame(whiteResults).T.reset_index(names=['proteinA', 'proteinB']) # This allows for a compatible merging with PaiwiseCorrMatrix objects
         self.homoskeTest = whiteResults
         numPPIs = whiteResults.shape[0]
         whiteResults = whiteResults.dropna(axis=0)
-        pValues = whiteResults['pValue']
+        pValues = whiteResults['p-value']
         rejected, _, _, _ = multipletests(pValues, alpha=globalPVal, method='fdr_bh')
         numHeteroske = np.sum(rejected)
     
@@ -838,8 +841,9 @@ class ProteinsMatrix(MatrixData):
 
 class PairwiseCorrMatrix(MatrixData):
 
-    def __init__(self, proteomicsType:str, filepath: str = None, data: pd.DataFrame = None, proxies:list[str] = [], ascendings:list[bool] = [], yColumn:str ='corum',** readerKwargs):
-        """_summary_
+    def __init__(self, proteomicsType:str, filepath: str = None, data: pd.DataFrame = None, proxies:list[str] = ['p-value', 'coef'], ascendings:list[bool] = [True, False],** readerKwargs):
+        """Initialize the PairwiseCorrMatrix object, where we calculate the correlation between all the proteins in the data, and their p-value
+        Additionally we can use one of these values to calculate the auc of that proxy metric towards recalling PPIs in a specific yColumn Dataset, the ground truth
 
         Args:
             filepath (str, optional): filepath where Datafrane is stored to instatiate the object. Defaults to None.
@@ -854,6 +858,7 @@ class PairwiseCorrMatrix(MatrixData):
         self.corrCumSums = {proxy:{} for proxy in self.proxies}
         self.indexes = {proxy:{} for proxy in self.proxies}
         self.aucs = {proxy:{} for proxy in self.proxies} 
+        self.proteomicsType = proteomicsType
 
 
 
@@ -898,6 +903,7 @@ class PairwiseCorrMatrix(MatrixData):
 
     @classmethod
     def addGroundTruths(cls, insts:Iterable[PairwiseCorrMatrix]):
+        from .utils import read
 
         #get all ppis
         corum:ppiDataset = read(PATH + '/external/ppiDataset/corum.pickle.gz')
@@ -909,23 +915,24 @@ class PairwiseCorrMatrix(MatrixData):
 
         ppis = [corum, biogrid, stringLow, stringMedium, stringHigh, stringHighest]
 
-        for self in insts:
+        for inst in insts:
 
             
-            self.yColumn = []
-            self.proxies= ["p-value", "coef"]
-            self.ascendings = [True, False]
-            self.labels = {proxy:{} for proxy in self.proxies}
-            self.corrCumSums = {proxy:{} for proxy in self.proxies}
-            self.indexes = {proxy:{} for proxy in self.proxies}
-            self.aucs = {proxy:{} for proxy in self.proxies} 
-            print(self.proteomicsType)
+
+            print(inst.proteomicsType)
+            if 'proteinA' not in set(inst.data.columns) or 'proteinB' not in set(inst.data.columns):
+                inst.data['proteinA'] = [ppi.split(';')[0] for ppi in inst.data.index]
+                inst.data['proteinB'] = [ppi.split(';')[1] for ppi in inst.data.index]
+                
 
             for ppi in ppis:
                 #if the ppi set was already added to the dataframe, skip it
-                if ppi.name in self.yColumn:
+                if ppi.name in inst.yColumn:
                     continue
-                self.addGroundTruth(ppi.ppis, ppi.name)
+                inst.addGroundTruth(ppi.ppis, ppi.name)
+            
+            #Save what was done!
+            inst.write()
 
     
     def aucCalculator(self, yColumnName:str, proteomicsType:str, proxyColumn:str, ascending:bool):
@@ -943,18 +950,26 @@ class PairwiseCorrMatrix(MatrixData):
         pairwiseCorr.sort_values(by=proxyColumn, ascending=ascending, inplace=True) # We sort rows by the smallest to greatest pValues
         self.corrCumSums[proxyColumn][yColumnName] = np.cumsum(pairwiseCorr[yColumnName]) / np.sum(pairwiseCorr[yColumnName])
         self.indexes[proxyColumn][yColumnName] = np.array(pairwiseCorr.reset_index().index) / pairwiseCorr.shape[0]
-        self.aucs[proxyColumn][yColumnName] = auc(self.indexes[proxyColumn], self.corrCumSums[proxyColumn]) # update aucs dict to have a new auc for a specific proxy column
+        self.aucs[proxyColumn][yColumnName] = auc(self.indexes[proxyColumn][yColumnName], self.corrCumSums[proxyColumn][yColumnName]) # update aucs dict to have a new auc for a specific proxy column
 
         # if not label: #if the user did not insert any label default it
         #     self.labels[proxyColumn] = f"(AUC {proxyColumn} {self.aucs[proxyColumn]:.2f})"
         
-        self.labels[proxyColumn][yColumnName] =  f" ({proteomicsType} proteomics using {proxyColumn} ⇒ AUC:{self.aucs[proxyColumn]:.2f})"
+        self.labels[proxyColumn][yColumnName] =  f" ({proteomicsType} proteomics using {proxyColumn} ⇒ AUC:{self.aucs[proxyColumn][yColumnName]:.2f} recalling {yColumnName})"
 
-    def aucsCalculator(self, proteomicsType:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None ):
+    def aucsCalculator(self, proteomicsType:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None):
+        """Get the auc's of the recall curve for each proxy column (coef, p-value, etc) and for each external PPI dataset (corum, biogrid, etc)
+
+        Args:
+            proteomicsType (str): Name of the PairwiseCorrMatrix object
+            proxyColumnList (list[str]): List of proxies for PPI existence
+            ascendingList (list[bool]): List of booleans to indicate if the proxyColumn should be ordered ascending or not for best AUC calculation
+            filepath (str, optional): Filepath where to save the pairwiseCorrMatrix Object. Defaults to None.
+        """        
 
         for aucIndex in range(len(proxyColumnList)):
-            for yColumn in self.yColumn
-                self.aucCalculator(yColumnName, proteomicsType, proxyColumnList[aucIndex], ascendingList[aucIndex])
+            for yColumn in self.yColumn:
+                self.aucCalculator(yColumn, proteomicsType, proxyColumnList[aucIndex], ascendingList[aucIndex])
     
         if filepath is not None:
             self.write(filepath)
