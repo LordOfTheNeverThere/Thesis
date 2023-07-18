@@ -41,8 +41,14 @@ if __name__ == '__main__':
     # dummy.write()
 
 
-    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')    
-    dummy.volcanoPlot('volcanoPlotDrInteractionPxModel.png') # 142393 points
+    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
+    data = dummy.data
+    data = data.loc[data['info']['fdr'] < 0.01]
+    betaThresh = data['effectSize']['interaction'].quantile(0.98) # define a beta threshold based on a quantile given by the use
+    data = data.loc[abs(data['effectSize']['interaction']) > betaThresh] # subset data to only include betas above the threshold
+    data = data.sort_values(by=[('info','logLikePValue')], ascending=[True])
+
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelFDRBuffer.png') # 3579956 points
     drugRes.data = drugRes.data.T
-    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes)
+    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
 
