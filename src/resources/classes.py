@@ -1815,6 +1815,7 @@ class DRInteractionPxModel(MatrixData):
         """        
 
         pararelList =  zip(repeat(self), self.ppis)
+        print(CPUS)
         with mp.Pool(CPUS) as process:
             pararelResults = process.starmap(processPPIWrapper, pararelList)
         results = list(chain.from_iterable(pararelResults))
