@@ -715,6 +715,7 @@ class ProteinsMatrix(MatrixData):
 
         #Add Drugresponse
         plottingData = plottingData.join(drugResponse, how = 'inner')
+        print(plottingData)
 
 
         plt.figure(figsize=(10, 10))
