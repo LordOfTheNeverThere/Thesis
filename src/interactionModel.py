@@ -37,17 +37,14 @@ if __name__ == '__main__':
 
 
     dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, pcFactors)
-    fit = dummy.fit()
+    start = t.time()
+    fit = dummy.fit(numOfCores = 25)
     dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/PCARegressor.pickle.gz'
     dummy.write()
+    print(f'fitting took {t.time() - start} seconds')
 
 
     # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
-    # data = dummy.data
-    # data = data.loc[data['info']['fdr'] < 0.01]
-    # betaThresh = data['effectSize']['interaction'].quantile(0.98) # define a beta threshold based on a quantile given by the use
-    # data = data.loc[abs(data['effectSize']['interaction']) > betaThresh] # subset data to only include betas above the threshold
-    # data = data.sort_values(by=[('info','logLikePValue')], ascending=[True])
 
     # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelFDRBuffer.png') # 3579956 points
     # drugRes.data = drugRes.data.T

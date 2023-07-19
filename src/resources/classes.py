@@ -824,11 +824,9 @@ class ProteinsMatrix(MatrixData):
         sns.lineplot(x=np.arange(0, numPC), y=cumulativeVar, color='red', ax=scree) # Cumulative explained variance of PCA
         # Change labels of axes
         scree.set(xlabel='Principal Component', ylabel='Explained Variance')
-        #show figure
-        plt.show()
         # Save figure
         if filepath != '':
-            plt.savefig(filepath, bbox_inches='tight')
+            plt.savefig(filepath)
         if factorsName != '':
             #Change the name of the columns of the factors and scores given by the PCA Object
             newColumns = [f'{factorsName}{i}' for i in range(1, numPC + 1)]
@@ -1813,7 +1811,7 @@ class DRInteractionPxModel(MatrixData):
         return lmLarge, lmSmall, res
     
 
-    def fit(self)->pd.DataFrame:
+    def fit(self, numOfCores = CPUS)->pd.DataFrame:
         """Fit each Px and Py pair towards every drug in the drugRes dataframe.
             Calculate the Log likelihood p-value for the null hypothesis that the smaller model is correct, so the larger model does not add any covariate which is statistically significant.
             Or so to say the wilk's or likelihood ratio test.
@@ -1824,8 +1822,8 @@ class DRInteractionPxModel(MatrixData):
         """        
 
         pararelList =  zip(repeat(self), self.ppis)
-        print(CPUS)
-        with mp.Pool(CPUS) as process:
+
+        with mp.Pool(numOfCores) as process:
             pararelResults = process.starmap(processPPIWrapper, pararelList)
         results = list(chain.from_iterable(pararelResults))
 
