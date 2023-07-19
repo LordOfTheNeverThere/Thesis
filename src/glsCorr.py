@@ -39,7 +39,7 @@ if __name__ == '__main__':
     pearsonOg.data.rename(columns={'pValue': 'p-value', 'pearsonR':'coef'}, inplace=True)
     pearsonOg.data['fdr'] = multipletests(pearsonOg.data['p-value'], method='fdr_bh')[1]
     
-    pairwiseList = [glsVae, pearsonVae, glsMean75, pearsonMean75, glsMean80, pearsonMean80, pearsonOg]]
+    pairwiseList = [glsVae, pearsonVae, glsMean75, pearsonMean75, glsMean80, pearsonMean80, pearsonOg]
     
     #PairwiseCorrMatrix.addGroundTruths(pairwiseList)
 
