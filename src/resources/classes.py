@@ -1060,6 +1060,14 @@ class PairwiseCorrMatrix(MatrixData):
             instances (Iterable[PairwiseCorrMatrix]): List of PairwiseCorrMatrix objects
         """ 
         for instance in instances:
+            instance.yColumn = []
+            instance.proxies= ["p-value", "coef"]
+            instance.ascendings = [True, False]
+            instance.labels = {proxy:{} for proxy in instance.proxies}
+            instance.corrCumSums = {proxy:{} for proxy in instance.proxies}
+            instance.indexes = {proxy:{} for proxy in instance.proxies}
+            instance.aucs = {proxy:{} for proxy in instance.proxies} 
+
             instance.aucsCalculator(instance.proteomicsType, instance.proxies, instance.ascendings, instance.filepath)
 
 

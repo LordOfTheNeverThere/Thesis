@@ -17,7 +17,7 @@ if __name__ == '__main__':
     pearsonVae : PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/pearsonPairCorr.pickle.gz')
     pearsonVae.data.rename(columns={'pValue': 'p-value', 'pearsonR':'coef'}, inplace=True)
     pearsonVae.data['fdr'] = multipletests(pearsonVae.data['p-value'], method='fdr_bh')[1]
-    Done#
+
 
     glsMean75: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr75PV.pickle.gz')
     glsMean75.data['fdr'] = multipletests(glsMean75.data['p-value'], method='fdr_bh')[1]
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     pearsonOg.data.rename(columns={'pValue': 'p-value', 'pearsonR':'coef'}, inplace=True)
     pearsonOg.data['fdr'] = multipletests(pearsonOg.data['p-value'], method='fdr_bh')[1]
     
-    pairwiseList = [glsMean75, pearsonMean75, glsMean80, pearsonMean80, pearsonOg]
+    pairwiseList = [glsVae, pearsonVae, glsMean75, pearsonMean75, glsMean80, pearsonMean80, pearsonOg]]
     
     #PairwiseCorrMatrix.addGroundTruths(pairwiseList)
 
