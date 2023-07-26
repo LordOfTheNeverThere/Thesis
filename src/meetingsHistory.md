@@ -67,7 +67,8 @@ Tasks:
     12. Do the Interaction Model for the Gene Essentiallty instead of Drug Response:
         1.  Get the GeneEsssentially (Pvalues of the respective effect sizes) and Effect sizes of each gene towards every cell line
         2.  Ajustar PValue por Coluna com multiple testing, per Gene in this case
-        3.  Filtrar genes para que fiquemos com entre 5 a 6k
+        3.  Convert the ids of Broad to Sanger like The Professor said on Google Chat, use the id mapping provided
+        4.  Filtrar genes para que fiquemos com entre 5 a 6k
             1.  Escolher genes que sejam essenciais para pelo menos x cell lines, ou seja, que tenha menos que y p-value e estejam presentes em pelo menos x cell lines (É um guessing game)
     13. Questiona TUDO!
     14. Começa a organizar a escrita, Títulos <-> Sub-títulos <-> Bullet Points
