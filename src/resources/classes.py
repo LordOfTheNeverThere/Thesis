@@ -1058,7 +1058,7 @@ class PairwiseCorrMatrix(MatrixData):
             instances (Iterable[PairwiseCorrMatrix]): List of PairwiseCorrMatrix objects
         """ 
         for instance in instances:
-            # instance.yColumn = []
+            instance.yColumn = ['corum', 'biogrid','stringLow', 'stringMedium', 'stringHigh', 'stringHighest'] #The External Datasets in Usage
             # instance.proxies= ["p-value", "coef"]
             # instance.ascendings = [True, False]
             # instance.labels = {proxy:{} for proxy in instance.proxies}
