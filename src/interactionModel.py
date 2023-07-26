@@ -36,17 +36,28 @@ if __name__ == '__main__':
     pd.set_option('display.max_colwidth', -1)
 
 
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, pcFactors)
-    start = t.time()
-    fit = dummy.fit(numOfCores = 25)
-    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/PCARegressor.pickle.gz'
-    dummy.write()
-    print(f'fitting took {t.time() - start} seconds')
+    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, pcFactors)
+    # start = t.time()
+    # fit = dummy.fit(numOfCores = 25)
+    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/PCARegressor.pickle.gz'
+    # dummy.write()
+    # print(f'fitting took {t.time() - start} seconds')
 
 
-    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
+    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/PCARegressor.pickle.gz')        
 
-    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelFDRBuffer.png') # 3579956 points
-    # drugRes.data = drugRes.data.T
-    # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelPCA.png') # 3579956 points
+    drugRes.data = drugRes.data.T
+    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
 
+
+
+
+    #Get the professor's csv
+
+    profProteomics = ogProteomics.data[['PSMD14', 'PSMD11']]
+    profDrug = drugRes.data['1909;Venetoclax;GDSC2']
+    profCsv = profProteomics.join(profDrug, how='inner').dropna()
+    profCsv = profCsv.join(samplesheet, how='left')
+    profCsv.to_csv('InterestingPPIDrugAssociation.csv')
+    
