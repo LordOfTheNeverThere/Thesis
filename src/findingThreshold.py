@@ -141,23 +141,31 @@ def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int]
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
     plt.legend()
-    plt.savefig("../images/test.png",
+    if glmCoefs:
+        plt.savefig("../images/glsAUCSubSampling_Mean_Proteomics.png",
                 bbox_inches="tight")
+    else:
+        plt.savefig("../images/pearsonAUCSubSampling_Mean_Proteomics.png",
+                bbox_inches="tight")
+
+    plt.close()
 
 
 if __name__ == '__main__':
     
     proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75PVProteomics.pickle.gz')
 
-    proteinsData.data = proteinsData.data.iloc[0:50,250:300]
+    subsamplingList = list(range(5,950,5))
+    repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
 
-
-    # subsamplingList = list(range(5,950,5))
-    # repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
-    subsamplingList = list(range(4, 8, 2))
-    repeatsList = [2 for repeat in subsamplingList]
     start = time.time()
     randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList, False, True)
     end = time.time()
     sumOfTime = end-start
     print(sumOfTime)
+    start = time.time()
+    randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList, True, True)
+    end = time.time()
+    sumOfTime = end-start
+    print(sumOfTime)
+
