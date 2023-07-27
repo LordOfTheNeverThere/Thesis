@@ -319,7 +319,6 @@ def read(filepath: str):
     f.close()
 
     object.filepath = filepath
-
     return object
 
 

@@ -106,7 +106,7 @@ class MatrixData:
 
         if self.filepath is not None:
             filepath = self.filepath
-
+            
         assert filepath is not None, 'No filepath provided'
 
         with gzip.open(filepath, 'wb') as f:
@@ -275,12 +275,15 @@ class ProteinsMatrix(MatrixData):
             pairwiseCorr['PPI'].append(proteinAName + ';' + proteinBName)
             pairwiseCorr['proteinA'].append(proteinAName)
             pairwiseCorr['proteinB'].append(proteinBName)
-            pairwiseCorr['pearsonR'].append(corr)
+            pairwiseCorr[columnName].append(corr)
             pairwiseCorr['p-value'].append(pValue)
             pairwiseCorr['counts'].append(count)
 
         index = pairwiseCorr.pop('PPI')
-        return PairwiseCorrMatrix(proteomicsType, None, pd.DataFrame(pairwiseCorr, index=index), ['pearsonR', 'p-value'], [False, True])
+        pairwiseCorrelations = PairwiseCorrMatrix(proteomicsType, None, pd.DataFrame(pairwiseCorr, index=index), [columnName, 'p-value'], [False, True])
+        assert pairwiseCorrelations.data.shape[0] > 0, 'No pairwise correlations were found, try lowering the thresholdInteraction, or adding more samples'
+        
+        return pairwiseCorrelations
       
     def calculateResidues(self, ppis: Iterable[set[str]]) -> ResiduesMatrix:
     
@@ -392,7 +395,7 @@ class ProteinsMatrix(MatrixData):
 
         return warpedProteinsMean, warpedIntereceptMean
 
-    def getGLSCorr(self, proteomicsType:str, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'glsCoefficient') -> PairwiseCorrMatrix:
+    def getGLSCorr(self, proteomicsType:str, pValues: bool = True, listCovMatrix:list[pd.DataFrame] = None, coefColumnName :str = 'coef') -> PairwiseCorrMatrix:
         """Get the GLS coeficents between each Protein X and Y, where X != Y, these will measure the correlation between each protein. 
         But this method differs from the pearsonCorrelations since it has underneath a GLM where the covariance matrix can be any specified.
         This covariance matrix will transform both X and y of the proteinData.data. By default this covariance matrix is calculated with proteinData.data
@@ -904,6 +907,12 @@ class PairwiseCorrMatrix(MatrixData):
 
     @classmethod
     def addGroundTruths(cls, insts:Iterable[PairwiseCorrMatrix]):
+        """Adds all the ground truths of the existence of a PPI in an external PPI dataset to the PairwiseCorrMatrix object.
+        The external PPI datasets used are: Corum, Biogrid, String150, String400, String700, String900
+
+        Args:
+            insts (Iterable[PairwiseCorrMatrix]): An iterable of PairwiseCorrMatrix objects
+        """
         from .utils import read
 
         #get all ppis
@@ -918,13 +927,9 @@ class PairwiseCorrMatrix(MatrixData):
 
         for inst in insts:
 
-            
-
-            print(inst.proteomicsType)
             if 'proteinA' not in set(inst.data.columns) or 'proteinB' not in set(inst.data.columns):
                 inst.data['proteinA'] = [ppi.split(';')[0] for ppi in inst.data.index]
                 inst.data['proteinB'] = [ppi.split(';')[1] for ppi in inst.data.index]
-                
 
             for ppi in ppis:
                 #if the ppi set was already added to the dataframe, skip it
@@ -933,6 +938,7 @@ class PairwiseCorrMatrix(MatrixData):
                 inst.addGroundTruth(ppi.ppis, ppi.name)
             
             #Save what was done!
+
             inst.write()
 
     
@@ -944,8 +950,11 @@ class PairwiseCorrMatrix(MatrixData):
             label (str): Text which will show up as label next to the value of the AUC, e.g 'Baseline Auc == 0.9' 
             proxyColumn (str): Name of the column of the statistical meausure to quantify the probability of PPI existence
             ascending(bool): should the proxyColumn be ordered ascending or not for best AUC calculation
+
+        Returns:
+            float: AUC of the recall curve
         """
-        pairwiseCorr = self.data 
+        pairwiseCorr = self.data.copy()
 
         
         pairwiseCorr.sort_values(by=proxyColumn, ascending=ascending, inplace=True) # We sort rows by the smallest to greatest pValues
@@ -958,6 +967,8 @@ class PairwiseCorrMatrix(MatrixData):
         
         self.labels[proxyColumn][yColumnName] =  f" ({proteomicsType} proteomics using {proxyColumn} ⇒ AUC:{self.aucs[proxyColumn][yColumnName]:.2f} recalling {yColumnName})"
 
+        return self.aucs[proxyColumn][yColumnName]
+    
     def aucsCalculator(self, proteomicsType:str, proxyColumnList:list[str], ascendingList:list[bool], filepath:str = None):
         """Get the auc's of the recall curve for each proxy column (coef, p-value, etc) and for each external PPI dataset (corum, biogrid, etc)
 
