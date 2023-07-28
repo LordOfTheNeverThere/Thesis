@@ -43,7 +43,7 @@ Tasks:
 
 26/7/23
 Tasks:
-    1. Do Roc Curve of VAE vs Original in terms of pearson'r (PRIORITY)
+    1. ~~Do Roc Curve of VAE vs Original in terms of pearson'r (PRIORITY)~~
     2. Do the subsampling convergence tests for protein mean, pearson'r pval vs gls' pval
     3. ~~Update: Recalculate the AUC of the various Pairwise Models~~
         1.  Redo the barplots
