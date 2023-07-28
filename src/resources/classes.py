@@ -965,7 +965,7 @@ class PairwiseCorrMatrix(MatrixData):
         # if not label: #if the user did not insert any label default it
         #     self.labels[proxyColumn] = f"(AUC {proxyColumn} {self.aucs[proxyColumn]:.2f})"
         
-        self.labels[proxyColumn][yColumnName] =  f" ({proteomicsType} proteomics using {proxyColumn} ⇒ AUC:{self.aucs[proxyColumn][yColumnName]:.2f} recalling {yColumnName})"
+        self.labels[proxyColumn][yColumnName] =  f" ({proteomicsType} proteomics using {proxyColumn} \n AUC:{self.aucs[proxyColumn][yColumnName]:.2f} recalling {yColumnName})"
 
         return self.aucs[proxyColumn][yColumnName]
     
