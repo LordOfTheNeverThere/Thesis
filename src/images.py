@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 from scipy.special import stdtr
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 from statsmodels.stats.multitest import multipletests
 from resources import ProteinsMatrix, PATH, drawRecallCurves, read, ppiDataset, PairwiseCorrMatrix
@@ -42,4 +43,37 @@ grid.set_axis_labels("", "AUC")
 plt.tight_layout(pad = 4)
 plt.subplots_adjust(hspace=0.5, wspace=0.2)
 plt.show()
+
+
+
+# Proteomics PCA Screen and Cumulative plot
+
+
+vaeProteomics = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
+
+
+pca = PCA(n_components=10).fit(vaeProteomics.data)
+
+# Construct the plot of scree and the cumulative explained variance
+# Get the explained variance and explained variance ratio
+explained_variance = pca.explained_variance_
+explained_variance_ratio = pca.explained_variance_ratio_
+
+# Calculate the cumulative explained variance
+cumulative_explained_variance = np.cumsum(explained_variance)
+
+# Bar plot for explained variance ratios
+ax1 = sns.barplot(x=np.arange(1, len(explained_variance_ratio) + 1), y=explained_variance_ratio, color='blue', alpha=0.8, edgecolor='k', linewidth=1, zorder=2)
+ax1.set_xlabel('Principal Component')
+ax1.set_ylabel('Explained Variance Ratio')
+ax1.set_title('Scree Plot and Cumulative Explained Variance')
+# Cumulative explained variance line plot    
+ax2 = ax1.twinx()
+ax2.plot(cumulative_explained_variance, marker='o', color='red')
+ax2.set_xlabel('Cumulative Explained Variance')
+ax2.grid(False)  
+ax2.set_ylim(0)  
+plt.tight_layout(pad=2)
+plt.show()
+
 

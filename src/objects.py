@@ -11,6 +11,13 @@ import time as t
 if __name__ == '__main__':
 
     # Pairwise Corrs
+
     #Mean
     pv75Mean = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr75PV.pickle.gz')
     pv80Mean = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr80PV.pickle.gz')
+
+    #Proteomics
+
+    ogProteomics = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
+    vaeProteomics = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
+

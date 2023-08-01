@@ -12,13 +12,13 @@ plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["font.sans-serif"] = "Arial"
 
 # Matplotlib set main axis font size
-plt.rcParams["axes.titlesize"] = 12
+plt.rcParams["axes.titlesize"] = 10
 
 # Matplotlib set legend font size
 plt.rcParams["legend.fontsize"] = 10
 
 # Matplotlib set tick label font size
-plt.rcParams["axes.labelsize"] = 14
+plt.rcParams["axes.labelsize"] = 10
 
 # Matplotlib set tick label font size
 plt.rcParams["xtick.labelsize"] = 10

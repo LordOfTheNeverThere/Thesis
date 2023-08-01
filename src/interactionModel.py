@@ -29,7 +29,7 @@ if __name__ == '__main__':
     growthProps = pd.get_dummies(samplesheet['growth_properties'])
     growthProps = growthProps.rename(columns={'Semi-Adherent': 'SemiAdherent'})
 
-    pcFactors = vaeProteomics.PCA(filepath='pca.png', factorsName='PC').factors
+    pca, pcFactors = vaeProteomics.PCA(filepath='pca.png', factorsName='PC')
 
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', None)

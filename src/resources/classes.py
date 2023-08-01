@@ -13,7 +13,7 @@ import statsmodels.formula.api as smf
 from statsmodels.regression.linear_model import RegressionResultsWrapper
 from statsmodels.stats.diagnostic import het_breuschpagan, het_white
 from statsmodels.stats.multitest import multipletests
-from statsmodels.multivariate.pca import PCA
+from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import normalize, QuantileTransformer, StandardScaler
 from scipy.stats import chi2, shapiro
@@ -796,47 +796,54 @@ class ProteinsMatrix(MatrixData):
         plt.close()
 
     
-    def PCA(self, filepath:str='', numPC:int = 10, gls:bool = False, factorsName:str='', **pcaKwargs) -> PCA:
+    def PCA(self, filepath:str='', numPC:int = 10, factorsName:str='', **pcaKwargs) -> tuple[PCA, DataFrame | Unbound]:
         """Generate the PCA of the protein data
 
         Args:
             filepath (str, optional): File name and directory where 
             the scree and PC cumulative variance plot will be stored. Defaults to ''.
             numPC (int, optional): number of principal components used. Defaults to 10.
-            gls (bool, optional): If the PCA class will use the gls parameter 
-            from the documentation it states that "Flag indicating to implement a two-step GLS 
-            estimator where in the first step principal components are used to estimate residuals, 
-            and then the inverse residual variance is used as a set of weights to estimate the final 
-            principal components. Setting gls to True requires ncomp to be less then the min of the 
-            number of rows or columns". Defaults to False.
+            factorsName (str, optional): Name to give to the factors, appears on the Dataframe's (factors) columns. Defaults to ''.
 
         Returns:
             PCA: The returned object will be the PCA object with all the relevant atributes
+            factors: The new values of each observation on the Principal Component Space
         """        
         # Fit PCA
-        pca = PCA(self.data, ncomp=numPC, gls=gls, missing='drop-row', **pcaKwargs)
+        pca = PCA(n_components=numPC, **pcaKwargs).fit(self.data)
 
-        # Extract explained variance of each PC
-        explainedVar = pca.eigenvals / np.sum(pca.eigenvals)
-
-        # Calculate cumulative explained variance
-        cumulativeVar = np.cumsum(explainedVar)
-        
-        # Plot Scree plot along with cumulative explained variance
-        scree = sns.barplot(x=np.arange(1, numPC + 1), y=explainedVar, color='blue') # Scree plot, individual explained variance of PCA
-        sns.lineplot(x=np.arange(0, numPC), y=cumulativeVar, color='red', ax=scree) # Cumulative explained variance of PCA
-        # Change labels of axes
-        scree.set(xlabel='Principal Component', ylabel='Explained Variance')
-        # Save figure
-        if filepath != '':
-            plt.savefig(filepath)
+        #Get the values of each sample on the new PC space
         if factorsName != '':
             #Change the name of the columns of the factors and scores given by the PCA Object
             newColumns = [f'{factorsName}{i}' for i in range(1, numPC + 1)]
-            pca.factors.columns = newColumns
-            pca.scores.columns = newColumns
+            factors = pd.DataFrame(pca.components_.T, columns=newColumns, index=vaeProteomics.data.columns)
 
-        return pca
+
+        # Construct the plot of scree and the cumulative explained variance
+        # Get the explained variance and explained variance ratio
+        explained_variance = pca.explained_variance_
+        explained_variance_ratio = pca.explained_variance_ratio_
+
+        # Calculate the cumulative explained variance
+        cumulative_explained_variance = np.cumsum(explained_variance)
+
+        # Bar plot for explained variance ratios
+        ax1 = sns.barplot(x=np.arange(1, len(explained_variance_ratio) + 1), y=explained_variance_ratio, color='blue', alpha=0.8, edgecolor='k', linewidth=1, zorder=2)
+        ax1.set_xlabel('Principal Component')
+        ax1.set_ylabel('Explained Variance Ratio')
+        ax1.set_title('Scree Plot and Cumulative Explained Variance')
+        # Cumulative explained variance line plot    
+        ax2 = ax1.twinx()
+        ax2.plot(cumulative_explained_variance, marker='o', color='red')
+        ax2.set_xlabel('Cumulative Explained Variance')
+        ax2.grid(False)  
+        ax2.set_ylim(0)  
+        plt.tight_layout(pad=2)
+        if filepath != '':
+            plt.savefig(filepath)
+        plt.close()
+
+        return pca, factors
         
 
 

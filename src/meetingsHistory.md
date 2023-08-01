@@ -46,8 +46,8 @@ Tasks:
     1. ~~Do Roc Curve of VAE vs Original in terms of pearson'r (PRIORITY)~~
     2. Do the subsampling convergence tests for protein mean, pearson'r pval vs gls' pval
     3. ~~Update: Recalculate the AUC of the various Pairwise Models~~
-        1.  Redo the barplots
-        2.  Do an additional one, with the a grid like structure and multiple subplots one for each Dataset, inquery Emanuel on more details on this
+        1.  ~~Redo the barplots~~
+        2.  ~~Do an additional one, with the a grid like structure and multiple subplots one for each Dataset, inquery Emanuel on more details on this~~
     4. The Bar Plot in the Scree Plot is Correct but the cummulative is of the explained_variance and not explained_variance_ratio, so we want the variance explained by each PC for that data, regardless of of the variance explained by all the PC's
     5.  Understand why there is a hat on the volcano plot of FDR correction without PCA
     6.  Maybe have in the scatterplots the drug response given by Size and not Colour
