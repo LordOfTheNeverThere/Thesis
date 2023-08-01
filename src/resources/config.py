@@ -1,6 +1,7 @@
 # Copyright (C) 2022 Emanuel Goncalves
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Matplotlib config
 plt.rcParams["figure.figsize"] = [4, 4]
@@ -91,3 +92,7 @@ TISSUEPALETTE = {
     "Eye": "#ff1493",
 }
 
+# Pandas Config
+
+pd.set_option('display.max_columns', 25)
+pd.set_option('display.max_rows', 50)
