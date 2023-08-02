@@ -723,7 +723,7 @@ class ProteinsMatrix(MatrixData):
 
 
         plt.figure(figsize=(10, 10))
-        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, palette="viridis", alpha=1, edgecolor='none', s=15)
+        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, size=drug, palette="viridis", alpha=1, edgecolor='none', s=15)
         norm = matplotlib.colors.Normalize(vmin=drugResponse.min(), vmax=drugResponse.max())
         # Add Colour Map
         sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
