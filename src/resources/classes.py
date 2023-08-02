@@ -1809,6 +1809,12 @@ class DRInteractionPxModel(MatrixData):
         xLarge.columns = xLarge.columns.astype(str)
         lmLarge = self.modelRegressor().fit(xLarge, Py)
         lmLargeLogLike = self.loglike(Py, lmLarge.predict(xLarge))
+        
+        #Calculating Residuals (Small model)
+        lmSmallResiduals = Py - lmSmall.predict(M)
+
+        #Calculating Residuals (Large model)
+        lmLargeResiduals = Py - lmLarge.predict(xLarge)
 
         # Log-ratio test
         lr = 2 * (lmLargeLogLike - lmSmallLogLike)
@@ -1826,6 +1832,8 @@ class DRInteractionPxModel(MatrixData):
         res[('info', 'logLikePValue')] = LogLikeliRatioPVal
         res[('info', 'llStatistic')] = lr
         res[('info', 'intercept')] = lmLarge.intercept_
+        res[('info', 'residLarge')] = lmLargeResiduals
+        res[('info', 'residSmall')] = lmSmallResiduals
 
 
         return lmLarge, lmSmall, res
