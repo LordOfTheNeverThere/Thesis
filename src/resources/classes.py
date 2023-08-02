@@ -1828,6 +1828,12 @@ class DRInteractionPxModel(MatrixData):
         xLarge.columns = xLarge.columns.astype(str)
         lmLarge = self.modelRegressor().fit(xLarge, Py)
         lmLargeLogLike = self.loglike(Py, lmLarge.predict(xLarge))
+        
+        #Calculating Residuals (Small model)
+        lmSmallResiduals = Py - lmSmall.predict(M)
+
+        #Calculating Residuals (Large model)
+        lmLargeResiduals = Py - lmLarge.predict(xLarge)
 
         # Log-ratio test
         lr = 2 * (lmLargeLogLike - lmSmallLogLike)
@@ -1845,6 +1851,8 @@ class DRInteractionPxModel(MatrixData):
         res[('info', 'logLikePValue')] = LogLikeliRatioPVal
         res[('info', 'llStatistic')] = lr
         res[('info', 'intercept')] = lmLarge.intercept_
+        res[('info', 'residLarge')] = lmLargeResiduals
+        res[('info', 'residSmall')] = lmSmallResiduals
 
 
         return lmLarge, lmSmall, res
@@ -1874,10 +1882,65 @@ class DRInteractionPxModel(MatrixData):
 
         return results
     
+
+    def resiCorr(self)->pd.DataFrame:
+        """Calculates the correlation between the residuals of the large model and each drug and the residuals of the small model and each drug.
+        Using analysis of Variance or ANOVA Linear models, where we use categorical vars (drugs) to explain the variance in the residuals of the large and small models.
+
+
+        Returns:
+            pd.DataFrame: The correlation between the residuals of the large model and each drug and the residuals of the small model and each drug.
+        """        
+        data = self.data.copy()
+        #get only relevant columns
+        anovaData = pd.DataFrame(columns=['residSmall', 'residLarge', 'drug'])
+        anovaData['drug'] = data['info']['drug']
+        anovaData['residLarge'] = data['info']['residLarge']
+        anovaData['residSmall'] = data['info']['residSmall']
+        #dummy encode the drugs
+        setOfDrugs = set(anovaData['drug'])
+        anovaData = pd.get_dummies(anovaData, columns=['drug'], prefix=None)
+        results = {'drug':[], 'etaSquaredSmall':[], 'etaSquaredLarge':[]}
+        for drug in setOfDrugs:
+            #binarize the drug column
+            anovaData[f'{drug}'] = anovaData.apply(lambda row: 1 if row['drug'] == str(drug) else 0, axis=1)
+            #fit anova models with the small residuals and the large residuals
+            anovaSmall = smf.ols(f'residSmall ~ C({drug})', data=anovaData).fit()
+            anovaLarge = smf.ols(f'residLarge ~ C({drug})', data=anovaData).fit()
+        
+            # Get the tables (Dataframes) with the ANOVA results
+            anovaSmallTable = sm.stats.anova_lm(anovaSmall, typ=2)
+            anovaLargeTable = sm.stats.anova_lm(anovaLarge, typ=2)
+
+            #Calculate the eta squared for each model, the effect size of each drug towards the residuals
+            results['etaSquaredSmall'].append(anovaSmallTable[:-1]['sum_sq']/sum(anovaSmallTable['sum_sq']))
+            results['etaSquaredLarge'].append(anovaLargeTable[:-1]['sum_sq']/sum(anovaLargeTable['sum_sq']))
+
+            #Add additional info to the results
+            results['drug'].append(drug)
+            results['fPValueSmall'] = anovaSmallTable['PR(>F)'][0]
+            results['fPValueLarge'] = anovaLargeTable['PR(>F)'][0]
+
+
+        self.resiCorrResults = pd.DataFrame(results)
+
+        return self.resiCorrResults
+
+
+
+
+
+
+    
+    
     def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.01, pValHzLine:float = 0.001):
-        """
-        Volcano plot in order to find statisticall relevant relationships.
-        """
+        """Volcano plot in order to find statisticall relevant relationships.
+
+        Args:
+            filepath (str): Path to save the plot.
+            falseDiscoveryRate (float, optional): The corrected p-value at which we start to acknowledge a relevant interaction, independently of how many times an hypothesis was tested . Defaults to 0.01.
+            pValHzLine (float, optional): p-value line to draw on the plot, as a reference. Defaults to 0.001.
+        """        
         data = self.data.copy()
         data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
         yValues = -np.log10(data['info']['logLikePValue'])
