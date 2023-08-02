@@ -21,3 +21,15 @@ if __name__ == '__main__':
     ogProteomics = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
     vaeProteomics = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
 
+
+    #Drug Response
+    drugRes = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz')
+
+
+    #Samplesheet
+    samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
+
+
+    
+
+

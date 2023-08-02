@@ -51,13 +51,4 @@ if __name__ == '__main__':
     dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
 
 
-
-
-    #Get the professor's csv
-
-    profProteomics = ogProteomics.data[['PSMD14', 'PSMD11']]
-    profDrug = drugRes.data['1909;Venetoclax;GDSC2']
-    profCsv = profProteomics.join(profDrug, how='inner').dropna()
-    profCsv = profCsv.join(samplesheet, how='left')
-    profCsv.to_csv('InterestingPPIDrugAssociation.csv')
     

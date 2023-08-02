@@ -10,8 +10,5 @@ from resources import ProteinsMatrix, PATH, drawRecallCurves, read, ppiDataset, 
 
 if __name__ == '__main__':
         
-    vaeProteomics = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
-
-    numPC:int = 10
-    factorsName:str=''
+    
 
