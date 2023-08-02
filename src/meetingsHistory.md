@@ -49,8 +49,8 @@ Tasks:
         1.  ~~Redo the barplots~~
         2.  ~~Do an additional one, with the a grid like structure and multiple subplots one for each Dataset, inquery Emanuel on more details on this~~
     4. ~~The Bar Plot in the Scree Plot is Correct but the cummulative is of the explained_variance and not explained_variance_ratio, so we want the variance explained by each PC for that data, regardless of of the variance explained by all the PC's~~
-    5.  Understand why there is a hat on the volcano plot of FDR correction without PCA
-    6.  Maybe have in the scatterplots the drug response given by Size and not Colour
+    5.  ~~Understand why there is a hat on the volcano plot of FDR correction without PCA~~ -- The hat is composed of the same PPI in the same direction Py ~ Px, with all the drugs, where Py is MRPS30 and Px is MRPL41, não faz sentido se dever nem ao n (nº de samples em comum entre droga e PPI e respectiva inflação do pValue), pois as associações de sentido inverso também estariam sobre-representadas ou número de drogas que podem fazer associação com o PPI (686 drogas), porque este valor afectaria apenas o fdr e não o p-value do log likelihood test.
+    6.  ~~Maybe have in the scatterplots the drug response given by Size and not Colour~~
     7.  Correlacionar resíduos do small model Py ~ Px + M, com Drogas
     8.  Analyse in concrete the Volcano Plot of th FDR without PCA (Remember the Professor said that we need only one example of biologival interest in order to make our model viable)
         1.  Select certain points or clusters of points

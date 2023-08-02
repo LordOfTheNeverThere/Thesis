@@ -303,25 +303,6 @@ def drawRecallCurves(paiwiseMatrices: list[PairwiseCorrMatrix], colours: list, f
     plt.close("all")
 
 
-def read(filepath: str):
-    """Load one of the pickled objects stored in filepath
-
-    Args:
-        filepath (str): filepath of pickled, gziped object
-
-    Returns:
-        _type_: object
-    """
-    import sys
-    sys.path.append('resources')
-    with gzip.open(filepath, 'rb') as f:
-        object = pickle.load(f)
-    f.close()
-
-    object.filepath = filepath
-    return object
-
-
 def pxPyScatterPlots(other: PairwiseCorrMatrix, limitsR: tuple[float], limitsMetricOther: tuple[ﬂoat], corum: int, lung: bool, sortingColum: str, ascending: bool) -> None:
     """Creates a scatter plot with top 5 PPI according with queries done to the 
 

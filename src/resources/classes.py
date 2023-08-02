@@ -26,6 +26,25 @@ import multiprocessing as mp
 from resources import *
 
 
+def read(filepath: str):
+    """Load one of the pickled objects stored in filepath
+
+    Args:
+        filepath (str): filepath of pickled, gziped object
+
+    Returns:
+        _type_: object
+    """
+    import sys
+    sys.path.append('resources')
+    with gzip.open(filepath, 'rb') as f:
+        object = pickle.load(f)
+    f.close()
+
+    object.filepath = filepath
+    return object
+
+
 def ols(Y,X):
     """Give the OLS regression results for a given set of features and a response variable, like R Summary
 
@@ -1917,7 +1936,7 @@ class DRInteractionPxModel(MatrixData):
             ppi = row['info']['Py'] + ';' + row['info']['Px']
             proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
 
-    def triangulate(self, volcanoXMin:float, volcanoXMax:float, volcanoYMin:float, volcanoYMax:float, falseDiscoveryRate:float=0.10)->pd.DataFrame:
+    def triangulate(self, volcanoXMin:float, volcanoXMax:float, volcanoYMin:float, volcanoYMax:float, scatter:int = 0, filepathMold:str='')->pd.DataFrame:
         """Triangulate the model results data according to the volcano plot thresholds
 
         Args:
@@ -1925,7 +1944,8 @@ class DRInteractionPxModel(MatrixData):
             volcanoXMax (float): The maximum interaction effect size value for the x axis
             volcanoYMin (float): The minimum -np.log10(p-value) value for the y axis
             volcanoYMax (float): The maximum -np.log10(p-value) value for the y axis
-            falseDiscoveryRate (float, optional): _description_. Defaults to 0.10.
+            scatter (int, optional): The number of associations to scatter. Defaults to 0.
+
 
         Returns:
             pd.DataFrame: Data according to the volcano plot thresholds
@@ -1933,14 +1953,53 @@ class DRInteractionPxModel(MatrixData):
 
     
         data = self.data.copy()
-        data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
         data = data.loc[(data['effectSize']['interaction'] >= volcanoXMin) & (data['effectSize']['interaction'] <= volcanoXMax)]
         data = data.loc[(-np.log10(data['info']['logLikePValue']) >= volcanoYMin) & (-np.log10(data['info']['logLikePValue']) <= volcanoYMax)]
         data = data.sort_values(by=[('info','logLikePValue')], ascending=[True])
 
         print(data)
+        if scatter > 0:
+            self.scatter(scatter, filepathMold, data)
 
         return data
+
+    def scatter(
+            self, 
+            topNumber:int, 
+            filepathMold:str, 
+            data:pd.DataFrame = None, 
+            drugRes:DrugResponseMatrix = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz'), 
+            proteomics:ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')):
+        """ Scatter the first topNumber associations in data or self.data
+
+        Args:
+            topNumber (int): Number of associations to scatter
+            filepathMold (str): Filepath template to save the scatter plots
+            data (_type_, optional): Data to use instead of the objects full result matrix, comming out of the linear Model. Defaults to None.
+            drugRes (DrugResponseMatrix, optional): Drug response Object. Defaults to read(PATH + '/internal/drugResponses/drugResponse.pickle.gz').
+            proteomics (ProteinsMatrix, optional): Proteomics Object used for scatter. Defaults to read(PATH + '/internal/proteomics/ogProteomics.pickle.gz').
+        """        
+        if data is None:
+            data = self.data.copy()
+        
+        top = data.iloc[0:topNumber,:]
+        #reseting index
+        top = top.reset_index(drop=True)
+        #iterate samples
+        for index, row in top.iterrows():
+
+            pValue = row['info']['logLikePValue']
+            effectSize = row['effectSize']['interaction']
+            drug = row['info']['drug']
+            anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
+            anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
+            filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
+            ppi = row['info']['Py'] + ';' + row['info']['Px']
+            proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
+
+
+
+        
 
 
 

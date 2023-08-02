@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # print(f'fitting took {t.time() - start} seconds')
 
 
-    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/PCARegressor.pickle.gz')        
+    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
 
     dummy.volcanoPlot('volcanoPlotDrInteractionPxModelPCA.png') # 3579956 points
     drugRes.data = drugRes.data.T
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     #Understand why there is a hat in the Volcano Plot
 
-    dummy.triangulate()
+    triangulationResults = dummy.triangulate(-0.1, 0.1, 63, 70, 10, 'triangulationHat.png')
 
 
     
