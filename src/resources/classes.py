@@ -726,7 +726,7 @@ class ProteinsMatrix(MatrixData):
         scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, palette="viridis", alpha=1, edgecolor='none', s=15)
         norm = matplotlib.colors.Normalize(vmin=drugResponse.min(), vmax=drugResponse.max())
         # Add Colour Map
-        sm = plt.cm.ScalarMappable(cmap="viridis", norm=None)
+        sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
         sm.set_array([])
         scatter.get_legend().remove()
         scatter.figure.colorbar(sm, label='Drug Response')
