@@ -1917,6 +1917,30 @@ class DRInteractionPxModel(MatrixData):
             ppi = row['info']['Py'] + ';' + row['info']['Px']
             proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
 
+    def triangulate(self, volcanoXMin:float, volcanoXMax:float, volcanoYMin:float, volcanoYMax:float, falseDiscoveryRate:float=0.10)->pd.DataFrame:
+        """Triangulate the model results data according to the volcano plot thresholds
+
+        Args:
+            volcanoXMin (float): The minimum interaction effect size value for the x axis
+            volcanoXMax (float): The maximum interaction effect size value for the x axis
+            volcanoYMin (float): The minimum -np.log10(p-value) value for the y axis
+            volcanoYMax (float): The maximum -np.log10(p-value) value for the y axis
+            falseDiscoveryRate (float, optional): _description_. Defaults to 0.10.
+
+        Returns:
+            pd.DataFrame: Data according to the volcano plot thresholds
+        """
+
+    
+        data = self.data.copy()
+        data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
+        data = data.loc[(data['effectSize']['interaction'] >= volcanoXMin) & (data['effectSize']['interaction'] <= volcanoXMax)]
+        data = data.loc[(-np.log10(data['info']['logLikePValue']) >= volcanoYMin) & (-np.log10(data['info']['logLikePValue']) <= volcanoYMax)]
+        data = data.sort_values(by=[('info','logLikePValue')], ascending=[True])
+
+        print(data)
+
+        return data
 
 
 

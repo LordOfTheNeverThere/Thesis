@@ -50,5 +50,9 @@ if __name__ == '__main__':
     drugRes.data = drugRes.data.T
     dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
 
+    #Understand why there is a hat in the Volcano Plot
+
+    dummy.triangulate()
+
 
     
