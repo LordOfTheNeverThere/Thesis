@@ -19,6 +19,7 @@ from sklearn.preprocessing import normalize, QuantileTransformer, StandardScaler
 from scipy.stats import chi2, shapiro
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib
 import time as t
 from typing import Iterable,Any
 import multiprocessing as mp
@@ -723,6 +724,7 @@ class ProteinsMatrix(MatrixData):
 
         plt.figure(figsize=(10, 10))
         scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, palette="viridis", alpha=1, edgecolor='none', s=15)
+        norm = matplotlib.colors.Normalize(vmin=drugResponse.min(), vmax=drugResponse.max())
         # Add Colour Map
         sm = plt.cm.ScalarMappable(cmap="viridis", norm=None)
         sm.set_array([])
