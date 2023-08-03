@@ -36,28 +36,28 @@ if __name__ == '__main__':
     pd.set_option('display.max_colwidth', -1)
 
 
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, growthProps)
-    start = t.time()
-    fit = dummy.fit(numOfCores = 25)
-    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz'
-    dummy.write()
-    print(f'fitting took {t.time() - start} seconds')
-    #Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
-    dummy.resiCorr()
-    dummy.write()
-    print('done')
+    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, growthProps)
+    # start = t.time()
+    # fit = dummy.fit(numOfCores = 25)
+    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz'
+    # dummy.write()
+    # print(f'fitting took {t.time() - start} seconds')
+    # #Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
+    # dummy.resiCorr()
+    # dummy.write()
+    # print('done')
 
 
 
-    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
+    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
 
-    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelPCA.png') # 3579956 points
-    # drugRes.data = drugRes.data.T
-    # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelFDRPerPPI.png') # 3579956 points
+    drugRes.data = drugRes.data.T
+    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
 
-    # #Understand why there is a hat in the Volcano Plot
+    #Understand why there is a hat in the Volcano Plot
 
-    # triangulationResults = dummy.triangulate(-0.1, 0.1, 63, 70, 10, 'triangulationHat.png')
+    triangulationResults = dummy.triangulate(-0.1, 0.1, 63, 70, 10, 'triangulationHat.png')
 
 
     

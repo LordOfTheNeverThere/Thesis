@@ -1925,15 +1925,9 @@ class DRInteractionPxModel(MatrixData):
         self.resiCorrResults = pd.DataFrame(results)
 
         return self.resiCorrResults
-
-
-
-
-
-
     
     
-    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.01, pValHzLine:float = 0.001):
+    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.01, pValHzLine:float = 0.001, extraFeatures:bool = True):
         """Volcano plot in order to find statisticall relevant relationships.
 
         Args:
@@ -1947,7 +1941,7 @@ class DRInteractionPxModel(MatrixData):
         xValues = data['effectSize']['interaction']
 
 
-        plt.figure(figsize=(20, 20), dpi=600)
+        plt.figure(figsize=(20, 20), dpi=300)
         # Plot
         plt.scatter(
             xValues,
@@ -1974,6 +1968,56 @@ class DRInteractionPxModel(MatrixData):
         plt.savefig(filepath, bbox_inches="tight")
         plt.close()
 
+
+        if extraFeatures:
+                hueVars = {} # List to store all the extra vars to be used as hue in the scatter plot
+                #1st feature (Number of samples in common between Px, Py and Drug)
+                hueVars['samples'] = data['info']['n']
+                #2nd feature (Number of other associations of that PPI with other drug, how much the PPI is tested, how large is the fdr penalty)
+                valuesCount = data.loc[:,[('info','Py'),('info', 'Px')]].value_counts()
+                hueVars['#tested']= data.apply(lambda row: valuesCount[row[('info','Py')], row[('info', 'Px')]], axis=1)
+                #3rd feature (Py)
+                hueVars['Py'] = data['info']['Py']
+                #4th feature (Px)
+                hueVars['Px'] = data['info']['Px']
+                #5th feature (Drug)
+                hueVars['drug'] = data['info']['drug']
+                #6th feature (fdr)
+                hueVars['fdr'] = data['info']['fdr']
+
+                for hueVar in hueVars: # Iterate over all the extra features, and used them as hue in the scatterPlots
+
+                    plt.figure(figsize=(20, 20), dpi=300)
+                    ax = sns.scatterplot(
+                        x=xValues,
+                        y=yValues,
+                        hue=hueVars[hueVar],
+                        color="k",
+                        s=15,
+                        alpha=0.8,
+                        edgecolors="none",
+                        rasterized=True,
+                    )
+
+                    # Labels
+                    ax.set_xlabel(r"$\beta$")
+                    ax.set_ylabel(r"$-\log_{10}(p-value)$")
+
+                    # Grid
+                    ax.axvline(0, c="k", lw=0.5, ls="--")
+                    pValHzLine = 0.05  # Replace this value with the desired p-value
+                    ax.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
+
+                    # Title
+                    ax.set_title(f"Volcano plot with {hueVar} as hue")
+                    ax.legend()
+
+                    # Show the plot
+                    plt.show()
+
+
+
+                
         
     
     def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0.98):
