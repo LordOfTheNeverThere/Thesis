@@ -29,30 +29,35 @@ if __name__ == '__main__':
     growthProps = pd.get_dummies(samplesheet['growth_properties'])
     growthProps = growthProps.rename(columns={'Semi-Adherent': 'SemiAdherent'})
 
-    pca, pcFactors = vaeProteomics.PCA(filepath='pca.png', factorsName='PC')
+    # pca, pcFactors = vaeProteomics.PCA(filepath='pca.png', factorsName='PC')
 
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', None)
     pd.set_option('display.max_colwidth', -1)
 
 
-    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, pcFactors)
-    # start = t.time()
-    # fit = dummy.fit(numOfCores = 25)
-    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/PCARegressor.pickle.gz'
-    # dummy.write()
-    # print(f'fitting took {t.time() - start} seconds')
+    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, growthProps)
+    start = t.time()
+    fit = dummy.fit(numOfCores = 25)
+    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz'
+    dummy.write()
+    print(f'fitting took {t.time() - start} seconds')
+    #Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
+    dummy.resiCorr()
+    dummy.write()
+    print('done')
 
 
-    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
 
-    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelPCA.png') # 3579956 points
-    drugRes.data = drugRes.data.T
-    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
+    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
 
-    #Understand why there is a hat in the Volcano Plot
+    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelPCA.png') # 3579956 points
+    # drugRes.data = drugRes.data.T
+    # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
 
-    triangulationResults = dummy.triangulate(-0.1, 0.1, 63, 70, 10, 'triangulationHat.png')
+    # #Understand why there is a hat in the Volcano Plot
+
+    # triangulationResults = dummy.triangulate(-0.1, 0.1, 63, 70, 10, 'triangulationHat.png')
 
 
     
