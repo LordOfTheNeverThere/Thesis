@@ -49,7 +49,7 @@ Tasks:
         1.  ~~Redo the barplots~~
         2.  ~~Do an additional one, with the a grid like structure and multiple subplots one for each Dataset, inquery Emanuel on more details on this~~
     4. ~~The Bar Plot in the Scree Plot is Correct but the cummulative is of the explained_variance and not explained_variance_ratio, so we want the variance explained by each PC for that data, regardless of of the variance explained by all the PC's~~
-    5.  ~~Understand why there is a hat on the volcano plot of FDR correction without PCA~~ -- The hat is composed of the same PPI in the same direction Py ~ Px, with all the drugs, where Py is MRPS30 and Px is MRPL41, não faz sentido se dever nem ao n (nº de samples em comum entre droga e PPI e respectiva inflação do pValue), pois as associações de sentido inverso também estariam sobre-representadas ou número de drogas que podem fazer associação com o PPI (686 drogas), porque este valor afectaria apenas o fdr e não o p-value do log likelihood test.
+    5.  ~~Understand why there is a hat on the volcano plot of FDR correction without PCA~~
     6.  ~~Maybe have in the scatterplots the drug response given by Size and not Colour~~
     7.  Correlacionar resíduos do small model Py ~ Px + M, com Drogas (Method has been made but in order for it to be used the Interaction Models need to be recalculated)
     8.  Analyse in concrete the Volcano Plot of th FDR without PCA (Remember the Professor said that we need only one example of biologival interest in order to make our model viable)
@@ -61,7 +61,7 @@ Tasks:
             3.  Drug
             4.  Etc
         4. Why is the Effect Size Mostly Positive, Biologically?
-    9. Repeat the analysis in 6 to the volcano Plot with PCA and FDR correction and Compare
+    9.  Repeat the analysis in 6 to the volcano Plot with PCA and FDR correction and Compare
     10. Test another interaction model, where the small model is given by Py ~ Px + M + Drug, only on the model with FDR and no PCA. Check if there is any difference between that and the homologous, by doing the same analysis done in 8 and 9
     11. (Last Resource if nothing comes out of the previous analyses, because it is more cumbersome) Fazer versão deste modelo de interacção Linear Mixed Models com matrix de covariância da VAE Proteomics
     12. Do the Interaction Model for the Gene Essentiallty instead of Drug Response:
@@ -74,5 +74,14 @@ Tasks:
     14. Começa a organizar a escrita, Títulos <-> Sub-títulos <-> Bullet Points
     15. Escreve apenas aquilo que pensas que se manterá imutado até à entrega da tese, datasets e whatnot
     16. FAZ FÉRIAS E PAUSAS
+    17. Find a way to correct the fdr interaction model, so that we have a way to descriminate either drugs or PPI's. A work arround could be to use the non inputed data ... choose one (PPI or Drug) and explain the choice. But a drawback from this is that drugs with low samples would get the least penalization, while we are performing the same number of tests in all drugs, maybe the fdr model should be discontinued...
 
+    Findings:
+    18. The hat is composed of the same PPI in the same direction Py ~ Px, with 686 drugs, where Py is MRPS30 and Px is MRPL41
+       1. não faz sentido ser devido ao n (nº de samples em comum entre droga e PPI e respectiva inflação do pValue), pois as associações de sentido inverso também estariam sobre-representadas.
+       2. Uma hipotese é número de drogas que podem fazer associação com o PPI (686 drogas), porque este valor afectaria apenas o fdr e possivelmente no modelo inicial onde estamos a fazer a correção na globalidade este fdr cairia acima do threshold, e agora como a penalização é menos signicativa já está abaixo do threshold.
+       3. Outra hipotese é que tem um p-value alto, e um effect-size minusculo devido a estarmos a testar a significância da droga e não só do termo de interação, logo a droga é relevante para explicar Py porque a Drug response aumenta um pouco com aumentos de Py, mas muito provavelmente o termo de interação em si não deve ser muito relevante para explicar a Py, daí o effect size minusculo, ao fazer o modelo novo com Drug no small model este chapéu deve desaparecer.
+       4.  Relativamente à 1ª hipotese todos os PPI's são associados com o mesmo número de drogas, 697 (esta penalização é de facto menor que a global, mas não descrimina PPI porque são todos testados de igual forma, mas as drogas tambem se associam sempre com o mesmo número de PPI 25452, logo não dá para discernir PPI ou drogas com FDR este modelo parece muito pouco interessante)
+       5.  porque se inputou a mean na drug Response, logo a penalty de fdr é idêntica para todos mas no chapéu so estão 686, porquê, talvez só nesses é que a Drug é estatisticamente signifcativa para explicar Py... E os restantes estão presentes no volcano elsewhere
+       6.  O modelo do FDR não é nada interessante da forma como está feito, porque as drogas emparelham todas com o mesmo número de PPI e vice-versa, logo não há grupos de associações que sejam discreminadas, simplesmente reduzimos o valor de fdr globalmente.
             
