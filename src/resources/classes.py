@@ -1927,7 +1927,7 @@ class DRInteractionPxModel(MatrixData):
         return self.resiCorrResults
     
     
-    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.01, pValHzLine:float = 0.001, extraFeatures:bool = True):
+    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.01, pValHzLine:float = 0.001, extraFeatures:bool = False):
         """Volcano plot in order to find statisticall relevant relationships.
 
         Args:
@@ -1943,10 +1943,10 @@ class DRInteractionPxModel(MatrixData):
 
         plt.figure(figsize=(20, 20), dpi=300)
         # Plot
-        plt.scatter(
-            xValues,
-            yValues,
-            c="k",
+        ax = sns.scatterplot(
+            x=xValues,
+            y=yValues,
+            color="k",
             s=15,
             alpha=0.8,
             edgecolors="none",
@@ -1954,16 +1954,18 @@ class DRInteractionPxModel(MatrixData):
         )
 
         # Labels
-        plt.xlabel(r"$\beta$")
-        plt.ylabel(r"$-\log_{10}(p-value)$")
+        ax.set_xlabel(r"$\beta$")
+        ax.set_ylabel(r"$-\log_{10}(p-value)$")
 
         # Grid
-        plt.axvline(0, c="k", lw=0.5, ls="--")
-        plt.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
+        ax.axvline(0, c="k", lw=0.5, ls="--")
+        pValHzLine = 0.05  # Replace this value with the desired p-value
+        ax.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
 
         # Title
-        plt.title("Volcano plot")
-        plt.legend()
+        ax.set_title(f"Volcano plot")
+        ax.legend()
+
         self.volcanoPath = filepath
         plt.savefig(filepath, bbox_inches="tight")
         plt.close()
