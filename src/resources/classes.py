@@ -2177,6 +2177,8 @@ class DRInteractionPxModel(MatrixData):
             anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
             if filepathMold is not None:
                 filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
+            else:
+                filepath = None
             ppi = row['info']['Py'] + ';' + row['info']['Px']
             proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
 
