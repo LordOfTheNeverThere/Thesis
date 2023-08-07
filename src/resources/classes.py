@@ -2048,7 +2048,7 @@ class DRInteractionPxModel(MatrixData):
                     plt.close()
 
         
-    
+
     def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0.98):
         
         data = self.data.copy()
@@ -2072,7 +2072,7 @@ class DRInteractionPxModel(MatrixData):
             ppi = row['info']['Py'] + ';' + row['info']['Px']
             proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
 
-    def triangulate(self, volcanoXMin:float, volcanoXMax:float, volcanoYMin:float, volcanoYMax:float, scatter:int = 0, filepathMold:str='', interactive:bool = False)->pd.DataFrame:
+    def triangulate(self, volcanoXMin:float, volcanoXMax:float, volcanoYMin:float, volcanoYMax:float, scatter:int = 0, filepathMold:str|None='', interactive:bool = False)->pd.DataFrame:
         """Triangulate the model results data according to the volcano plot thresholds
 
         Args:
@@ -2097,9 +2097,9 @@ class DRInteractionPxModel(MatrixData):
             
             yValues = -np.log10(data['info']['logLikePValue'])
             xValues = data['effectSize']['interaction']
-
-            plt.figure(figsize=(20, 20), dpi=300)
-            # Plot
+            
+            fig = plt.figure(figsize=(60,60), dpi=300)
+            ax = fig.add_subplot(111)
 
             ax = sns.scatterplot(
                 x=xValues,
@@ -2110,6 +2110,7 @@ class DRInteractionPxModel(MatrixData):
                 edgecolors="none",
                 rasterized=True,
                 picker=True,
+                ax=ax
             )
 
             # Labels
@@ -2118,32 +2119,37 @@ class DRInteractionPxModel(MatrixData):
 
             # Grid
             ax.axvline(0, c="k", lw=0.5, ls="--")
-            pValHzLine = 0.05  # Replace this value with the desired p-value
-            ax.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
+            #Change x and y range according to the volcano plot thresholds
+            ax.set_xlim(volcanoXMin, volcanoXMax)
+            ax.set_ylim(volcanoYMin, volcanoYMax)
 
             # Title
             ax.set_title(f"Volcano plot")
-            ax.legend()
 
             # Function to handle pick events
             def picker(event):
+
                 
                 ind = event.ind[0]  # Get the index of the selected point
-                selected = data.iloc[ind]
+                selected = data.iloc[[ind],:] # The double bracket is so that the retrieved object is a dataframe and not a series
+                plt.gcf().canvas.mpl_disconnect(mouseEvent)  # Disconnect the pick event handler
+                plt.close(fig)  # Close the figure
                 print(selected)
+                # Scatter the selected point
                 self.scatter(1, filepathMold, selected)
-
+                
+            fig.show()
             # Connect the pick event handler to the scatter plot
             mouseEvent = plt.gcf().canvas.mpl_connect("pick_event", picker)
-            plt.show()
-            plt.gcf().canvas.mpl_disconnect(mouseEvent)
-            plt.close()
+            
+            
+
 
         else:
             if scatter > 0:
                 self.scatter(scatter, filepathMold, data)
 
-        return data
+            return data
 
     def scatter(
             self, 

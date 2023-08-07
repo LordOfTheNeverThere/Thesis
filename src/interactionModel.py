@@ -51,13 +51,13 @@ if __name__ == '__main__':
 
     dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
 
-    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelFDRPerPPI.png', interactive=True) # 3579956 points
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelFDRPerPPI.png') # 3579956 points
     drugRes.data = drugRes.data.T
     dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
 
     #Understand why there is a hat in the Volcano Plot
 
-    triangulationResults = dummy.triangulate(-0.1, 0.1, 63, 70, 10, 'triangulationHat.png')
+    triangulationResults = dummy.triangulate(0.175, 0.25, 27, 38, 13, 'dummy.png', False)
 
 
     
