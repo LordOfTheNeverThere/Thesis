@@ -710,7 +710,7 @@ class ProteinsMatrix(MatrixData):
 
         plt.close()
 
-    def plotPxPyDrugContinous(self, drug:str, ppi:str, drugResponse: DrugResponseMatrix, filepath:str, **annotationArgs):
+    def plotPxPyDrugContinous(self, drug:str, ppi:str, drugResponse: DrugResponseMatrix, filepath:str|None, **annotationArgs):
         """Scatter Plot with the protein expression of two proteins and the drug response of a drug, in a continous manner, unlike plotPxPyDrug.
         Additionally, the plot can be annotated with the arguments passed to the function. And the Drug Response will be represented with a colorbar and
         and an overlaying Kernel Distribution Estimation.
@@ -756,8 +756,11 @@ class ProteinsMatrix(MatrixData):
 
         if annotationArgs is not None:
             plt.annotate(**annotationArgs)
-
-        plt.savefig(filepath)
+        
+        if filepath is not None:
+            plt.savefig(filepath)
+        else:
+            plt.show()
         plt.close()
 
 
@@ -1925,34 +1928,42 @@ class DRInteractionPxModel(MatrixData):
         self.resiCorrResults = pd.DataFrame(results)
 
         return self.resiCorrResults
-
-
-
-
-
-
     
     
-    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.01, pValHzLine:float = 0.001):
+    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.01, pValHzLine:float = 0.001, extraFeatures:bool = False):
         """Volcano plot in order to find statisticall relevant relationships.
 
         Args:
             filepath (str): Path to save the plot.
             falseDiscoveryRate (float, optional): The corrected p-value at which we start to acknowledge a relevant interaction, independently of how many times an hypothesis was tested . Defaults to 0.01.
             pValHzLine (float, optional): p-value line to draw on the plot, as a reference. Defaults to 0.001.
+            extraFeatures (bool, optional): If True, will plot the volcano plot with extra features as hue. All in separare files. The features are: Number of samples in common between Px, Py and Drug, how much the PPI is tested, how large is the fdr penalty, the PPI. Defaults to False.
         """        
         data = self.data.copy()
         data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
         yValues = -np.log10(data['info']['logLikePValue'])
         xValues = data['effectSize']['interaction']
 
+        # Matplotlib set main axis font size
+        plt.rcParams["axes.titlesize"] =22
 
-        plt.figure(figsize=(20, 20), dpi=600)
+        # Matplotlib set legend font size
+        plt.rcParams["legend.fontsize"] = 22
+
+        # Matplotlib set tick label font size
+        plt.rcParams["axes.labelsize"] = 22
+
+        # Matplotlib set tick label font size
+        plt.rcParams["xtick.labelsize"] = 22
+        plt.rcParams["ytick.labelsize"] = 22
+
+
+        plt.figure(figsize=(20, 20), dpi=300)
         # Plot
-        plt.scatter(
-            xValues,
-            yValues,
-            c="k",
+        ax = sns.scatterplot(
+            x=xValues,
+            y=yValues,
+            color="k",
             s=15,
             alpha=0.8,
             edgecolors="none",
@@ -1960,22 +1971,84 @@ class DRInteractionPxModel(MatrixData):
         )
 
         # Labels
-        plt.xlabel(r"$\beta$")
-        plt.ylabel(r"$-\log_{10}(p-value)$")
+        ax.set_xlabel(r"$\beta$")
+        ax.set_ylabel(r"$-\log_{10}(p-value)$")
 
         # Grid
-        plt.axvline(0, c="k", lw=0.5, ls="--")
-        plt.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
+        ax.axvline(0, c="k", lw=0.5, ls="--")
+        pValHzLine = 0.05  # Replace this value with the desired p-value
+        ax.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
 
         # Title
-        plt.title("Volcano plot")
-        plt.legend()
+        ax.set_title(f"Volcano plot")
+        ax.legend()
+
         self.volcanoPath = filepath
         plt.savefig(filepath, bbox_inches="tight")
         plt.close()
 
+
+        if extraFeatures:
+                hueVars = {} # List to store all the extra vars to be used as hue in the scatter plot
+                #1st feature (Number of samples in common between Px, Py and Drug)
+                hueVars['samples'] = {'data': data['info']['n'], 'varType': 'numerical'}
+                #2nd feature (Number of other associations of that PPI with other drug, how much the PPI is tested, how large is the fdr penalty)
+                valuesCount = data.loc[:,[('info','Py'),('info', 'Px')]].value_counts()
+                hueVars['#tested']= {'data': data.apply(lambda row: valuesCount[row[('info','Py')], row[('info', 'Px')]], axis=1), 'varType': 'numerical'}
+                #3rd feature (Py)
+                hueVars['Py'] = {'data': data['info']['Py'], 'varType': 'categorical'}
+                #4th feature (Px)
+                hueVars['Px'] = {'data': data['info']['Px'], 'varType': 'categorical'}
+                #5th feature (Drug)
+                hueVars['drug'] = {'data': data['info']['drug'], 'varType': 'categorical'}
+                #6th feature (fdr)
+                hueVars['fdr'] = {'data': data['info']['fdr'], 'varType': 'numerical'}
+                #7th feature (ppi)
+                hueVars['ppi'] = {'data': data['info']['Py'] + ';' + data['info']['Px'], 'varType': 'categorical'}
+
+                for hueVar in hueVars: # Iterate over all the extra features, and used them as hue in the scatterPlots
+
+                    plt.figure(figsize=(20, 20), dpi=300)
+                    ax = sns.scatterplot(
+                        x=xValues,
+                        y=yValues,
+                        hue=hueVars[hueVar]['data'],
+                        palette= sns.color_palette("viridis", as_cmap=True) if hueVars[hueVar]['varType'] == 'numerical' else sns.color_palette("hls", len(hueVars[hueVar]['data'].unique())) ,  
+                        legend= hueVars[hueVar]['varType'] == 'numerical',       # Set the legend parameter to False
+                        s=15,
+                        alpha=0.8,
+                        edgecolors="none",
+                        rasterized=True,
+                    )
+
+                    # Labels
+                    ax.set_xlabel(r"$\beta$")
+                    ax.set_ylabel(r"$-\log_{10}(p-value)$")
+
+                    # Grid
+                    ax.axvline(0, c="k", lw=0.5, ls="--")
+                    pValHzLine = 0.05  # Replace this value with the desired p-value
+                    ax.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
+
+                    # Title and Legend
+                    ax.set_title(f"Volcano plot with {hueVar} as hue")
+                    ax.legend()
+
+                    if hueVars[hueVar]['varType'] == 'numerical':
+                        norm = matplotlib.colors.Normalize(vmin=hueVars[hueVar]['data'].min(), vmax=hueVars[hueVar]['data'].max())
+                        sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+                        sm.set_array([])
+                        ax.get_legend().remove()
+                        ax.figure.colorbar(sm, label=str(hueVar))
+
+
+                    # Save the plot
+                    huePath = filepath.split('.png')[0] + hueVar + '.png'
+                    plt.savefig(huePath, bbox_inches="tight")
+                    plt.close()
+
         
-    
+
     def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0.98):
         
         data = self.data.copy()
@@ -1999,7 +2072,7 @@ class DRInteractionPxModel(MatrixData):
             ppi = row['info']['Py'] + ';' + row['info']['Px']
             proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
 
-    def triangulate(self, volcanoXMin:float, volcanoXMax:float, volcanoYMin:float, volcanoYMax:float, scatter:int = 0, filepathMold:str='')->pd.DataFrame:
+    def triangulate(self, volcanoXMin:float, volcanoXMax:float, volcanoYMin:float, volcanoYMax:float, scatter:int = 0, filepathMold:str|None='', interactive:bool = False)->pd.DataFrame:
         """Triangulate the model results data according to the volcano plot thresholds
 
         Args:
@@ -2008,28 +2081,80 @@ class DRInteractionPxModel(MatrixData):
             volcanoYMin (float): The minimum -np.log10(p-value) value for the y axis
             volcanoYMax (float): The maximum -np.log10(p-value) value for the y axis
             scatter (int, optional): The number of associations to scatter. Defaults to 0.
+            interactive (bool, optional): If True, it will show the volcano plot with the possibility of selecting a point, and scattering it with Drug Response as Color and Size. Defaults to False.
+
 
 
         Returns:
             pd.DataFrame: Data according to the volcano plot thresholds
         """
-
-    
         data = self.data.copy()
         data = data.loc[(data['effectSize']['interaction'] >= volcanoXMin) & (data['effectSize']['interaction'] <= volcanoXMax)]
         data = data.loc[(-np.log10(data['info']['logLikePValue']) >= volcanoYMin) & (-np.log10(data['info']['logLikePValue']) <= volcanoYMax)]
         data = data.sort_values(by=[('info','logLikePValue')], ascending=[True])
 
-        print(data)
-        if scatter > 0:
-            self.scatter(scatter, filepathMold, data)
+        if interactive: #It will show the original dark plot, but it will allow the user to select a point, and scatter it with Drug Response as Color and Size
+            
+            yValues = -np.log10(data['info']['logLikePValue'])
+            xValues = data['effectSize']['interaction']
+            
+            fig = plt.figure(figsize=(60,60), dpi=300)
+            ax = fig.add_subplot(111)
 
-        return data
+            ax = sns.scatterplot(
+                x=xValues,
+                y=yValues,
+                color="k",
+                s=15,
+                alpha=0.8,
+                edgecolors="none",
+                rasterized=True,
+                picker=True,
+                ax=ax
+            )
+
+            # Labels
+            ax.set_xlabel(r"$\beta$")
+            ax.set_ylabel(r"$-\log_{10}(p-value)$")
+
+            # Grid
+            ax.axvline(0, c="k", lw=0.5, ls="--")
+            #Change x and y range according to the volcano plot thresholds
+            ax.set_xlim(volcanoXMin, volcanoXMax)
+            ax.set_ylim(volcanoYMin, volcanoYMax)
+
+            # Title
+            ax.set_title(f"Volcano plot")
+
+            # Function to handle pick events
+            def picker(event):
+
+                
+                ind = event.ind[0]  # Get the index of the selected point
+                selected = data.iloc[[ind],:] # The double bracket is so that the retrieved object is a dataframe and not a series
+                plt.gcf().canvas.mpl_disconnect(mouseEvent)  # Disconnect the pick event handler
+                plt.close(fig)  # Close the figure
+                print(selected)
+                # Scatter the selected point
+                self.scatter(1, filepathMold, selected)
+                
+            fig.show()
+            # Connect the pick event handler to the scatter plot
+            mouseEvent = plt.gcf().canvas.mpl_connect("pick_event", picker)
+            
+            
+
+
+        else:
+            if scatter > 0:
+                self.scatter(scatter, filepathMold, data)
+
+            return data
 
     def scatter(
             self, 
             topNumber:int, 
-            filepathMold:str, 
+            filepathMold:str|None, 
             data:pd.DataFrame = None, 
             drugRes:DrugResponseMatrix = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz'), 
             proteomics:ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')):
@@ -2056,7 +2181,10 @@ class DRInteractionPxModel(MatrixData):
             drug = row['info']['drug']
             anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
             anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
-            filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
+            if filepathMold is not None:
+                filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
+            else:
+                filepath = None
             ppi = row['info']['Py'] + ';' + row['info']['Px']
             proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
 

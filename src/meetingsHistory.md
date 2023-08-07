@@ -49,20 +49,20 @@ Tasks:
         1.  ~~Redo the barplots~~
         2.  ~~Do an additional one, with the a grid like structure and multiple subplots one for each Dataset, inquery Emanuel on more details on this~~
     4. ~~The Bar Plot in the Scree Plot is Correct but the cummulative is of the explained_variance and not explained_variance_ratio, so we want the variance explained by each PC for that data, regardless of of the variance explained by all the PC's~~
-    5.  ~~Understand why there is a hat on the volcano plot of FDR correction without PCA~~ -- The hat is composed of the same PPI in the same direction Py ~ Px, with all the drugs, where Py is MRPS30 and Px is MRPL41, não faz sentido se dever nem ao n (nº de samples em comum entre droga e PPI e respectiva inflação do pValue), pois as associações de sentido inverso também estariam sobre-representadas ou número de drogas que podem fazer associação com o PPI (686 drogas), porque este valor afectaria apenas o fdr e não o p-value do log likelihood test.
+    5.  ~~Understand why there is a hat on the volcano plot of FDR correction without PCA~~
     6.  ~~Maybe have in the scatterplots the drug response given by Size and not Colour~~
     7.  Correlacionar resíduos do small model Py ~ Px + M, com Drogas (Method has been made but in order for it to be used the Interaction Models need to be recalculated)
-    8.  Analyse in concrete the Volcano Plot of th FDR without PCA (Remember the Professor said that we need only one example of biologival interest in order to make our model viable)
+    8.  Analyse in concrete the Volcano Plot of th FDR without PCA (Remember the Professor said that we need only one example of biological interest in order to make our model viable)
         1.  Select certain points or clusters of points
         2.  Look into the Fudge Factor, those weird tagents with seconf order polynomial shape. As a method to select points of interest
-        3.  Colorir Volcano com várias cores: (O objectivo é fugir de de linhas polinomiais contínuos, ou seja uma variável não deve estar associada a uma projecção específica do volcano plot, deve ser all over the place, combinar isto talvez com fudge factor)
-            1.  Colorir com #Samples
-            2.  Px ou Py
-            3.  Drug
-            4.  Etc
+        3.  ~~Colorir Volcano com várias cores: (O objectivo é fugir de de linhas polinomiais contínuos, ou seja uma variável não deve estar associada a uma projecção específica do volcano plot, deve ser all over the place, combinar isto talvez com fudge factor)~~
+            1.  ~~Colorir com #Samples~~
+            2.  ~~Px ou Py~~
+            3.  ~~Drug~~
+            4.  ~~Etc~~
         4. Why is the Effect Size Mostly Positive, Biologically?
-    9. Repeat the analysis in 6 to the volcano Plot with PCA and FDR correction and Compare
-    10. Test another interaction model, where the small model is given by Py ~ Px + M + Drug, only on the model with FDR and no PCA. Check if there is any difference between that and the homologous, by doing the same analysis done in 8 and 9
+    9. Test another interaction model, where the small model is given by Py ~ Px + M + Drug, only on the model with FDR and no PCA. Check if there is an improvement on the analysability of the volcano Plot
+    10. Repeat the analysis in 6 to the volcano Plot with PCA and FDR correction and Compare
     11. (Last Resource if nothing comes out of the previous analyses, because it is more cumbersome) Fazer versão deste modelo de interacção Linear Mixed Models com matrix de covariância da VAE Proteomics
     12. Do the Interaction Model for the Gene Essentiallty instead of Drug Response:
         1.  Get the GeneEsssentially (Pvalues of the respective effect sizes) and Effect sizes of each gene towards every cell line
@@ -74,5 +74,18 @@ Tasks:
     14. Começa a organizar a escrita, Títulos <-> Sub-títulos <-> Bullet Points
     15. Escreve apenas aquilo que pensas que se manterá imutado até à entrega da tese, datasets e whatnot
     16. FAZ FÉRIAS E PAUSAS
+    17. ~~Find a way to correct the fdr interaction model, so that we have a way to descriminate either drugs or PPI's. A work arround could be to use the non inputed data ... choose one (PPI or Drug) and explain the choice. But a drawback from this is that drugs with low samples would get the least penalization, while we are performing the same number of tests in all drugs, maybe the fdr model should be discontinued...~~
 
-            
+    Findings:
+    18. The hat is composed of the same PPI in the same direction Py ~ Px, with 686 drugs, where Py is MRPS30 and Px is MRPL41
+       1. não faz sentido ser devido ao n (nº de samples em comum entre droga e PPI e respectiva inflação do pValue), pois as associações de sentido inverso também estariam sobre-representadas.
+       2. Uma hipotese é número de drogas que podem fazer associação com o PPI (686 drogas), porque este valor afectaria apenas o fdr e possivelmente no modelo inicial onde estamos a fazer a correção na globalidade este fdr cairia acima do threshold, e agora como a penalização é menos signicativa já está abaixo do threshold. Não obstante uma penalização de 686 associações é bastante musculado no quadro global de penalizações cujo percentil 75% é de 221
+       3. Outra hipotese é que tem um p-value alto, e um effect-size minusculo devido a estarmos a testar a significância da droga e não só do termo de interação, logo a droga é relevante para explicar Py porque a Drug response aumenta um pouco com aumentos de Py, mas muito provavelmente o termo de interação em si não deve ser muito relevante para explicar a Py, daí o effect size minusculo, ao fazer o modelo novo com Drug no small model este chapéu deve desaparecer.
+    19. Some good examples were found on the 7/8, these constitue mainly two complexes:
+        1.  PSM (PSMA and PSMB)->This complex plays numerous essential roles within the cell by associating with different regulatory particles;forms the 26S proteasome and thus participates in the ATP-dependent degradation of ubiquitinated protein;plays a key role in the maintenance of protein homeostasis by removing misfolded or damaged proteins that could impair cellular functions, and by removing proteins whose functions are no longer required;mediates ubiquitin-independent protein degradation
+        2.  RPS ->
+            1. RPSA  -> This gene encodes a high-affinity, non-integrin family, laminin receptor 1. This receptor has been variously called 67 kD laminin receptor, 37 kD laminin receptor precursor (37LRP) and p40 ribosome-associated protein. Laminins, a family of extracellular matrix glycoproteins, are the major noncollagenous constituent of basement membranes. They have been implicated in a wide variety of biological processes including cell adhesion, differentiation, migration, signaling, neurite outgrowth and metastasis. It has been observed that the level of the laminin receptor transcript is higher in colon carcinoma tissue and lung cancer cell line than their normal counterparts. Also, there is a correlation between the upregulation of this polypeptide in cancer cells and their invasive and metastatic phenotype. 
+            2. RPS9 -> The protein belongs to the S4P family of ribosomal proteins. It is located in the cytoplasm. Variable expression of this gene in colorectal cancers compared to adjacent normal tissues has been observed, although no correlation between the level of expression and the severity of the disease has been found. 
+            3. RPS20 -> This gene encodes a ribosomal protein that is a component of the 40S subunit. The protein belongs to the S10P family of ribosomal proteins. It is located in the cytoplasm. This gene is co-transcribed with the small nucleolar RNA gene U54, which is located in its second intron. 
+            4. RPL3  -> This gene encodes a ribosomal protein that is a component of the 60S subunit. The protein belongs to the L3P family of ribosomal proteins and it is located in the cytoplasm. The protein can bind to the HIV-1 TAR mRNA, and it has been suggested that the protein contributes to tat-mediated transactivation. This gene is co-transcribed with several small nucleolar RNA genes, which are located in several of this gene's introns. Alternate transcriptional splice variants, encoding different isoforms, have been characterized. 
+            5. RPL7 -> This gene encodes a ribosomal protein that is a component of the 60S subunit. The protein belongs to the L30P family of ribosomal proteins. It contains an N-terminal basic region-leucine zipper (BZIP)-like domain and the RNP consensus submotif RNP2. In vitro the BZIP-like domain mediates homodimerization and stable binding to DNA and RNA, with a preference for 28S rRNA and mRNA. The protein can inhibit cell-free translation of mRNAs, suggesting that it plays a regulatory role in the translation apparatus. It is located in the cytoplasm. The protein has been shown to be an autoantigen in patients with systemic autoimmune diseases, such as systemic lupus erythematosus.
