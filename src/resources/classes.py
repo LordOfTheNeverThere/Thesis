@@ -1818,8 +1818,8 @@ class DRInteractionPxModel(MatrixData):
         # Small Model: Py ~ (Px + M) 
         # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
         
-        X = pd.concat([drugRes, pxInteractionDR], axis=1) 
-        M = pd.concat([Px, M], axis=1)
+        X = pxInteractionDR
+        M = pd.concat([Px, M, drugRes], axis=1)
 
         # Fit Confounding, small model
         lmSmall = self.modelRegressor().fit(M, Py)
@@ -1945,7 +1945,7 @@ class DRInteractionPxModel(MatrixData):
         xValues = data['effectSize']['interaction']
 
         # Matplotlib set main axis font size
-        plt.rcParams["axes.titlesize"] =22
+        plt.rcParams["axes.titlesize"] = 22
 
         # Matplotlib set legend font size
         plt.rcParams["legend.fontsize"] = 22
