@@ -1818,7 +1818,7 @@ class DRInteractionPxModel(MatrixData):
         # Small Model: Py ~ (Px + M) 
         # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
         
-        X = pxInteractionDR
+        X = pd.concat([pxInteractionDR], axis=1) 
         M = pd.concat([Px, M, drugRes], axis=1)
 
         # Fit Confounding, small model
