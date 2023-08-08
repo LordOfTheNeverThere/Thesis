@@ -106,14 +106,6 @@ def calcMahalanobis(y:pd.DataFrame, data: pd.DataFrame, cov:pd.DataFrame=None):
     return np.sqrt(mahal), pValue
 
 
-import sys
-def sizeof_fmt(num, suffix='B'):
-    ''' by Fred Cirera,  https://stackoverflow.com/a/1094933/1870254, modified'''
-    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
-        if abs(num) < 1024.0:
-            return "%3.1f %s%s" % (num, unit, suffix)
-        num /= 1024.0
-    return "%.1f %s%s" % (num, 'Yi', suffix)
 
 
 class MatrixData:
@@ -1892,18 +1884,11 @@ class DRInteractionPxModel(MatrixData):
 
         pararelList =  zip(repeat(self), self.ppis)
 
-        for name, size in sorted(((name, sys.getsizeof(value)) for name, value in list(
-                            locals().items())), key= lambda x: -x[1])[:10]:
-            print("{:>30}: {:>8}".format(name, sizeof_fmt(size)))
-
 
         with mp.Pool(numOfCores) as process:
-            pararelResults = process.starmap(processPPIWrapper, pararelList)
+            pararelResults = process.starmap(processPPIWrapper, pararelList, chunksize= (len(pararelList)//numOfCores))
         results = list(chain.from_iterable(pararelResults))
 
-        for name, size in sorted(((name, sys.getsizeof(value)) for name, value in list(
-                            locals().items())), key= lambda x: -x[1])[:10]:
-            print("{:>30}: {:>8}".format(name, sizeof_fmt(size)))
 
 
 
