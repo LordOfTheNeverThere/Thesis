@@ -1715,6 +1715,7 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
         res[('info', 'fdr')] = correctedPValues
         results.append(res)
+        del res
 
 
     return results
@@ -1729,13 +1730,14 @@ class DRInteractionPxModel(MatrixData):
     Returns:
         _type_: _description_
     """
-    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, fitIntercept=True, copyX=True, standardisePx = True, nJobs:int=4, filepath:str=None, data:pd.DataFrame=None, **readerKwargs):
+    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, isDrugResSmall:bool = True, fitIntercept=True, copyX=True, standardisePx = True, nJobs:int=4, filepath:str=None, data:pd.DataFrame=None, **readerKwargs):
         
         super().__init__(filepath, data, **readerKwargs)
         self.ppis = ppis
         self.proteomics = proteomics.data
         self.drugRes = drugRes.data
         self.M = M
+        self.isDrugResSmall = isDrugResSmall
         self.fitIntercept = fitIntercept
         self.copyX = copyX
         self.standardisePx = standardisePx
@@ -1818,8 +1820,12 @@ class DRInteractionPxModel(MatrixData):
         # Small Model: Py ~ (Px + M) 
         # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
         
-        X = pd.concat([pxInteractionDR], axis=1) 
-        M = pd.concat([Px, M, drugRes], axis=1)
+        if self.isDrugResSmall:
+            X = pd.concat([pxInteractionDR], axis=1) 
+            M = pd.concat([Px, M, drugRes], axis=1)
+        else:
+            X = pd.concat([drugRes, pxInteractionDR], axis=1) 
+            M = pd.concat([Px, M], axis=1)
 
         # Fit Confounding, small model
         lmSmall = self.modelRegressor().fit(M, Py)
