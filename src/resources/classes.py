@@ -1901,7 +1901,7 @@ class DRInteractionPxModel(MatrixData):
             pararelResults = process.starmap(processPPIWrapper, pararelList)
         results = list(chain.from_iterable(pararelResults))
 
-            for name, size in sorted(((name, sys.getsizeof(value)) for name, value in list(
+        for name, size in sorted(((name, sys.getsizeof(value)) for name, value in list(
                             locals().items())), key= lambda x: -x[1])[:10]:
             print("{:>30}: {:>8}".format(name, sizeof_fmt(size)))
 
