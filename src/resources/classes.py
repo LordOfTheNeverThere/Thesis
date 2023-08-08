@@ -1886,7 +1886,7 @@ class DRInteractionPxModel(MatrixData):
 
 
         with mp.Pool(numOfCores) as process:
-            pararelResults = process.starmap(processPPIWrapper, pararelList, chunksize= (len(pararelList)//numOfCores))
+            pararelResults = process.starmap(processPPIWrapper, pararelList, chunksize= (len(self.ppis)//numOfCores))
         results = list(chain.from_iterable(pararelResults))
 
 
