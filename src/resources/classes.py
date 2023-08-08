@@ -1728,7 +1728,7 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
         res[('info', 'fdr')] = correctedPValues
         results.append(res)
-        del res
+
 
 
     return results
