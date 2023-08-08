@@ -1698,7 +1698,22 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
     """    
     results = [] # List of results for each drug
+    import sys
+    def sizeof_fmt(num, suffix='B'):
+        ''' by Fred Cirera,  https://stackoverflow.com/a/1094933/1870254, modified'''
+        for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+            if abs(num) < 1024.0:
+                return "%3.1f %s%s" % (num, unit, suffix)
+            num /= 1024.0
+        return "%.1f %s%s" % (num, 'Yi', suffix)
+
+
     for drugName in self.drugRes:
+
+        print(f"Drug: {drugName}")
+        for name, size in sorted(((name, sys.getsizeof(value)) for name, value in list(
+                                locals().items())), key= lambda x: -x[1])[:10]:
+            print("{:>30}: {:>8}".format(name, sizeof_fmt(size)))
         
         YName = ppi[0]
         XName = ppi[1]
