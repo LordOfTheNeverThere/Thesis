@@ -1700,7 +1700,7 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
     Returns:
         dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
     """    
-    results:set = {} # List of results for each drug
+    results = set() # List of results for each drug
 
 
     for drugName in self.drugRes:
