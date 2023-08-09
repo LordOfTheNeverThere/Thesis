@@ -1692,6 +1692,38 @@ class UnbiasedResidualsLinModel(MatrixData):
 
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
+def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
+    """Wrapper for fitting the 2 linear models of Py ~ Px and Px ~ Py, so that it can be used in a multiprocessing pool
+
+    Args:
+        ppi (tuple[str, str]): Names of Py and Px
+    Returns:
+        dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
+    """    
+    results = [] # List of results for each drug
+
+
+    for drugName in self.drugRes:
+        
+        YName = ppi[0]
+        XName = ppi[1]
+        _, _, res= self.getLinearModels(YName, XName, drugName)
+
+        correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
+        res[('info', 'fdr')] = correctedPValues
+        results.append(res)
+
+        # invert Px and Py to understand if there are one way relationships
+        YName = ppi[1]
+        XName = ppi[0]
+        _, _, res= self.getLinearModels(YName, XName, drugName)
+        correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
+        res[('info', 'fdr')] = correctedPValues
+        results.append(res)
+
+
+
+    return results
 
 
 class DRInteractionPxModel(MatrixData):
@@ -1849,45 +1881,15 @@ class DRInteractionPxModel(MatrixData):
             pd.DataFrame: The results of the fitting process, with the following columns: 
                 Py, Px, drug, n, intercept, PxBeta, adherentBeta, semiAdherentBeta, suspensionBeta, unknownBeta, drugResBeta, interactionBeta, logLikePValue, llStatistic
         """        
-        def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
-            """Wrapper for fitting the 2 linear models of Py ~ Px and Px ~ Py, so that it can be used in a multiprocessing pool
-
-            Args:
-                ppi (tuple[str, str]): Names of Py and Px
-            Returns:
-                dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
-            """    
-            results = [] # List of results for each drug
-
-
-            for drugName in self.drugRes:
-                
-                YName = ppi[0]
-                XName = ppi[1]
-                _, _, res= self.getLinearModels(YName, XName, drugName)
-
-                correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
-                res[('info', 'fdr')] = correctedPValues
-                results.append(res)
-
-                # invert Px and Py to understand if there are one way relationships
-                YName = ppi[1]
-                XName = ppi[0]
-                _, _, res= self.getLinearModels(YName, XName, drugName)
-                correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
-                res[('info', 'fdr')] = correctedPValues
-                results.append(res)
-
-
-
-            return results
-
 
         pararelList =  zip(repeat(self), self.ppis)
+
 
         with mp.Pool(numOfCores, maxtasksperchild=500) as process:
             pararelResults = process.starmap(processPPIWrapper, pararelList)
         results = list(chain.from_iterable(pararelResults))
+
+
 
 
         results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results[0].keys()))
