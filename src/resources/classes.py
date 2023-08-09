@@ -1700,33 +1700,31 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
     Returns:
         dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
     """    
-    # results = [] # List of results for each drug
+    results:set = {} # List of results for each drug
 
 
-    # for drugName in self.drugRes:
+    for drugName in self.drugRes:
         
-    #     YName = ppi[0]
-    #     XName = ppi[1]
-    #     _, _, res= self.getLinearModels(YName, XName, drugName)
+        YName = ppi[0]
+        XName = ppi[1]
+        _, _, res= self.getLinearModels(YName, XName, drugName)
 
-    #     correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
-    #     res[('info', 'fdr')] = correctedPValues
-    #     results.append(res)
+        correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
+        res[('info', 'fdr')] = correctedPValues
+        #Add res to the set
+        results.add(res)
 
-    #     # invert Px and Py to understand if there are one way relationships
-    #     YName = ppi[1]
-    #     XName = ppi[0]
-    #     _, _, res= self.getLinearModels(YName, XName, drugName)
-    #     correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
-    #     res[('info', 'fdr')] = correctedPValues
-    #     results.append(res)
-
-
-
-    # return results
-    
+        # invert Px and Py to understand if there are one way relationships
+        YName = ppi[1]
+        XName = ppi[0]
+        _, _, res= self.getLinearModels(YName, XName, drugName)
+        correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
+        res[('info', 'fdr')] = correctedPValues
+        results.add(res)
 
 
+
+    return results
 
 
 class DRInteractionPxModel(MatrixData):
@@ -1888,7 +1886,7 @@ class DRInteractionPxModel(MatrixData):
         pararelList =  zip(repeat(self), self.ppis)
 
 
-        with mp.Pool(numOfCores, maxtasksperchild=5) as process:
+        with mp.Pool(numOfCores) as process:
             pararelResults = process.starmap(processPPIWrapper, pararelList)
         results = list(chain.from_iterable(pararelResults))
 
