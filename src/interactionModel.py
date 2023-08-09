@@ -1,5 +1,5 @@
 import pandas as pd
-from resources import PATH, CPUS, read, DrugResponseMatrix, DRInteractionPxModel, ResiduesMatrix, ProteinsMatrix, PairwiseCorrMatrix
+from resources import getMemoryOfVars ,PATH, CPUS, read, DrugResponseMatrix, DRInteractionPxModel, ResiduesMatrix, ProteinsMatrix, PairwiseCorrMatrix
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from typing import Iterable
