@@ -1692,7 +1692,7 @@ class UnbiasedResidualsLinModel(MatrixData):
 
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
-def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
+def processPPIWrapper(self, ppi:tuple[str, str]) -> tuple[dict, dict]:
     """Wrapper for fitting the 2 linear models of Py ~ Px and Px ~ Py, so that it can be used in a multiprocessing pool
 
     Args:
@@ -1700,31 +1700,28 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
     Returns:
         dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
     """    
-    results = set() # List of results for each drug
-
 
     for drugName in self.drugRes:
         
         YName = ppi[0]
         XName = ppi[1]
-        _, _, res= self.getLinearModels(YName, XName, drugName)
+        _, _, res1= self.getLinearModels(YName, XName, drugName)
 
-        correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
-        res[('info', 'fdr')] = correctedPValues
-        #Add res to the set
-        results.add(res)
+        correctedPValues = multipletests(res1[('info', 'logLikePValue')], method="fdr_bh")[1]
+        res1[('info', 'fdr')] = correctedPValues
+
 
         # invert Px and Py to understand if there are one way relationships
         YName = ppi[1]
         XName = ppi[0]
-        _, _, res= self.getLinearModels(YName, XName, drugName)
-        correctedPValues = multipletests(res[('info', 'logLikePValue')], method="fdr_bh")[1]
-        res[('info', 'fdr')] = correctedPValues
-        results.add(res)
+        _, _, res2= self.getLinearModels(YName, XName, drugName)
+        correctedPValues = multipletests(res2[('info', 'logLikePValue')], method="fdr_bh")[1]
+        res2[('info', 'fdr')] = correctedPValues
 
 
 
-    return results
+
+    return res1, res2
 
 
 class DRInteractionPxModel(MatrixData):
@@ -1750,6 +1747,7 @@ class DRInteractionPxModel(MatrixData):
         self.nJobs = nJobs
         self.drugResLen = drugRes.data.shape[1]
         self.lenM =  M.shape[1]
+        self.residuals = pd.DataFrame()
     
     def modelRegressor(self):
         regressor = LinearRegression(
@@ -1866,9 +1864,8 @@ class DRInteractionPxModel(MatrixData):
         res[('info', 'logLikePValue')] = LogLikeliRatioPVal
         res[('info', 'llStatistic')] = lr
         res[('info', 'intercept')] = lmLarge.intercept_
-        res[('info', 'residLarge')] = lmLargeResiduals
-        res[('info', 'residSmall')] = lmSmallResiduals
-
+        res[('info', 'residLarge')] = lmLargeResiduals.sum()
+        res[('info', 'residSmall')] = lmSmallResiduals.sum()
 
         return lmLarge, lmSmall, res
     
@@ -1888,7 +1885,13 @@ class DRInteractionPxModel(MatrixData):
 
         with mp.Pool(numOfCores) as process:
             pararelResults = process.starmap(processPPIWrapper, pararelList)
-        results = list(chain.from_iterable(pararelResults))
+
+        #Get the results of the fitting process
+        results = []
+        for res1, res2 in pararelResults:
+            results.append(res1)
+            results.append(res2)
+
 
         results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results[0].keys()))
 
