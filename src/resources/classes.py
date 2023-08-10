@@ -1692,7 +1692,7 @@ class UnbiasedResidualsLinModel(MatrixData):
 
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
-def processPPIWrapper(self, ppi:tuple[str, str]) -> tuple[dict, dict]:
+def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
     """Wrapper for fitting the 2 linear models of Py ~ Px and Px ~ Py, so that it can be used in a multiprocessing pool
 
     Args:
@@ -1701,14 +1701,20 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> tuple[dict, dict]:
         dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
     """    
 
-    for drugName in self.drugRes:
+    for index, drugName in enumerate(self.drugRes):
         
         YName = ppi[0]
         XName = ppi[1]
         _, _, res1= self.getLinearModels(YName, XName, drugName)
 
         correctedPValues = multipletests(res1[('info', 'logLikePValue')], method="fdr_bh")[1]
-        res1[('info', 'fdr')] = correctedPValues
+        res1[('info', 'fdr')] = list(correctedPValues)
+
+        if index == 0: # If first drug, then we want to create the dictionary that will be used to save the results from all other drugs
+            results = res1 # Create dictionary, results, that will be used to save the results from all other drugs
+        else:
+            for key in results:
+                results[key] = results[key] + res1[key]
 
 
         # invert Px and Py to understand if there are one way relationships
@@ -1716,12 +1722,12 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> tuple[dict, dict]:
         XName = ppi[0]
         _, _, res2= self.getLinearModels(YName, XName, drugName)
         correctedPValues = multipletests(res2[('info', 'logLikePValue')], method="fdr_bh")[1]
-        res2[('info', 'fdr')] = correctedPValues
+        res2[('info', 'fdr')] = list(correctedPValues)
 
+        for key in results: #Update the return object
+            results[key] = results[key] + res2[key]
 
-
-
-    return res1, res2
+    return results
 
 
 class DRInteractionPxModel(MatrixData):
@@ -1747,8 +1753,7 @@ class DRInteractionPxModel(MatrixData):
         self.nJobs = nJobs
         self.drugResLen = drugRes.data.shape[1]
         self.lenM =  M.shape[1]
-        self.residuals = pd.DataFrame()
-    
+
     def modelRegressor(self):
         regressor = LinearRegression(
             fit_intercept=self.fitIntercept,
@@ -1819,7 +1824,6 @@ class DRInteractionPxModel(MatrixData):
 
         pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
 
-
         #reordering of expressions to build the smaller and larger models
         # Small Model: Py ~ (Px + M) 
         # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
@@ -1856,16 +1860,16 @@ class DRInteractionPxModel(MatrixData):
         columns = ['Px'] + self.M.columns.tolist() + ['drug'] + ['interaction']
         columns = [('effectSize', col) for col in columns]
 
-        res = {col:coefs[index] for index,col in enumerate(columns)}
-        res[('info', 'Py')] = YName
-        res[('info', 'Px')] = XName
-        res[('info', 'drug')] = drugName
-        res[('info', 'n')] = n
-        res[('info', 'logLikePValue')] = LogLikeliRatioPVal
-        res[('info', 'llStatistic')] = lr
-        res[('info', 'intercept')] = lmLarge.intercept_
-        res[('info', 'residLarge')] = lmLargeResiduals.sum()
-        res[('info', 'residSmall')] = lmSmallResiduals.sum()
+        res = {col:[coefs[index]] for index,col in enumerate(columns)}
+        res[('info', 'Py')] = [YName]
+        res[('info', 'Px')] = [XName]
+        res[('info', 'drug')] = [drugName]
+        res[('info', 'n')] = [n]
+        res[('info', 'logLikePValue')] = [LogLikeliRatioPVal]
+        res[('info', 'llStatistic')] = [lr]
+        res[('info', 'intercept')] = [lmLarge.intercept_]
+        res[('info', 'residLarge')] = [lmLargeResiduals.sum()]
+        res[('info', 'residSmall')] = [lmSmallResiduals.sum()]
 
         return lmLarge, lmSmall, res
     
@@ -1885,18 +1889,16 @@ class DRInteractionPxModel(MatrixData):
 
         with mp.Pool(numOfCores) as process:
             pararelResults = process.starmap(processPPIWrapper, pararelList)
+        
+        for index, result in enumerate(pararelResults):
+            if index == 0:
+                results = result
+            for key in result:
+                results[key] = results[key] + result[key]
 
-        #Get the results of the fitting process
-        results = []
-        for res1, res2 in pararelResults:
-            results.append(res1)
-            results.append(res2)
 
+        results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results.keys()))
 
-        results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results[0].keys()))
-
-        correctedPValues = multipletests(results['info']['logLikePValue'], method="fdr_bh")[1]
-        results[('info', 'fdr')] = correctedPValues
         self.data = results
 
         return results
