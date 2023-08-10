@@ -1151,6 +1151,73 @@ class DrugResponseMatrix(MatrixData):
         else:
             return data.loc[relevantDrugs].drop(columns=['efficacyThreshold'])
         
+
+class GeneDependency(MatrixData):
+    """Class interface and methods for the gene dependency data"""
+    def __init__(self, pValues:pd.DataFrame, filepath: str|None= None, data: pd.DataFrame|None= None, name:str|None = None,**readerKwargs):
+
+        super().__init__(filepath, data, **readerKwargs)
+        self.name = name
+        self.pValues = pValues
+    
+    @staticmethod
+    def convertBroadToSangerId(broadId:str)->str:
+        """Converts a Broad Id to a Sanger Id
+
+        Args:
+            broadId (str): Broad Id
+
+        Returns:
+            str: Sanger Id
+        """        
+        mappingFile = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRSamplesheet.csv', index_col=0)
+        sangerID = str(mappingFile.loc[mappingFile['BROAD_ID'] == broadId].index[0])
+        return sangerID
+    @staticmethod
+    def isCorrectIds(data:pd.DataFrame)->bool:
+        """Check if the gene dependency matrix has the correct ids, which should be Sanger Ids
+
+        Returns:
+            bool: Is the Dataframe indexed by Sanger Ids?
+        """
+        result = 1
+        for index in list(data.index):
+            
+            if index[0:4] == "SIDM":
+                result = result*1
+            else:
+                result = result*0
+
+        return bool(result)
+
+    
+    def correctIds(self)->None:
+        """Correct the Ids on the gene dependency matrix, so that they are the same as the ones in the protein matrix, they should be Sanger Ids
+        """
+        if not self.isCorrectIds(self.data): # Ids not correct
+
+            data = self.data.copy()
+            
+            for broadIDs in list(data.index):
+                sangerIDs = self.convertBroadToSangerId(broadIDs)
+                data.rename(index={broadIDs:sangerIDs}, inplace=True)
+
+            self.data = data
+        
+        if not self.isCorrectIds(self.pValues):
+            
+            data = self.pValues.copy()
+            
+            for broadIDs in list(data.index):
+                sangerIDs = self.convertBroadToSangerId(broadIDs)
+                data.rename(index={broadIDs:sangerIDs}, inplace=True)
+                
+            self.pValues = data
+        
+
+
+
+
 class ResiduesMatrix(MatrixData):
 
     def __init__(self, filepath: str=None, data: pd.DataFrame=None, **readerKwargs):
