@@ -44,7 +44,7 @@ Tasks:
 26/7/23
 Tasks:
     1. ~~Do Roc Curve of VAE vs Original in terms of pearson'r (PRIORITY)~~
-    2. Do the subsampling convergence tests for protein mean, pearson'r pval vs gls' pval
+    2. ~~Do the subsampling convergence tests for protein mean, pearson'r pval vs gls' pval~~
     3. ~~Update: Recalculate the AUC of the various Pairwise Models~~
         1.  ~~Redo the barplots~~
         2.  ~~Do an additional one, with the a grid like structure and multiple subplots one for each Dataset, inquery Emanuel on more details on this~~
@@ -60,9 +60,9 @@ Tasks:
             2.  ~~Px ou Py~~
             3.  ~~Drug~~
             4.  ~~Etc~~
-        4. Why is the Effect Size Mostly Positive, Biologically?
+        4. ~~Why is the Effect Size Mostly Positive, Biologically?~~
     9. Test another interaction model, where the small model is given by Py ~ Px + M + Drug, only on the model with FDR and no PCA. Check if there is an improvement on the analysability of the volcano Plot
-    10. Repeat the analysis in 6 to the volcano Plot with PCA and FDR correction and Compare
+    10. Repeat the analysis in 8 to the volcano Plot with PCA and FDR correction and Compare
     11. (Last Resource if nothing comes out of the previous analyses, because it is more cumbersome) Fazer versão deste modelo de interacção Linear Mixed Models com matrix de covariância da VAE Proteomics
     12. Do the Interaction Model for the Gene Essentiallty instead of Drug Response:
         1.  Get the GeneEsssentially (Pvalues of the respective effect sizes) and Effect sizes of each gene towards every cell line
