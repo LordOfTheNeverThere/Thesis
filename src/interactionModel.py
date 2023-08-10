@@ -36,10 +36,10 @@ if __name__ == '__main__':
     # pd.set_option('display.max_colwidth', -1)
 
 
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, growthProps)
+    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, growthProps, isDrugResSmall= False)
     start = t.time()
-    fit = dummy.fit(numOfCores = 37)
-    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/neoSmallModelRegressor.pickle.gz'
+    fit = dummy.fit(numOfCores = 30)
+    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz'
     dummy.write()
     print(f'fitting took {t.time() - start} seconds')
     #Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
