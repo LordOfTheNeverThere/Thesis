@@ -1787,9 +1787,6 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         XName = ppi[1]
         _, _, res1= self.getLinearModels(YName, XName, drugName)
 
-        correctedPValues = multipletests(res1[('info', 'logLikePValue')], method="fdr_bh")[1]
-        res1[('info', 'fdr')] = list(correctedPValues)
-
         if index == 0: # If first drug, then we want to create the dictionary that will be used to save the results from all other drugs
             results = res1 # Create dictionary, results, that will be used to save the results from all other drugs
         else:
@@ -1801,11 +1798,12 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         YName = ppi[1]
         XName = ppi[0]
         _, _, res2= self.getLinearModels(YName, XName, drugName)
-        correctedPValues = multipletests(res2[('info', 'logLikePValue')], method="fdr_bh")[1]
-        res2[('info', 'fdr')] = list(correctedPValues)
 
         for key in results: #Update the return object
             results[key] = results[key] + res2[key]
+            
+    correctedPValues = multipletests(results[('info', 'logLikePValue')], method="fdr_bh")[1]
+    results[('info', 'fdr')] = list(correctedPValues)
 
     return results
 
