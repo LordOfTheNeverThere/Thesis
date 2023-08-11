@@ -18,6 +18,9 @@ if __name__ == '__main__':
     effectSizes = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSize.csv', index_col=0)
     pValues = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSizePValue.csv', index_col=0)
 
+    # unstack pValues to a 1D array
+    pValues.unstack().reset_index()[0].hist(bins=100)
+    plt.show()
 
     # get data to run lienar model with TLS residuals and plot significant associations with proteomics data
     # drugRes = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz')

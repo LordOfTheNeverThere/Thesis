@@ -1159,6 +1159,7 @@ class GeneDependency(MatrixData):
         super().__init__(filepath, data, **readerKwargs)
         self.name = name
         self.pValues = pValues
+        self.genes = self.data.columns #At first we include all genes
         
         if not fdrDone:
             self.fdrCorrection()
@@ -1225,7 +1226,34 @@ class GeneDependency(MatrixData):
                 data.rename(index={broadIDs:sangerIDs}, inplace=True)
                 
             self.pValues = data
-    # TODO:Add method to filter out the less relevant genes, so that calculations become feasible
+    
+    def filterGenes(self, pValThresh:float, presentRatioThesh:float)->None:
+        """ Filter the genes in the gene dependency matrix, 
+        so that a gene must have a ratio of present values greater or equal to presentRatioThresh,
+        if we only consider samples for each gene that have a pValue less or equal to pValThresh
+
+
+        Args:
+            pValThresh (float): Significance level for gene effect size
+            presentRatioThesh (float): Ratio of samples that a gene must have with a p-value less than pValThres
+        """
+
+        pValues = self.pValues.copy()
+        genesFiltered = set()
+        presentThresh = round(presentRatioThesh * pValues.shape[1])
+
+        for gene in pValues:
+
+            geneData = pValues[gene]
+            geneData = geneData[geneData <= pValThresh]
+            
+            if geneData.shape[0] >= presentThesh:
+                
+                genesFiltered.add(gene)
+        
+        self.genes = genesFiltered
+
+            
         
 
 
