@@ -36,7 +36,7 @@ if __name__ == '__main__':
     # pd.set_option('display.max_colwidth', -1)
 
 
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, growthProps, isDrugResSmall= False)
+    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, growthProps)
     start = t.time()
     fit = dummy.fit(numOfCores = 38)
     dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz'
