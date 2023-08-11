@@ -61,7 +61,7 @@ Tasks:
             3.  ~~Drug~~
             4.  ~~Etc~~
         4. ~~Why is the Effect Size Mostly Positive, Biologically?~~
-    9. Test another interaction model, where the small model is given by Py ~ Px + M + Drug, only on the model with FDR and no PCA. Check if there is an improvement on the analysability of the volcano Plot
+    9. ~~Test another interaction model, where the small model is given by Py ~ Px + M + Drug, only on the model with FDR and no PCA. Check if there is an improvement on the analysability of the volcano Plot~~
     10. Repeat the analysis in 8 to the volcano Plot with PCA and FDR correction and Compare
     11. (Last Resource if nothing comes out of the previous analyses, because it is more cumbersome) Fazer versão deste modelo de interacção Linear Mixed Models com matrix de covariância da VAE Proteomics
     12. Do the Interaction Model for the Gene Essentiallty instead of Drug Response:
