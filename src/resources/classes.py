@@ -1154,12 +1154,24 @@ class DrugResponseMatrix(MatrixData):
 
 class GeneDependency(MatrixData):
     """Class interface and methods for the gene dependency data"""
-    def __init__(self, pValues:pd.DataFrame, filepath: str|None= None, data: pd.DataFrame|None= None, name:str|None = None,**readerKwargs):
+    def __init__(self, pValues:pd.DataFrame, fdrDone:bool, filepath: str|None= None, data: pd.DataFrame|None= None, name:str|None = None,**readerKwargs):
 
         super().__init__(filepath, data, **readerKwargs)
         self.name = name
         self.pValues = pValues
+        
+        if not fdrDone:
+            self.fdrCorrection()
     
+    def fdrCorrection(self)->None:
+        """ Apply fdr correction to the pValues of the gene dependency matrix, for each gene
+        """        
+        pValues = self.pValues.copy()
+        # Apply fdr multipletesting correction in each column (default, axis = 0), or gene
+        pValues = pValues.apply(lambda col: multipletests(col, method='fdr_bh')[1])
+
+        self.pValues = pValues
+
     @staticmethod
     def convertBroadToSangerId(broadId:str)->str:
         """Converts a Broad Id to a Sanger Id
@@ -1213,6 +1225,7 @@ class GeneDependency(MatrixData):
                 data.rename(index={broadIDs:sangerIDs}, inplace=True)
                 
             self.pValues = data
+    # TODO:Add method to filter out the less relevant genes, so that calculations become feasible
         
 
 

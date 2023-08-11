@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import time as t
+from statsmodels.stats.multitest import multipletests
 from resources import UnbiasedResidualsLinModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
 
 
@@ -16,6 +17,7 @@ if __name__ == '__main__':
 
     effectSizes = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSize.csv', index_col=0)
     pValues = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSizePValue.csv', index_col=0)
+
 
     # get data to run lienar model with TLS residuals and plot significant associations with proteomics data
     # drugRes = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz')
