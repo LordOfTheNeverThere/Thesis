@@ -77,3 +77,15 @@ plt.tight_layout(pad=2)
 plt.show()
 
 
+
+# Good examples Scatter Plot of interactionModel without Drug in Small Model
+dummy = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')        
+
+dummy.triangulate(0.175, 0.25, 27, 38, 13, 'goodExample.png', False)
+
+# Good examples Scatter Plot of interactionModel with Drug in Small Model 
+# first section
+dummy = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')        
+
+triangulationResults = dummy.triangulate(0.099, 0.18, 50, 100, 16, 'goodExampleDrugSmall.png', False)
+

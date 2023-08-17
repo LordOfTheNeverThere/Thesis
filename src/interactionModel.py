@@ -57,9 +57,4 @@ if __name__ == '__main__':
 
     # Understand why there is a hat in the Volcano Plot
 
-    triangulationResults = dummy.triangulate(0.175, 0.25, 27, 38, 13, 'goodExample.png', False)
-
-    # substitute zeros with the smallest non-zero value
-    dummy.data.loc[:,('info','logLikePValue')] = dummy.data.loc[:,('info','logLikePValue')].apply(lambda x: x if x != 0 else 1e-323)
-
-    dummy.data['info']['logLikePValue'].loc[dummy.data['info']['logLikePValue'] == 0]
+    triangulationResults = dummy.triangulate(0.2, 0.3, 22, 50, 14, 'exampleDrugSmall0,2_0,3_22_50.png', True)
