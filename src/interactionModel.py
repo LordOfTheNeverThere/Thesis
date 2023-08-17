@@ -20,10 +20,10 @@ if __name__ == '__main__':
     ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz') #used for the interaction model class
            
     # using only corum ppis that we were able to recall, with high confidence
-    vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
-    vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
-    ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").index)
-    ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
+    # vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
+    # vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
+    # ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").index)
+    # ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
 
     #Cofounding Factors, use The samplesheet's growth properties or the 10 PC of the vaeProteomics dataframe    
     growthProps = pd.get_dummies(samplesheet['growth_properties'])
@@ -36,13 +36,13 @@ if __name__ == '__main__':
     # pd.set_option('display.max_colwidth', -1)
 
 
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, growthProps)
-    start = t.time()
-    fit = dummy.fit(numOfCores = 38)
-    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz'
-    dummy.write()
-    print(f'fitting took {t.time() - start} seconds')
-    #Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
+    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, growthProps)
+    # start = t.time()
+    # fit = dummy.fit(numOfCores = 38)
+    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz'
+    # dummy.write()
+    # print(f'fitting took {t.time() - start} seconds')
+    # Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
     # dummy.resiCorr()
     # dummy.write()
     # print('done')
@@ -50,15 +50,16 @@ if __name__ == '__main__':
 
 
 
-    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/fdrPerPPIRegressor.pickle.gz')        
+    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')        
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmall.png', extraFeatures=True) # 3579956 points
+    drugRes.data = drugRes.data.T
+    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
 
-    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelFDRPerPPI.png') # 3579956 points
-    # drugRes.data = drugRes.data.T
-    # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
+    # Understand why there is a hat in the Volcano Plot
 
-    # #Understand why there is a hat in the Volcano Plot
+    triangulationResults = dummy.triangulate(0.175, 0.25, 27, 38, 13, 'goodExample.png', False)
 
-    # triangulationResults = dummy.triangulate(0.175, 0.25, 27, 38, 13, 'dummy.png', False)
+    # substitute zeros with the smallest non-zero value
+    dummy.data.loc[:,('info','logLikePValue')] = dummy.data.loc[:,('info','logLikePValue')].apply(lambda x: x if x != 0 else 1e-323)
 
-
-    
+    dummy.data['info']['logLikePValue'].loc[dummy.data['info']['logLikePValue'] == 0]

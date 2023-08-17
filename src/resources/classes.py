@@ -1879,9 +1879,7 @@ class DRInteractionPxModel(MatrixData):
         llf = -nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) - nobs2
 
         return llf
-
-
-
+    
     def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, dict]:
         """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
         It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
@@ -1960,7 +1958,7 @@ class DRInteractionPxModel(MatrixData):
 
         # Log-ratio test
         lr = 2 * (lmLargeLogLike - lmSmallLogLike)
-        LogLikeliRatioPVal = chi2(X.shape[1]).sf(lr)
+        LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
 
         coefs = lmLarge.coef_
         columns = ['Px'] + self.M.columns.tolist() + ['drug'] + ['interaction']
@@ -2065,6 +2063,8 @@ class DRInteractionPxModel(MatrixData):
         """        
         data = self.data.copy()
         data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
+        # Replace 0 p-values with the smallest possible value for so that log10 is defined
+        data.loc[:,('info','logLikePValue')] = data.loc[:,('info','logLikePValue')].apply(lambda x: x if x != 0 else 1e-323)
         yValues = -np.log10(data['info']['logLikePValue'])
         xValues = data['effectSize']['interaction']
 
