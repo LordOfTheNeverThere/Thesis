@@ -42,19 +42,25 @@ if __name__ == '__main__':
     # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz'
     # dummy.write()
     # print(f'fitting took {t.time() - start} seconds')
-    # Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
-    # dummy.resiCorr()
-    # dummy.write()
-    # print('done')
 
 
 
 
-    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')        
-    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmall.png', extraFeatures=True) # 3579956 points
-    drugRes.data = drugRes.data.T
-    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
+    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')        
+    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmall.png', extraFeatures=True) # 3579956 points
+    # drugRes.data = drugRes.data.T
+    # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes, topNumber=10)
 
     # Understand why there is a hat in the Volcano Plot
 
-    triangulationResults = dummy.triangulate(0.2, 0.3, 22, 50, 14, 'exampleDrugSmall0,2_0,3_22_50.png', True)
+    # triangulationResults = dummy.triangulate(0.2, 0.3, 22, 50, 14, 'exampleDrugSmall0,2_0,3_22_50.png', True)
+
+
+    # Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
+    drugSmall:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')
+    drugLarge:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
+    start = t.time()
+    drugSmall.resiCorr()
+    print(f'drugSmall.resiCorr() took {t.time() - start} seconds')
+    # drugSmall.write()
+    print('done')

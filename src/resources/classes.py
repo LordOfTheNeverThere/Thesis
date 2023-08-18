@@ -1800,6 +1800,33 @@ class UnbiasedResidualsLinModel(MatrixData):
 
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
+
+def anovaDrugExpTable(anovaData:pd.DataFrame, drug:str)->dict:
+    results = {'drug':[], 'etaSquaredSmall':[], 'etaSquaredLarge':[], 'fPValueSmall': [], 'fPValueLarge':[]} #dictionary to store results
+    #Binerize the drug column
+    anovaData['drugBin'] = anovaData.apply(lambda row: 1 if row['drug'] == str(drug) else 0, axis=1)
+
+    #fit anova models with the small residuals and the large residuals
+    anovaSmall = smf.ols(f'residSmall ~ C(drugBin)', data=anovaData).fit()
+    anovaLarge = smf.ols(f'residLarge ~ C(drugBin)', data=anovaData).fit()
+
+    # Get the tables (Dataframes) with the ANOVA results
+    anovaSmallTable = sm.stats.anova_lm(anovaSmall, typ=2)
+    anovaLargeTable = sm.stats.anova_lm(anovaLarge, typ=2)
+
+    #Calculate the eta squared for each model, the effect size of each drug towards the residuals
+    results['etaSquaredSmall'].append((anovaSmallTable[:-1]['sum_sq'].values/sum(anovaSmallTable['sum_sq'].values))[0])
+    results['etaSquaredLarge'].append((anovaLargeTable[:-1]['sum_sq'].values/sum(anovaLargeTable['sum_sq'].values))[0])
+
+    #Add additional info to the results
+    results['drug'].append(drug)
+    results['fPValueSmall'].append(anovaSmallTable['PR(>F)'].values[0])
+    results['fPValueLarge'].append(anovaLargeTable['PR(>F)'].values[0])
+
+    return results
+
+
+
 def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
     """Wrapper for fitting the 2 linear models of Py ~ Px and Px ~ Py, so that it can be used in a multiprocessing pool
 
@@ -1995,10 +2022,13 @@ class DRInteractionPxModel(MatrixData):
             pararelResults = process.starmap(processPPIWrapper, pararelList)
         
         for index, result in enumerate(pararelResults):
+
             if index == 0:
                 results = result
-            for key in result:
-                results[key] = results[key] + result[key]
+
+            else:
+                for key in result:
+                    results[key] = results[key] + result[key]
 
 
         results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results.keys()))
@@ -2006,48 +2036,40 @@ class DRInteractionPxModel(MatrixData):
         self.data = results
 
         return results
-    
 
-    def resiCorr(self)->pd.DataFrame:
+
+
+    def resiCorr(self, numOfCores:int = CPUS)->pd.DataFrame:
         """Calculates the correlation between the residuals of the large model and each drug and the residuals of the small model and each drug.
         Using analysis of Variance or ANOVA Linear models, where we use categorical vars (drugs) to explain the variance in the residuals of the large and small models.
 
 
         Returns:
             pd.DataFrame: The correlation between the residuals of the large model and each drug and the residuals of the small model and each drug.
-        """        
+        """    
+
+
+  
         data = self.data.copy()
         #get only relevant columns
         anovaData = pd.DataFrame(columns=['residSmall', 'residLarge', 'drug'])
         anovaData['drug'] = data['info']['drug']
         anovaData['residLarge'] = data['info']['residLarge']
         anovaData['residSmall'] = data['info']['residSmall']
-        #dummy encode the drugs
         setOfDrugs = set(anovaData['drug'])
-        anovaData = pd.get_dummies(anovaData, columns=['drug'], prefix=None)
-        results = {'drug':[], 'etaSquaredSmall':[], 'etaSquaredLarge':[]}
-        for drug in setOfDrugs:
-            #binarize the drug column
-            anovaData[f'{drug}'] = anovaData.apply(lambda row: 1 if row['drug'] == str(drug) else 0, axis=1)
-            #fit anova models with the small residuals and the large residuals
-            anovaSmall = smf.ols(f'residSmall ~ C({drug})', data=anovaData).fit()
-            anovaLarge = smf.ols(f'residLarge ~ C({drug})', data=anovaData).fit()
-        
-            # Get the tables (Dataframes) with the ANOVA results
-            anovaSmallTable = sm.stats.anova_lm(anovaSmall, typ=2)
-            anovaLargeTable = sm.stats.anova_lm(anovaLarge, typ=2)
 
-            #Calculate the eta squared for each model, the effect size of each drug towards the residuals
-            results['etaSquaredSmall'].append(anovaSmallTable[:-1]['sum_sq']/sum(anovaSmallTable['sum_sq']))
-            results['etaSquaredLarge'].append(anovaLargeTable[:-1]['sum_sq']/sum(anovaLargeTable['sum_sq']))
+        with mp.Pool(numOfCores) as process:
+            pararelResults = process.starmap(anovaDrugExpTable, zip(repeat(anovaData), setOfDrugs))
 
-            #Add additional info to the results
-            results['drug'].append(drug)
-            results['fPValueSmall'] = anovaSmallTable['PR(>F)'][0]
-            results['fPValueLarge'] = anovaLargeTable['PR(>F)'][0]
-
+        for index, result in enumerate(pararelResults):
+            if index == 0:
+                results = result
+            else:
+                for key in result:
+                    results[key] = results[key] + result[key]
 
         self.resiCorrResults = pd.DataFrame(results)
+
 
         return self.resiCorrResults
     
