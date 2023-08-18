@@ -58,15 +58,15 @@ if __name__ == '__main__':
 
     # Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
     drugSmall:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')
-    # drugLarge:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
+    drugLarge:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
     start = t.time()
-    drugSmall.resiCorr(numOfCores=32)
+    drugSmall.resiCorr(numOfCores=25)
     print(f'drugSmall.resiCorr() took {t.time() - start} seconds')
     drugSmall.write()
     print('done')
 
-    # start = t.time()
-    # drugLarge.resiCorr(numOfCores=32)
-    # print(f'drugLarge.resiCorr() took {t.time() - start} seconds')
-    # drugLarge.write()
-    # print('done')
+    start = t.time()
+    drugLarge.resiCorr(numOfCores=25)
+    print(f'drugLarge.resiCorr() took {t.time() - start} seconds')
+    drugLarge.write()
+    print('done')
