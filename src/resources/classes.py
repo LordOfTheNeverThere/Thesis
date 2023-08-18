@@ -144,7 +144,6 @@ def anovaExpTable(anovaData:pd.DataFrame, y:str, x:str)->tuple[float, float]:
 
     #fit anova models with the small residuals and the large residuals
     anova = smf.ols(f'{y} ~ C({x})', data=anovaData).fit()
-    print(anova.summary())
 
     # Get the tables (Dataframes) with the ANOVA results
     anovaTable = sm.stats.anova_lm(anova, typ=2)
@@ -2087,20 +2086,15 @@ class DRInteractionPxModel(MatrixData):
         anovaData['drug'] = data['info']['drug']
         anovaData['residLarge'] = data['info']['residLarge']
         anovaData['residSmall'] = data['info']['residSmall']
-
-        pararelZip = zip(repeat(anovaData), ['residLarge', 'residSmall'], repeat('drug'))
-
-        # print(f'Starting ANOVA with {numOfCores} cores')
-
-        # with mp.Pool(2) as process:
-
-        #     pararelResults = process.starmap(anovaDrugExpTable, pararelZip)
-
-        test = anovaExpTable(anovaData, 'residLarge', 'drug')
-
         
+        anovaLarge = smf.ols('residLarge ~ C(drug)', data=anovaData).fit()
+        anovaSmall = smf.ols('residSmall ~ C(drug)', data=anovaData).fit()
 
-        self.resiCorrResults = pd.DataFrame(pararelResults, columns=('drug', 'etaSquaredSmall', 'fPValueSmall', 'etaSquaredLarge', 'fPValueLarge'))
+        coefsLarge = anovaLarge.params
+        coefsSmall = anovaSmall.params
+
+        #join both Dataframes to get the coefficients when y is the large or small model, with the respective column names
+        self.resiCorrResults = pd.concat([coefsLarge, coefsSmall], axis=1, keys=['residLarge', 'residSmall'])
 
 
         return self.resiCorrResults
