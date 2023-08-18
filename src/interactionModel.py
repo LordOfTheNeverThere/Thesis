@@ -13,11 +13,11 @@ if __name__ == '__main__':
 
     #py ~ M + px + drugres + px:drugres
 
-    drugRes = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz')
-    drugRes.data = drugRes.data.T
-    samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
-    vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz') #used for PCA computation
-    ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz') #used for the interaction model class
+    # drugRes = read(PATH + '/internal/drnumOfCores=38ugResponses/drugResponse.pickle.gz')
+    # drugRes.data = drugRes.data.T
+    # samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
+    # vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz') #used for PCA computation
+    # ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz') #used for the interaction model class
            
     # using only corum ppis that we were able to recall, with high confidence
     # vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
@@ -26,8 +26,8 @@ if __name__ == '__main__':
     # ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
 
     #Cofounding Factors, use The samplesheet's growth properties or the 10 PC of the vaeProteomics dataframe    
-    growthProps = pd.get_dummies(samplesheet['growth_properties'])
-    growthProps = growthProps.rename(columns={'Semi-Adherent': 'SemiAdherent'})
+    # growthProps = pd.get_dummies(samplesheet['growth_properties'])
+    # growthProps = growthProps.rename(columns={'Semi-Adherent': 'SemiAdherent'})
 
     # pca, pcFactors = vaeProteomics.PCA(filepath='pca.png', factorsName='PC')
 
@@ -60,7 +60,13 @@ if __name__ == '__main__':
     drugSmall:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')
     drugLarge:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
     start = t.time()
-    drugSmall.resiCorr()
+    drugSmall.resiCorr(numOfCores=38)
     print(f'drugSmall.resiCorr() took {t.time() - start} seconds')
-    # drugSmall.write()
+    drugSmall.write()
+    print('done')
+
+    start = t.time()
+    drugLarge.resiCorr(numOfCores=38)
+    print(f'drugLarge.resiCorr() took {t.time() - start} seconds')
+    drugLarge.write()
     print('done')
