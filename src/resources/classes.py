@@ -24,6 +24,7 @@ import time as t
 from typing import Iterable,Any
 import multiprocessing as mp
 from resources import *
+from resources import getMemoryOfVars
 
 
 def read(filepath: str):
