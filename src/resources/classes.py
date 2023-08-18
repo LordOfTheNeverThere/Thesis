@@ -33,6 +33,7 @@ def getMemoryOfVars():
     Returns:
         _type_: _description_
     """
+    import sys
    
     def sizeof_fmt(num, suffix='B'):
         ''' by Fred Cirera,  https://stackoverflow.com/a/1094933/1870254, modified'''
