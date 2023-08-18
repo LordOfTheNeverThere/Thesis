@@ -2051,15 +2051,10 @@ class DRInteractionPxModel(MatrixData):
 
   
         data = self.data.copy()
-        #get only relevant columns
-        anovaData = pd.DataFrame(columns=['residSmall', 'residLarge', 'drug'])
-        anovaData['drug'] = data['info']['drug']
-        anovaData['residLarge'] = data['info']['residLarge']
-        anovaData['residSmall'] = data['info']['residSmall']
-        setOfDrugs = set(anovaData['drug'])
+        setOfDrugs = set(data['info']['drug'])
 
         with mp.Pool(numOfCores) as process:
-            pararelResults = process.starmap(anovaDrugExpTable, zip(repeat(anovaData), setOfDrugs))
+            pararelResults = process.starmap(anovaDrugExpTable, zip(repeat(data.loc[:, [('info', 'drug'), ('info', 'residLarge'), ('info', 'residSmall')]]), setOfDrugs))
 
         
 
