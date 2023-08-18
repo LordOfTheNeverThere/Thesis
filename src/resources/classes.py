@@ -129,6 +129,36 @@ def calcMahalanobis(y:pd.DataFrame, data: pd.DataFrame, cov:pd.DataFrame=None):
     return np.sqrt(mahal), pValue
 
 
+def anovaExpTable(anovaData:pd.DataFrame, y:str, x:str)->tuple[float, float]:
+    """Get the eta squared and the p value of the anova model, indicating the effect size of a category
+    towards the y, and the corresponding p value
+
+    Args:
+        anovaData (pd.DataFrame): Dataframe with x and y
+        y (str): name of the y column
+        x (str): name of the x column
+
+    Returns:
+        tuple[float, float]: (eta squared, p value)
+    """
+
+    #fit anova models with the small residuals and the large residuals
+    anova = smf.ols(f'{y} ~ C({x})', data=anovaData).fit()
+    print(anova.summary())
+
+    # Get the tables (Dataframes) with the ANOVA results
+    anovaTable = sm.stats.anova_lm(anova, typ=2)
+
+    #Calculate the eta squared for each model, the effect size of each drug towards the residuals
+    etaSquared = (anovaTable[:-1]['sum_sq'].values/sum(anovaTable['sum_sq'].values))[0]
+
+    #Add additional info to the results
+
+    fPValue = anovaTable['PR(>F)'].values[0]
+
+    
+    return (etaSquared, fPValue)
+
 
 
 class MatrixData:
@@ -1824,25 +1854,7 @@ class UnbiasedResidualsLinModel(MatrixData):
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
 
-def anovaExpTable(anovaData:pd.DataFrame, y:str, x:str)->tuple[float, float]:
-    
 
-    #fit anova models with the small residuals and the large residuals
-    anova = smf.ols(f'{y} ~ C({x})', data=anovaData).fit()
-    print(anova.summary())
-
-    # Get the tables (Dataframes) with the ANOVA results
-    anovaTable = sm.stats.anova_lm(anova, typ=2)
-
-    #Calculate the eta squared for each model, the effect size of each drug towards the residuals
-    etaSquared = (anovaTable[:-1]['sum_sq'].values/sum(anovaTable['sum_sq'].values))[0]
-
-    #Add additional info to the results
-
-    fPValue = anovaTable['PR(>F)'].values[0]
-
-    
-    return (etaSquared, fPValue)
 
 
 
