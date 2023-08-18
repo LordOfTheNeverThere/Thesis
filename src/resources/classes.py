@@ -1824,31 +1824,25 @@ class UnbiasedResidualsLinModel(MatrixData):
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
 
-def anovaDrugExpTable(anovaData:pd.DataFrame, drug:str)->tuple[str, float, float, float, float]:
+def anovaExpTable(anovaData:pd.DataFrame, y:str, x:str)->tuple[float, float]:
     
-    # anovaData['drugBin'] = anovaData.apply(lambda row: 1 if row['info']['drug'] == str(drug) else 0, axis=1)
-    getMemoryOfVars()
 
     #fit anova models with the small residuals and the large residuals
-    anovaSmall = smf.ols(f'residSmall ~ C(drug)', data=anovaData).fit()
-    anovaLarge = smf.ols(f'residLarge ~ C(drug)', data=anovaData).fit()
-    print(anovaSmall.summary())
+    anova = smf.ols(f'{y} ~ C({x})', data=anovaData).fit()
+    print(anova.summary())
 
     # Get the tables (Dataframes) with the ANOVA results
-    anovaSmallTable = sm.stats.anova_lm(anovaSmall, typ=2)
-    anovaLargeTable = sm.stats.anova_lm(anovaLarge, typ=2)
+    anovaTable = sm.stats.anova_lm(anova, typ=2)
 
     #Calculate the eta squared for each model, the effect size of each drug towards the residuals
-    etaSquaredSmall = (anovaSmallTable[:-1]['sum_sq'].values/sum(anovaSmallTable['sum_sq'].values))[0]
-    etaSquaredLarge = (anovaLargeTable[:-1]['sum_sq'].values/sum(anovaLargeTable['sum_sq'].values))[0]
+    etaSquared = (anovaTable[:-1]['sum_sq'].values/sum(anovaTable['sum_sq'].values))[0]
 
     #Add additional info to the results
 
-    fPValueSmall = anovaSmallTable['PR(>F)'].values[0]
-    fPValueLarge = anovaLargeTable['PR(>F)'].values[0]
+    fPValue = anovaTable['PR(>F)'].values[0]
 
     
-    return (drug, etaSquaredSmall, fPValueSmall, etaSquaredLarge, fPValueLarge)
+    return (etaSquared, fPValue)
 
 
 
@@ -2077,19 +2071,20 @@ class DRInteractionPxModel(MatrixData):
   
         data = self.data.copy()
         #get only relevant columns
-        # anovaData = pd.DataFrame(columns=['residSmall', 'residLarge', 'drug'])
-        # anovaData['drug'] = data['info']['drug']
-        # anovaData['residLarge'] = data['info']['residLarge']
-        # anovaData['residSmall'] = data['info']['residSmall']
-        # setOfDrugs = set(data['info']['drug'])
+        anovaData = pd.DataFrame(columns=['residSmall', 'residLarge', 'drug'])
+        anovaData['drug'] = data['info']['drug']
+        anovaData['residLarge'] = data['info']['residLarge']
+        anovaData['residSmall'] = data['info']['residSmall']
 
-        pararelZip = zip(repeat(data), set(data['info']['drug']))
+        pararelZip = zip(repeat(anovaData), ['residLarge', 'residSmall'], repeat('drug'))
 
-        print(f'Starting ANOVA with {numOfCores} cores')
-        getMemoryOfVars()
-        with mp.Pool(numOfCores) as process:
-            getMemoryOfVars()
-            pararelResults = process.starmap(anovaDrugExpTable, pararelZip)
+        # print(f'Starting ANOVA with {numOfCores} cores')
+
+        # with mp.Pool(2) as process:
+
+        #     pararelResults = process.starmap(anovaDrugExpTable, pararelZip)
+
+        test = anovaExpTable(anovaData, 'residLarge', 'drug')
 
         
 
