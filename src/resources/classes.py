@@ -1803,7 +1803,7 @@ class UnbiasedResidualsLinModel(MatrixData):
 
 def anovaDrugExpTable(anovaData:pd.DataFrame, drug:str)->tuple[str, float, float, float, float]:
     
-    anovaData['drugBin'] = anovaData.apply(lambda row: 1 if row['drug'] == str(drug) else 0, axis=1)
+    anovaData['drugBin'] = anovaData.apply(lambda row: 1 if row['info']['drug'] == str(drug) else 0, axis=1)
 
     #fit anova models with the small residuals and the large residuals
     anovaSmall = smf.ols(f'residSmall ~ C(drugBin)', data=anovaData).fit()
@@ -2061,7 +2061,9 @@ class DRInteractionPxModel(MatrixData):
         pararelZip = zip(repeat(data), set(data['info']['drug']))
 
         print(f'Starting ANOVA with {numOfCores} cores')
+        getMemoryOfVars()
         with mp.Pool(numOfCores) as process:
+            getMemoryOfVars()
             pararelResults = process.starmap(anovaDrugExpTable, pararelZip)
 
         
