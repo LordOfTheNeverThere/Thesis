@@ -2069,7 +2069,7 @@ class DRInteractionPxModel(MatrixData):
 
 
 
-    def resiCorr(self, numOfCores:int = CPUS)->pd.DataFrame:
+    def resiCorr(self)->pd.DataFrame:
         """Calculates the correlation between the residuals of the large model and each drug and the residuals of the small model and each drug.
         Using analysis of Variance or ANOVA Linear models, where we use categorical vars (drugs) to explain the variance in the residuals of the large and small models.
 
