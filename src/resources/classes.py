@@ -1801,9 +1801,8 @@ class UnbiasedResidualsLinModel(MatrixData):
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
 
-def anovaDrugExpTable(anovaData:pd.DataFrame, drug:str)->dict:
-    results = {'drug':[], 'etaSquaredSmall':[], 'etaSquaredLarge':[], 'fPValueSmall': [], 'fPValueLarge':[]} #dictionary to store results
-    #Binerize the drug column
+def anovaDrugExpTable(anovaData:pd.DataFrame, drug:str)->tuple[str, float, float, float, float]:
+    
     anovaData['drugBin'] = anovaData.apply(lambda row: 1 if row['drug'] == str(drug) else 0, axis=1)
 
     #fit anova models with the small residuals and the large residuals
@@ -1815,15 +1814,16 @@ def anovaDrugExpTable(anovaData:pd.DataFrame, drug:str)->dict:
     anovaLargeTable = sm.stats.anova_lm(anovaLarge, typ=2)
 
     #Calculate the eta squared for each model, the effect size of each drug towards the residuals
-    results['etaSquaredSmall'].append((anovaSmallTable[:-1]['sum_sq'].values/sum(anovaSmallTable['sum_sq'].values))[0])
-    results['etaSquaredLarge'].append((anovaLargeTable[:-1]['sum_sq'].values/sum(anovaLargeTable['sum_sq'].values))[0])
+    etaSquaredSmall = (anovaSmallTable[:-1]['sum_sq'].values/sum(anovaSmallTable['sum_sq'].values))[0]
+    etaSquaredLarge = (anovaLargeTable[:-1]['sum_sq'].values/sum(anovaLargeTable['sum_sq'].values))[0]
 
     #Add additional info to the results
-    results['drug'].append(drug)
-    results['fPValueSmall'].append(anovaSmallTable['PR(>F)'].values[0])
-    results['fPValueLarge'].append(anovaLargeTable['PR(>F)'].values[0])
 
-    return results
+    fPValueSmall = anovaSmallTable['PR(>F)'].values[0]
+    fPValueLarge = anovaLargeTable['PR(>F)'].values[0]
+
+    
+    return (drug, etaSquaredSmall, fPValueSmall, etaSquaredLarge, fPValueLarge)
 
 
 
@@ -2061,14 +2061,9 @@ class DRInteractionPxModel(MatrixData):
         with mp.Pool(numOfCores) as process:
             pararelResults = process.starmap(anovaDrugExpTable, zip(repeat(anovaData), setOfDrugs))
 
-        for index, result in enumerate(pararelResults):
-            if index == 0:
-                results = result
-            else:
-                for key in result:
-                    results[key] = results[key] + result[key]
+        
 
-        self.resiCorrResults = pd.DataFrame(results)
+        self.resiCorrResults = pd.DataFrame(pararelResults, columns=('drug', 'etaSquaredSmall', 'fPValueSmall', 'etaSquaredLarge', 'fPValueLarge'))
 
 
         return self.resiCorrResults
