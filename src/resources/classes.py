@@ -2058,7 +2058,7 @@ class DRInteractionPxModel(MatrixData):
         # anovaData['residSmall'] = data['info']['residSmall']
         # setOfDrugs = set(data['info']['drug'])
 
-        pararelZip = zip(repeat(data), setOfDrugs)
+        pararelZip = zip(repeat(data), set(data['info']['drug']))
 
         print(f'Starting ANOVA with {numOfCores} cores')
         with mp.Pool(numOfCores) as process:
