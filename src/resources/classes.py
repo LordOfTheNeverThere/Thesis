@@ -24,6 +24,7 @@ import time as t
 from typing import Iterable,Any
 import multiprocessing as mp
 from resources import *
+import resources
 
 
 
@@ -2076,26 +2077,26 @@ class DRInteractionPxModel(MatrixData):
 
         Returns:
             pd.DataFrame: The correlation between the residuals of the large model and each drug and the residuals of the small model and each drug.
-        """    
-
-
-  
+        """   
         data = self.data.copy()
         #get only relevant columns
         anovaData = pd.DataFrame(columns=['residSmall', 'residLarge', 'drug'])
         anovaData['drug'] = data['info']['drug']
         anovaData['residLarge'] = data['info']['residLarge']
         anovaData['residSmall'] = data['info']['residSmall']
-        
-        anovaLarge = smf.ols('residLarge ~ C(drug)', data=anovaData).fit()
-        anovaSmall = smf.ols('residSmall ~ C(drug)', data=anovaData).fit()
 
-        coefsLarge = anovaLarge.params
-        coefsSmall = anovaSmall.params
+        from resources import Anova
+        modelLarge = Anova(anovaData, False)
+        modelSmall = Anova(anovaData, False)
+
+        modelLarge = modelLarge.fitOneWay('drug', 'residLarge' )
+        modelSmall = modelSmall.fitOneWay('drug', 'residSmall')
+
+        coefsLarge = modelLarge.params
+        coefsSmall = modelSmall.params
 
         #join both Dataframes to get the coefficients when y is the large or small model, with the respective column names
         self.resiCorrResults = pd.concat([coefsLarge, coefsSmall], axis=1, keys=['residLarge', 'residSmall'])
-
 
         return self.resiCorrResults
     
