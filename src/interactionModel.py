@@ -62,17 +62,17 @@ if __name__ == '__main__':
     # triangulationResults = dummy.triangulate(0.2, 0.3, 22, 50, 14, 'exampleDrugSmall0,2_0,3_22_50.png', True)
 
 
-    # # Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
-    # drugSmall:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')
-    # start = t.time()
-    # drugSmall.resiCorr()
-    # print(f'drugSmall.resiCorr() took {t.time() - start} seconds')
-    # drugSmall.write()
-    # print('done')
+    # Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
+    drugSmall:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')
+    start = t.time()
+    drugSmall.resiCorr()
+    print(f'drugSmall.resiCorr() took {t.time() - start} seconds')
+    drugSmall.write()
+    print('done')
 
-    # drugLarge:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
-    # start = t.time()
-    # drugLarge.resiCorr()
-    # print(f'drugLarge.resiCorr() took {t.time() - start} seconds')
-    # drugLarge.write()
-    # print('done')
+    drugLarge:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
+    start = t.time()
+    drugLarge.resiCorr()
+    print(f'drugLarge.resiCorr() took {t.time() - start} seconds')
+    drugLarge.write()
+    print('done')
