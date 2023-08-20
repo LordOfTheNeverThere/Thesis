@@ -17,11 +17,11 @@ if __name__ == '__main__':
     vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz') #used for PCA computation
     ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz') #used for the interaction model class
            
-    # # using only corum ppis that we were able to recall, with high confidence
-    # vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
-    # vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
-    # ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").index)
-    # ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
+    # using only corum ppis that we were able to recall, with high confidence
+    vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
+    vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
+    ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").index)
+    ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
 
     #Cofounding Factors, use The samplesheet's growth properties or the 10 PC of the vaeProteomics dataframe    
     growthProps = pd.get_dummies(samplesheet['growth_properties'])
@@ -33,10 +33,6 @@ if __name__ == '__main__':
     # pd.set_option('display.width', None)
     # pd.set_option('display.max_colwidth', -1)
 
-
-    # Debugging TIME!!!! YEAHHHHHHHHH BO YEEE YEEE 
-    drugRes.data = drugRes.data.iloc[:,0:1]
-    ppisOfInterest = set([('PSMA4', 'PSMB5')])
 
     dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, growthProps)
     start = t.time()

@@ -1869,20 +1869,20 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
 
     for index, drugName in enumerate(self.drugRes):
 
-        print(f" \nProcessing {ppi} for drug {drugName}")        
+   
         YName = ppi[0]
         XName = ppi[1]
         _, _, res1= self.getLinearModels(YName, XName, drugName)
 
-        print(f" \nThe results for {ppi} and {drugName} are {res1} on the first model")
+
 
         if index == 0: # If first drug, then we want to create the dictionary that will be used to save the results from all other drugs
             results = res1 # Create dictionary, results, that will be used to save the results from all other drugs~
-            print(f" \nResults for {ppi} and {drugName} are {results} on the first model, on the iteration {index}")
+
         else:
             for key in results:
                 results[key] = results[key] + res1[key]
-                print(f" \nResults for {ppi} and {drugName} are {results} on the first model, on the iteration {index}")
+
 
 
         # invert Px and Py to understand if there are one way relationships
@@ -1892,14 +1892,11 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
 
         for key in results: #Update the return object
             results[key] = results[key] + res2[key]
-            print(f" \nResults for {ppi} and {drugName} are {results} on the second model, on the iteration {index}")
 
-        print(f" \nThe results for {ppi} and {drugName} are {res2} on the second model")
             
     correctedPValues = multipletests(results[('info', 'logLikePValue')], method="fdr_bh")[1]
     results[('info', 'fdr')] = list(correctedPValues)
 
-    print(f" \nResults for {ppi} are {results}, before returning")
     return results
 
 
@@ -2001,6 +1998,7 @@ class DRInteractionPxModel(MatrixData):
             drugRes = (drugRes - drugRes.mean()) / drugRes.std()
 
         pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
+        pxInteractionDR.name = f"{drugName}:{XName}" # rename the column to be the interaction term
 
         #reordering of expressions to build the smaller and larger models
         # Small Model: Py ~ (Px + M) 
@@ -2013,12 +2011,6 @@ class DRInteractionPxModel(MatrixData):
             X = pd.concat([drugRes, pxInteractionDR], axis=1) 
             M = pd.concat([Px, M], axis=1)
 
-        print(f" \nX is {X.shape}")
-        print(f" \nM is {M.shape}")
-        print(f" \nPy is {Py.shape}")
-        print(f" \nX columns are {X.columns}")
-        print(f" \nM columns are {M.columns}")
-
 
         # Fit Confounding, small model
         lmSmall = self.modelRegressor().fit(M, Py)
@@ -2028,7 +2020,6 @@ class DRInteractionPxModel(MatrixData):
         xLarge = pd.concat([M, X], axis=1)
         # Make sure all columns are strings
         xLarge.columns = xLarge.columns.astype(str)
-        print(f" \nxLarge columns are {xLarge.columns}")
         lmLarge = self.modelRegressor().fit(xLarge, Py)
         lmLargeLogLike = self.loglike(Py, lmLarge.predict(xLarge))
         
@@ -2056,7 +2047,6 @@ class DRInteractionPxModel(MatrixData):
         res[('info', 'llStatistic')] = [lr]
         res[('info', 'intercept')] = [lmLarge.intercept_]
         res[('info', 'residLarge')] = [lmLargeResiduals.sum()]
-        print(f" \nresidLarge is {lmLargeResiduals.sum()}, this should be equal regardless of the boolean value of isDrugResSmall")
         res[('info', 'residSmall')] = [lmSmallResiduals.sum()]
 
         return lmLarge, lmSmall, res
@@ -2078,13 +2068,11 @@ class DRInteractionPxModel(MatrixData):
         with mp.Pool(numOfCores) as process:
             pararelResults = process.starmap(processPPIWrapper, pararelList)
         
-        print(f" \nThe results coming from the pararel process are: {pararelResults}")
         
         for index, result in enumerate(pararelResults):
 
             if index == 0:
                 results = result
-                print(f" \nIn the {index}th iteration the results are: {result}")
 
             else:
                 for key in result:
