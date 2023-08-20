@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     #py ~ M + px + drugres + px:drugres
 
-    drugRes = read(PATH + '/internal/drnumOfCores=38ugResponses/drugResponse.pickle.gz')
+    drugRes = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz')
     drugRes.data = drugRes.data.T
     samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
     vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz') #used for PCA computation
