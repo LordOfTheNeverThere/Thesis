@@ -2024,10 +2024,10 @@ class DRInteractionPxModel(MatrixData):
         lmLargeLogLike = self.loglike(Py, lmLarge.predict(xLarge))
         
         #Calculating Residuals (Small model)
-        lmSmallResiduals = Py - lmSmall.predict(M)
+        lmSmallResidualsSq = np.power(Py - lmSmall.predict(M), 2)
 
         #Calculating Residuals (Large model)
-        lmLargeResiduals = Py - lmLarge.predict(xLarge)
+        lmLargeResidualsSq = np.power(Py - lmLarge.predict(xLarge), 2)
         
 
         # Log-ratio test
@@ -2046,8 +2046,8 @@ class DRInteractionPxModel(MatrixData):
         res[('info', 'logLikePValue')] = [LogLikeliRatioPVal]
         res[('info', 'llStatistic')] = [lr]
         res[('info', 'intercept')] = [lmLarge.intercept_]
-        res[('info', 'residLarge')] = [lmLargeResiduals.sum()]
-        res[('info', 'residSmall')] = [lmSmallResiduals.sum()]
+        res[('info', 'residSqLarge')] = [lmLargeResidualsSq.sum()]
+        res[('info', 'residSqSmall')] = [lmSmallResidualsSq.sum()]
 
         return lmLarge, lmSmall, res
     
@@ -2098,23 +2098,23 @@ class DRInteractionPxModel(MatrixData):
         """   
         data = self.data.copy()
         #get only relevant columns
-        anovaData = pd.DataFrame(columns=['residSmall', 'residLarge', 'drug'])
+        anovaData = pd.DataFrame(columns=['residSqSmall', 'residSqLarge', 'drug'])
         anovaData['drug'] = data['info']['drug']
-        anovaData['residLarge'] = data['info']['residLarge']
-        anovaData['residSmall'] = data['info']['residSmall']
+        anovaData['residSqLarge'] = data['info']['residSqLarge']
+        anovaData['residSqSmall'] = data['info']['residSqSmall']
 
         from resources import Anova
         modelLarge = Anova(anovaData, False)
         modelSmall = Anova(anovaData, False)
 
-        modelLarge = modelLarge.fitOneWay('drug', 'residLarge' )
-        modelSmall = modelSmall.fitOneWay('drug', 'residSmall')
+        modelLarge = modelLarge.fitOneWay('drug', 'residSqLarge' )
+        modelSmall = modelSmall.fitOneWay('drug', 'residSqSmall')
 
         coefsLarge = modelLarge.params
         coefsSmall = modelSmall.params
 
         #join both Dataframes to get the coefficients when y is the large or small model, with the respective column names
-        self.resiCorrResults = pd.concat([coefsLarge, coefsSmall], axis=1, keys=['residLarge', 'residSmall'])
+        self.resiCorrResults = pd.concat([coefsLarge, coefsSmall], axis=1, keys=['residSqLarge', 'residSqSmall'])
 
         return self.resiCorrResults
     
