@@ -896,7 +896,7 @@ class ProteinsMatrix(MatrixData):
         if factorsName != '':
             #Change the name of the columns of the factors and scores given by the PCA Object
             newColumns = [f'{factorsName}{i}' for i in range(1, numPC + 1)]
-            factors = pd.DataFrame(pca.components_.T, columns=newColumns, index=vaeProteomics.data.columns)
+            factors = pd.DataFrame(pca.fit_transform(self.data), index=self.data.index, columns=newColumns)
 
 
         # Construct the plot of scree and the cumulative explained variance
