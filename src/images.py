@@ -46,7 +46,7 @@ plt.show()
 
 
 
-# Proteomics PCA Screen and Cumulative plot
+# Proteomics PCA Scree and Cumulative plot
 
 
 vaeProteomics = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
