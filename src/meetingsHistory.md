@@ -70,7 +70,7 @@ Tasks:
         3.  Convert the ids of Broad to Sanger like The Professor said on Google Chat, use the id mapping provided
         4.  Filtrar genes para que fiquemos com entre 5 a 6k
             1.  Escolher genes que sejam essenciais para pelo menos x cell lines, ou seja, que tenha menos que y p-value e estejam presentes em pelo menos x cell lines (É um guessing game)
-    13. Why are the large residues of both models different? Shouldn't they be the reflection of the same model, maybe something is going on the classes.py
+    13. ~~Why are the large residues of both models different? Shouldn't they be the reflection of the same model, maybe something is going on the classes.py~~ I should calculate ssr instead of sum of the resiudals
     14. Questiona TUDO!
     15. Começa a organizar a escrita, Títulos <-> Sub-títulos <-> Bullet Points
     16. Escreve apenas aquilo que pensas que se manterá imutado até à entrega da tese, datasets e whatnot

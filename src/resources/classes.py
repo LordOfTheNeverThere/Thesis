@@ -1924,12 +1924,6 @@ class DRInteractionPxModel(MatrixData):
         self.drugResLen = drugRes.data.shape[1]
         self.lenM =  M.shape[1]
 
-        print(f" \nDrug Response is {self.drugResLen} and M is {self.lenM}")
-        print(f" \nppis are {ppis}")
-        print(f" \nproteomics is {proteomics.data.shape}")
-        print(f" \ndrugRes is {drugRes.data.shape}")
-        print(f" \nM is {M.shape}")
-
 
     def modelRegressor(self):
         regressor = LinearRegression(
@@ -2077,7 +2071,6 @@ class DRInteractionPxModel(MatrixData):
             else:
                 for key in result:
                     results[key] = results[key] + result[key]
-                    print(f"In the {index}th iteration the results are: {result}")
 
 
         results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results.keys()))
