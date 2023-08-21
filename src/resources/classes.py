@@ -903,7 +903,7 @@ class ProteinsMatrix(MatrixData):
         # Get the explained variance and explained variance ratio
         explained_variance = pca.explained_variance_
         explained_variance_ratio = pca.explained_variance_ratio_
-        print(explained_variance_ratio.sum())
+        print(f"The sum of explained variance is {sum(explained_variance_ratio)}")
 
         # Calculate the cumulative explained variance
         cumulative_explained_variance = np.cumsum(explained_variance)
