@@ -89,3 +89,4 @@ dummy = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRl
 
 triangulationResults = dummy.triangulate(0.099, 0.18, 50, 100, 16, 'goodExampleDrugSmall.png', False)
 
+triangulationResults = dummy.triangulate(0.2, 0.3, 22, 50, 14, 'exampleDrugSmall0,2_0,3_22_50.png', True)
