@@ -1301,7 +1301,7 @@ class GeneDependency(MatrixData):
             geneData = pValues[gene]
             geneData = geneData[geneData <= pValThresh]
             
-            if geneData.shape[0] >= presentThesh:
+            if geneData.shape[0] >= presentThresh:
                 
                 genesFiltered.add(gene)
         
