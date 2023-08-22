@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time as t
 from statsmodels.stats.multitest import multipletests
-from resources import UnbiasedResidualsLinModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
+from resources import GeneDependency, UnbiasedResidualsLinModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
 
 
 
@@ -13,10 +13,60 @@ if __name__ == '__main__':
 
 
 
-    # get gene dependecy data for effect size and its p-value
+    # # get gene dependecy data for effect size and its p-value
 
-    effectSizes = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSize.csv', index_col=0)
-    pValues = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSizePValue.csv', index_col=0)
+    # effectSizes = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSize.csv', index_col=0)
+    # pValues = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSizePValue.csv', index_col=0)
+
+    # Create a Gene Dependency object
+    geneDependency:GeneDependency = read(PATH + '/internal/geneInteractionModel/geneDependency.pickle.gz')
+    # Load necessary data for interaction model
+    samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
+    vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz') #used for PCA computation
+    ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz') #used for the interaction model class
+           
+    # using only corum ppis that we were able to recall, with high confidence
+    vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
+    vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
+    ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").index)
+    ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
+
+    # #Cofounding Factors, use The samplesheet's growth properties or the 10 PC of the vaeProteomics dataframe    
+    growthProps = pd.get_dummies(samplesheet['growth_properties'])
+    growthProps = growthProps.rename(columns={'Semi-Adherent': 'SemiAdherent'})
+
+    # pca, pcFactors = vaeProteomics.PCA(factorsName='PC', numPC=10)
+
+    #Filter data to only include genes of interest
+    geneDependency.filterGenes() #Default outputs 3468 genes has having at least 0.25 of samples with some statistical significance (pValue < 0.025)
+    #Construct the interaction model
+    interactionModel = geneDependency.createInteractionModel(ppisOfInterest, ogProteomics, growthProps, isDrugResSmall=True)
+    #Fit the interaction model
+    start = t.time()
+    interactionModel.fit(numOfCores=38)
+    end = t.time()
+    print(f'Time to fit model: {end - start}')
+    #Save the interaction model
+    interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelSmall.pickle.gz'
+    interactionModel.write()
+
+    #Construct another one with gene data as parte of the large model
+    interactionModel = geneDependency.createInteractionModel(ppisOfInterest, ogProteomics, growthProps, isDrugResSmall=False)
+    #Fit the interaction model
+    start = t.time()
+    interactionModel.fit(numOfCores=38)
+    end = t.time()
+    print(f'Time to fit model: {end - start}')
+    #Save the interaction model
+    interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelLarge.pickle.gz'
+    interactionModel.write()
+
+
+
+
+
+
+
 
     # get data to run lienar model with TLS residuals and plot significant associations with proteomics data
     # drugRes = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz')

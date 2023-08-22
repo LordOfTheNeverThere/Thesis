@@ -99,3 +99,59 @@ Tasks:
             2.  Py ~ Px * beta_Px + drugRes*(beta_drugRes + Px*beta_int),The increase in Px magnifies the explanatory power of drugRes towards Py. Thence, the correlation between drugRes and Py increases when we increase Px, this is not really interesting. Since if we look at the equation above knowing that Px and Py come from a set of known ppis where the majority are positively correlated, so the effect size of the interaction term is sure to be positive since most Px are correlated positively with Py, and thus add a little explanatory power to that of the drugRes.
             3.  So in sum only the first effect is actually interesting on a biological sense, since the  drug response impacts the slope between Px and Py and thus complex formation
     23. In terms of memory the output data from the interaction model occupies about 313 bytes per row, so in the gene dependency model if we have 5k genes we will have an outputing dataframe of about numGenes*numPPIs*2 = 5000*12726*2 = 127.260.000 rows... which would cost 39884102592.77743 bytes or 38Gb, if we instead use 2k we get a much more modest size of 15Gb
+    24. While converting the Broad Ids to Sanger Ids using the mapping file the prof provided, these Broad Ids had no Sanger Matches... Is it normal? 54 samples in total which 5% of total samples
+        1.  IndexError: ACH-000467 not found in mappingFile
+            IndexError: ACH-000833 not found in mappingFile
+            IndexError: ACH-001063 not found in mappingFile
+            IndexError: ACH-001172 not found in mappingFile
+            IndexError: ACH-001370 not found in mappingFile
+            IndexError: ACH-001393 not found in mappingFile
+            IndexError: ACH-001481 not found in mappingFile
+            IndexError: ACH-001543 not found in mappingFile
+            IndexError: ACH-001675 not found in mappingFile
+            IndexError: ACH-001691 not found in mappingFile
+            IndexError: ACH-001719 not found in mappingFile
+            IndexError: ACH-001834 not found in mappingFile
+            IndexError: ACH-001839 not found in mappingFile
+            IndexError: ACH-001844 not found in mappingFile
+            IndexError: ACH-001862 not found in mappingFile
+            IndexError: ACH-001961 not found in mappingFile
+            IndexError: ACH-001986 not found in mappingFile
+            IndexError: ACH-001990 not found in mappingFile
+            IndexError: ACH-002014 not found in mappingFile
+            IndexError: ACH-002024 not found in mappingFile
+            IndexError: ACH-002035 not found in mappingFile
+            IndexError: ACH-002070 not found in mappingFile
+            IndexError: ACH-002084 not found in mappingFile
+            IndexError: ACH-002239 not found in mappingFile
+            IndexError: ACH-002446 not found in mappingFile
+            IndexError: ACH-002458 not found in mappingFile
+            IndexError: ACH-002459 not found in mappingFile
+            IndexError: ACH-002460 not found in mappingFile
+            IndexError: ACH-002461 not found in mappingFile
+            IndexError: ACH-002462 not found in mappingFile
+            IndexError: ACH-002463 not found in mappingFile
+            IndexError: ACH-002464 not found in mappingFile
+            IndexError: ACH-002465 not found in mappingFile
+            IndexError: ACH-002467 not found in mappingFile
+            IndexError: ACH-002471 not found in mappingFile
+            IndexError: ACH-002485 not found in mappingFile
+            IndexError: ACH-002486 not found in mappingFile
+            IndexError: ACH-002508 not found in mappingFile
+            IndexError: ACH-002510 not found in mappingFile
+            IndexError: ACH-002511 not found in mappingFile
+            IndexError: ACH-002512 not found in mappingFile
+            IndexError: ACH-002523 not found in mappingFile
+            IndexError: ACH-002526 not found in mappingFile
+            IndexError: ACH-002531 not found in mappingFile
+            IndexError: ACH-002650 not found in mappingFile
+            IndexError: ACH-002654 not found in mappingFile
+            IndexError: ACH-002693 not found in mappingFile
+            IndexError: ACH-002710 not found in mappingFile
+            IndexError: ACH-002785 not found in mappingFile
+            IndexError: ACH-002799 not found in mappingFile
+            IndexError: ACH-002800 not found in mappingFile
+            IndexError: ACH-002834 not found in mappingFile
+            IndexError: ACH-002847 not found in mappingFile
+            IndexError: ACH-002922 not found in mappingFile
+            IndexError: ACH-002926 not found in mappingFile

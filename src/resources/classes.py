@@ -1214,6 +1214,7 @@ class GeneDependency(MatrixData):
         self.name = name
         self.pValues = pValues
         self.genes = self.data.columns #At first we include all genes
+        self.areIdsCorrected = GeneDependency.isCorrectIds(self.data)
         
         if not fdrDone:
             self.fdrCorrection()
@@ -1228,7 +1229,7 @@ class GeneDependency(MatrixData):
         self.pValues = pValues
 
     @staticmethod
-    def convertBroadToSangerId(broadId:str)->str:
+    def convertBroadToSangerId(broadId:str)->str|None:
         """Converts a Broad Id to a Sanger Id
 
         Args:
@@ -1238,7 +1239,16 @@ class GeneDependency(MatrixData):
             str: Sanger Id
         """        
         mappingFile = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRSamplesheet.csv', index_col=0)
-        sangerID = str(mappingFile.loc[mappingFile['BROAD_ID'] == broadId].index[0])
+
+        try:
+
+            sangerID = str(mappingFile.loc[mappingFile['BROAD_ID'] == broadId].index[0])
+            
+        except IndexError:
+
+            sangerID = None
+            print(f"IndexError: {broadId} not found in mappingFile")
+
         return sangerID
     @staticmethod
     def isCorrectIds(data:pd.DataFrame)->bool:
@@ -1261,13 +1271,19 @@ class GeneDependency(MatrixData):
     def correctIds(self)->None:
         """Correct the Ids on the gene dependency matrix, so that they are the same as the ones in the protein matrix, they should be Sanger Ids
         """
+        print(f"The Current shape of the gene dependecy is {self.data.shape}")
         if not self.isCorrectIds(self.data): # Ids not correct
 
             data = self.data.copy()
             
-            for broadIDs in list(data.index):
-                sangerIDs = self.convertBroadToSangerId(broadIDs)
-                data.rename(index={broadIDs:sangerIDs}, inplace=True)
+            for broadID in list(data.index):
+
+                sangerID = self.convertBroadToSangerId(broadID)
+
+                if sangerID is None: # If we can't find the sanger Id, we drop the row
+                    data.drop(index=broadID, inplace=True)
+                else:
+                    data.rename(index={broadID:sangerID}, inplace=True)
 
             self.data = data
         
@@ -1275,13 +1291,21 @@ class GeneDependency(MatrixData):
             
             data = self.pValues.copy()
             
-            for broadIDs in list(data.index):
-                sangerIDs = self.convertBroadToSangerId(broadIDs)
-                data.rename(index={broadIDs:sangerIDs}, inplace=True)
+            for broadID in list(data.index):
+
+                sangerID = self.convertBroadToSangerId(broadID)
+
+                if sangerID is None: # If we can't find the sanger Id, we drop the row
+                    data.drop(index=broadID, inplace=True)
+                else:
+                    data.rename(index={broadID:sangerID}, inplace=True)
                 
             self.pValues = data
-    
-    def filterGenes(self, pValThresh:float, presentRatioThesh:float)->None:
+        print(f"After correction of ids, the shape of the gene dependecy is {self.data.shape}")
+
+        self.areIdsCorrected = True
+
+    def filterGenes(self, pValThresh:float = 0.025, presentRatioThresh:float = 0.25)->None:
         """ Filter the genes in the gene dependency matrix, 
         so that a gene must have a ratio of present values greater or equal to presentRatioThresh,
         if we only consider samples for each gene that have a pValue less or equal to pValThresh
@@ -1289,23 +1313,57 @@ class GeneDependency(MatrixData):
 
         Args:
             pValThresh (float): Significance level for gene effect size
-            presentRatioThesh (float): Ratio of samples that a gene must have with a p-value less than pValThres
+            presentRatioThresh (float): Ratio of samples that a gene must have with a p-value less than pValThres
         """
 
         pValues = self.pValues.copy()
         genesFiltered = set()
-        presentThresh = round(presentRatioThesh * pValues.shape[1])
+        presentThresh = round(presentRatioThresh * pValues.shape[0])
 
-        for gene in pValues:
+        for gene in pValues.columns:
 
             geneData = pValues[gene]
             geneData = geneData[geneData <= pValThresh]
+
             
             if geneData.shape[0] >= presentThresh:
                 
                 genesFiltered.add(gene)
         
         self.genes = genesFiltered
+        print(f"Number of genes after filtration: {len(genesFiltered)}")
+        self.pValThresh = pValThresh
+        self.presentRatioThresh = presentRatioThresh
+
+    def createInteractionModel(
+            self, 
+            ppis:Iterable[tuple[str, str]], 
+            proteomics :ProteinsMatrix, 
+            M:pd.DataFrame | pd.Series, **modelKwargs) ->DRInteractionPxModel:
+        
+        """Creates an Interaction Model using instead of the Drug Response (samples*drug), 
+        it uses the gene dependency data (samples*genes)
+
+        Args:
+            ppis (Iterable[tuple[str, str]]): PPIS to use in the interaction model
+            proteomics (ProteinsMatrix): Proteomics data to use in the interaction model
+            M (DataFrame | Series[Unknown]): Possible Confouding factors to use in the interaction model
+
+        Returns:
+            DRInteractionPxModel: Interaction Model
+        """        
+
+        if not self.areIdsCorrected:
+            self.correctIds()
+        
+        # Only input genes in the model that are the important ones, the filtered genes
+        geneDependencyData = self.data.loc[:, list(self.genes)]
+        print(f"From all the gene data of shape {self.data.shape}, we only use {geneDependencyData.shape}")
+
+        #Get Interaction Model
+        interactionModel = DRInteractionPxModel(ppis, proteomics, geneDependencyData, M, isGeneData = True, **modelKwargs)
+
+        return interactionModel
 
             
         
@@ -1910,19 +1968,27 @@ class DRInteractionPxModel(MatrixData):
     Returns:
         _type_: _description_
     """
-    def __init__(self, ppis:Iterable[tuple[str,str]], proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, M:pd.DataFrame|pd.Series, isDrugResSmall:bool = True, fitIntercept=True, copyX=True, standardisePx = True, nJobs:int=4, filepath:str=None, data:pd.DataFrame=None, **readerKwargs):
+    def __init__(self, ppis:Iterable[tuple[str,str]],
+                proteomics:ProteinsMatrix, 
+                interactor:pd.DataFrame, 
+                M:pd.DataFrame|pd.Series, 
+                isDrugResSmall:bool = True, 
+                fitIntercept=True, copyX=True, 
+                standardisePx = True, nJobs:int=4, 
+                filepath:str=None, data:pd.DataFrame=None, 
+                **readerKwargs):
         
         super().__init__(filepath, data, **readerKwargs)
         self.ppis = ppis
         self.proteomics = proteomics.data
-        self.drugRes = drugRes.data
+        self.drugRes = interactor
         self.M = M
         self.isDrugResSmall = isDrugResSmall
         self.fitIntercept = fitIntercept
         self.copyX = copyX
         self.standardisePx = standardisePx
         self.nJobs = nJobs
-        self.drugResLen = drugRes.data.shape[1]
+        self.drugResLen = interactor.shape[1]
         self.lenM =  M.shape[1]
 
 
