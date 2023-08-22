@@ -2059,7 +2059,7 @@ class DRInteractionPxModel(MatrixData):
             drugRes = (drugRes - drugRes.mean()) / drugRes.std()
 
         pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
-        pxInteractionDR.name = f"{drugName}:{XName}" # rename the column to be the interaction term
+        pxInteractionDR.name = "interaction" # rename the column to be the interaction term
 
         #reordering of expressions to build the smaller and larger models
         # Small Model: Py ~ (Px + M) 

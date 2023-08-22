@@ -58,10 +58,11 @@ if __name__ == '__main__':
 
 
     dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')        
-    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmall.png', extraFeatures=True) # 3579956 points
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmall.png', extraFeatures=False) # 3579956 points
+    dummy.resiCorrResults    
     dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')        
-    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugLarge.png', extraFeatures=True) # 3579956 points
-
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugLarge.png', extraFeatures=False) # 3579956 points
+    dummy.resiCorrResults
     # drugRes.data = drugRes.data.T
     # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes.data, topNumber=10)
 
