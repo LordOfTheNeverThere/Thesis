@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time as t
 from statsmodels.stats.multitest import multipletests
-from resources import GeneDependency, UnbiasedResidualsLinModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
+from resources import GeneDependency, DRInteractionPxModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
 
 
 
@@ -24,6 +24,9 @@ if __name__ == '__main__':
     samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
     vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz') #used for PCA computation
     ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz') #used for the interaction model class
+    drugRes = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz')
+    drugRes.data = drugRes.data.T
+
            
     # using only corum ppis that we were able to recall, with high confidence
     vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
@@ -37,6 +40,22 @@ if __name__ == '__main__':
 
     # pca, pcFactors = vaeProteomics.PCA(factorsName='PC', numPC=10)
 
+    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps)
+    start = t.time()
+    fit = dummy.fit(numOfCores = 38)
+    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz'
+    dummy.write()
+    print(f'fitting took {t.time() - start} seconds')
+
+
+    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall=False)
+    start = t.time()
+    fit = dummy.fit(numOfCores = 38)
+    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz'
+    dummy.write()
+    print(f'fitting took {t.time() - start} seconds')
+
+
     #Filter data to only include genes of interest
     geneDependency.filterGenes() #Default outputs 3468 genes has having at least 0.25 of samples with some statistical significance (pValue < 0.025)
     #Construct the interaction model
@@ -44,22 +63,24 @@ if __name__ == '__main__':
     #Fit the interaction model
     start = t.time()
     interactionModel.fit(numOfCores=38)
-    end = t.time()
-    print(f'Time to fit model: {end - start}')
     #Save the interaction model
     interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelSmall.pickle.gz'
     interactionModel.write()
+    end = t.time()
+    print(f'Time to fit model: {end - start}')
+
 
     #Construct another one with gene data as parte of the large model
     interactionModel = geneDependency.createInteractionModel(ppisOfInterest, ogProteomics, growthProps, isDrugResSmall=False)
     #Fit the interaction model
     start = t.time()
     interactionModel.fit(numOfCores=38)
-    end = t.time()
-    print(f'Time to fit model: {end - start}')
-    #Save the interaction model
     interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelLarge.pickle.gz'
     interactionModel.write()
+    end = t.time()
+    print(f'Time to fit model: {end - start}')
+
+
 
 
 

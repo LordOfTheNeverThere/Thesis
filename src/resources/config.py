@@ -96,3 +96,20 @@ TISSUEPALETTE = {
 
 pd.set_option('display.max_columns', 25)
 pd.set_option('display.max_rows', 50)
+
+
+# Logger config
+import logging
+import sys
+logging.basicConfig(filename='error.log', level=logging.ERROR, 
+                    format='%(asctime)s %(levelname)s %(name)s %(message)s')
+
+# Custom exception handler function
+def custom_excepthook(exc_type, exc_value, exc_traceback):
+    logging.error("Uncaught exception:", exc_info=(exc_type, exc_value, exc_traceback))
+
+# Set the custom exception handler
+sys.excepthook = custom_excepthook
+
+# Example code with intentional error
+result = 10 / 0  # This will raise a ZeroDivisionError

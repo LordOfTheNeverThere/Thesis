@@ -2179,7 +2179,13 @@ class DRInteractionPxModel(MatrixData):
         return self.resiCorrResults
     
     
-    def volcanoPlot(self, filepath:str, falseDiscoveryRate:float=0.01, pValHzLine:float = 0.001, extraFeatures:bool = False):
+    def volcanoPlot(
+            self, 
+            filepath:str, 
+            falseDiscoveryRate:float=0.01, 
+            pValHzLine:float = 0.001, 
+            extraFeatures:bool = False, 
+            diffCutOff:float=0):
         """Volcano plot in order to find statisticall relevant relationships.
 
         Args:
@@ -2190,8 +2196,12 @@ class DRInteractionPxModel(MatrixData):
         """        
         data = self.data.copy()
         data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
-        # Replace 0 p-values with the smallest possible value for so that log10 is defined
-        data.loc[:,('info','logLikePValue')] = data.loc[:,('info','logLikePValue')].apply(lambda x: x if x != 0 else 1e-323)
+        # Calculate the difference between large and small model's residuals in order to understand what X changes the model the most
+        if diffCutOff != 0:
+            data.loc[:,('info','residSqDiff')] = data.loc[:,('info','residSqLarge')] - data.loc[:,('info','residSqSmall')]
+            data = data.loc[abs(data[('info','residSqDiff')]) > diffCutOff]
+        # # Replace 0 p-values with the smallest possible value for so that log10 is defined
+        # data.loc[:,('info','logLikePValue')] = data.loc[:,('info','logLikePValue')].apply(lambda x: x if x != 0 else 1e-323)
         yValues = -np.log10(data['info']['logLikePValue'])
         xValues = data['effectSize']['interaction']
 
@@ -2297,7 +2307,6 @@ class DRInteractionPxModel(MatrixData):
                     huePath = filepath.split('.png')[0] + hueVar + '.png'
                     plt.savefig(huePath, bbox_inches="tight")
                     plt.close()
-
         
 
     def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0.98):
@@ -2323,7 +2332,16 @@ class DRInteractionPxModel(MatrixData):
             ppi = row['info']['Py'] + ';' + row['info']['Px']
             proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
 
-    def triangulate(self, volcanoXMin:float, volcanoXMax:float, volcanoYMin:float, volcanoYMax:float, scatter:int = 0, filepathMold:str|None='', interactive:bool = False)->pd.DataFrame:
+    def triangulate(
+            self, 
+            volcanoXMin:float,
+            volcanoXMax:float, 
+            volcanoYMin:float,
+            volcanoYMax:float,
+            scatter:int = 0,
+            filepathMold:str|None='',
+            interactive:bool = False,
+            diffCutOff:float = 0)->pd.DataFrame:
         """Triangulate the model results data according to the volcano plot thresholds
 
         Args:
@@ -2342,6 +2360,10 @@ class DRInteractionPxModel(MatrixData):
         data = self.data.copy()
         data = data.loc[(data['effectSize']['interaction'] >= volcanoXMin) & (data['effectSize']['interaction'] <= volcanoXMax)]
         data = data.loc[(-np.log10(data['info']['logLikePValue']) >= volcanoYMin) & (-np.log10(data['info']['logLikePValue']) <= volcanoYMax)]
+        if diffCutOff != 0:
+            data.loc[:,('info','residSqDiff')] = data.loc[:,('info','residSqLarge')] - data.loc[:,('info','residSqSmall')]
+            data = data.loc[abs(data[('info','residSqDiff')]) > diffCutOff]
+
         data = data.sort_values(by=[('info','logLikePValue')], ascending=[True])
 
         if interactive: #It will show the original dark plot, but it will allow the user to select a point, and scatter it with Drug Response as Color and Size
