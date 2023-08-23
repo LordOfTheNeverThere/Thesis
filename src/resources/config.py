@@ -111,5 +111,3 @@ def custom_excepthook(exc_type, exc_value, exc_traceback):
 # Set the custom exception handler
 sys.excepthook = custom_excepthook
 
-# Example code with intentional error
-result = 10 / 0  # This will raise a ZeroDivisionError
