@@ -173,7 +173,9 @@ Tasks:
             One where the high IC50 is the linear line and the low IC50 are cluster above -> Expected: beta_int < 0
             One where the high IC50 is the linear line and the low IC50 are cluster bellow -> Expected: beta_int > 0
        3. Write a table with +/- on the betas values, and betas from intercept, Px, Drug/gene, Interaction
-    4. Re-Select the trully essential genes, since it seems that the p-value and effect size is not a suficient metric since if we consider genes it atleast one sample < 0.01 (Professor set as most restrictive filtration) we will get most of the genes, so not a reliable way to filter
+    4. Redo the same Drug Interaction Model but now instead of using ppi that are in corum under a specific fdr in the proteomics matrix, use those ppi seen in string900 and biogrid, since corum is ribossome protein enriched which gives us a not so cool bias, since ribossomal complexes contain many proteins. But it is unlikely that they have a big role on cancer response to drugs.
+       1. Find a way to select just a few if there is a too large number.
+    5. Re-Select the trully essential genes, since it seems that the p-value and effect size is not a suficient metric since if we consider genes it atleast one sample < 0.01 (Professor set as most restrictive filtration) we will get most of the genes, so not a reliable way to filter
        1. Do a sort of minMax Scalling with the median of the NE and E (NonEssential and Essential, respectively) from the files the professor sent to google chat
           1. So per sample (??? ask if it is per sample or gene ???) we calculate the median of essential genes medianEss and the counterRespective medianNonEss, we then standardise for each value x in column ((x - medianNonEss) / (medianNonEss - medianEss))
              1. So 1std will be the difference in previousSTD / (medianNonEss - medianEss)
