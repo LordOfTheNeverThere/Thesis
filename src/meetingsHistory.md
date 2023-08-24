@@ -156,3 +156,33 @@ Tasks:
             IndexError: ACH-002847 not found in mappingFile
             IndexError: ACH-002922 not found in mappingFile
             IndexError: ACH-002926 not found in mappingFile
+
+
+    24/8/23
+    1. Regarding the hat on the Model that includes the drug on the Large Model we ought to remove it from fruther analyses if it ever arises again
+    2. Only work with the Large Model Model, that is Py ~ Px + M + Drug/Gene + Drug/Gene*Px, the volcano plot of the Small Model Model is strangely worse...
+    3. Do the Synthetic data examples that will help understand the DRInteraction Model:
+       1. Starting with Positevely correlated Proteins: beta_Px > 0
+          1. One where the low IC50 is the linear line and the high IC50 are cluster above -> Expected: beta_int > 0
+          2. One where the low IC50 is the linear line and the high IC50 are cluster bellow -> Expected: beta_int < 0
+          3. One where the high IC50 is the linear line and the low IC50 are cluster above -> Expected: beta_int < 0
+          4. One where the high IC50 is the linear line and the low IC50 are cluster bellow -> Expected: beta_int > 0
+       2. Repeat the same with Negatively Correlated Proteins: beta_Px < 0
+            One where the low IC50 is the linear line and the high IC50 are cluster above -> Expected: beta_int > 0 
+            One where the low IC50 is the linear line and the high IC50 are cluster bellow -> Expected: beta_int < 0
+            One where the high IC50 is the linear line and the low IC50 are cluster above -> Expected: beta_int < 0
+            One where the high IC50 is the linear line and the low IC50 are cluster bellow -> Expected: beta_int > 0
+       3. Write a table with +/- on the betas values, and betas from intercept, Px, Drug/gene, Interaction
+    4. Re-Select the trully essential genes, since it seems that the p-value and effect size is not a suficient metric since if we consider genes it atleast one sample < 0.01 (Professor set as most restrictive filtration) we will get most of the genes, so not a reliable way to filter
+       1. Do a sort of minMax Scalling with the median of the NE and E (NonEssential and Essential, respectively) from the files the professor sent to google chat
+          1. So per sample (??? ask if it is per sample or gene ???) we calculate the median of essential genes medianEss and the counterRespective medianNonEss, we then standardise for each value x in column ((x - medianNonEss) / (medianNonEss - medianEss))
+             1. So 1std will be the difference in previousSTD / (medianNonEss - medianEss)
+             2. So essential genes will have standardiseX < 0 since the greater the essentiality the less the log of fold change, since the fold change becomes a less and lesser ration, less cells survived after testing
+             3. And non essential genes constitue the postive numbers
+             4. If x = medianEss the transformedX = -1
+             5. transformedX is only 1 when the x =(2*medianNonEss - medianEss)
+          2. Then select genes that have at least one sample that is less than -0.5
+       2. After the first filtration we used the filtrated genes on the second filtration, using Fisher's Skewdness test
+          1. Aceepting only genes with skewness in distribution less than -2
+          2. We want genes wich are negatively skewed somewhat since that means that they have an handful of observayion where the log fold change is more negative than the majority of the remaining samples. So it is a gene that is non essential for most samples, but for a set of few is essential. These samples are of biological interest since we ought to understand what happens in those samples that makes the cell lines suscepitable to the loss of expression of that gene
+       3. The set of genes of this two step filtration should be of interest, since these metric are not purely imperical but have some biological and statistical sense into it, counter respective.
