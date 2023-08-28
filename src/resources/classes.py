@@ -2182,8 +2182,8 @@ class DRInteractionPxModel(MatrixData):
     def volcanoPlot(
             self, 
             filepath:str, 
-            falseDiscoveryRate:float=0.01, 
-            pValHzLine:float = 0.001, 
+            falseDiscoveryRate:float=0.001, 
+            pValHzLine:float = 0.01, 
             extraFeatures:bool = False, 
             diffCutOff:float=0):
         """Volcano plot in order to find statisticall relevant relationships.
@@ -2195,6 +2195,7 @@ class DRInteractionPxModel(MatrixData):
             extraFeatures (bool, optional): If True, will plot the volcano plot with extra features as hue. All in separare files. The features are: Number of samples in common between Px, Py and Drug, how much the PPI is tested, how large is the fdr penalty, the PPI. Defaults to False.
         """        
         data = self.data.copy()
+        # Filter data by false discovery rate
         data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
         # Calculate the difference between large and small model's residuals in order to understand what X changes the model the most
         if diffCutOff != 0:
@@ -2341,7 +2342,9 @@ class DRInteractionPxModel(MatrixData):
             scatter:int = 0,
             filepathMold:str|None='',
             interactive:bool = False,
-            diffCutOff:float = 0)->pd.DataFrame:
+            diffCutOff:float = 0,
+            falseDiscoveryRate:float = 0.01
+            )->pd.DataFrame:
         """Triangulate the model results data according to the volcano plot thresholds
 
         Args:
@@ -2358,6 +2361,9 @@ class DRInteractionPxModel(MatrixData):
             pd.DataFrame: Data according to the volcano plot thresholds
         """
         data = self.data.copy()
+            # Filter data by false discovery rate
+        data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
+
         data = data.loc[(data['effectSize']['interaction'] >= volcanoXMin) & (data['effectSize']['interaction'] <= volcanoXMax)]
         data = data.loc[(-np.log10(data['info']['logLikePValue']) >= volcanoYMin) & (-np.log10(data['info']['logLikePValue']) <= volcanoYMax)]
         if diffCutOff != 0:
