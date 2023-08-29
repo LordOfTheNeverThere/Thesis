@@ -3,6 +3,7 @@ import time as t
 import pandas as pd
 from statsmodels.stats.multitest import multipletests
 import numpy as np
+import matplotlib.pyplot as plt
 
 
         
@@ -17,15 +18,15 @@ if __name__ == '__main__':
     vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz') #used for PCA computation
     ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz') #used for the interaction model class
            
-    # # using only corum ppis that we were able to recall, with high confidence
-    # vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
-    # vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
-    # ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").index)
-    # ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
+    # using only corum ppis that we were able to recall, with high confidence
+    vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
+    vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
+    ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").index)
+    ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
 
-    # #Cofounding Factors, use The samplesheet's growth properties or the 10 PC of the vaeProteomics dataframe    
-    # growthProps = pd.get_dummies(samplesheet['growth_properties'])
-    # growthProps = growthProps.rename(columns={'Semi-Adherent': 'SemiAdherent'})
+    #Cofounding Factors, use The samplesheet's growth properties or the 10 PC of the vaeProteomics dataframe    
+    growthProps = pd.get_dummies(samplesheet['growth_properties'])
+    growthProps = growthProps.rename(columns={'Semi-Adherent': 'SemiAdherent'})
 
     # pca, pcFactors = vaeProteomics.PCA(factorsName='PC', numPC=10)
 
@@ -49,26 +50,18 @@ if __name__ == '__main__':
     # dummy.write()
     # print(f'fitting took {t.time() - start} seconds')
 
-    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes, pcFactors)
-    # start = t.time()
-    # fit = dummy.fit(numOfCores = 27)
-    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallPCARegressor.pickle.gz'
-    # dummy.write()
-    # print(f'fitting took {t.time() - start} seconds')
+    # Delete this 
+    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall = False)
+    start = t.time()
+    fit = dummy.fit(numOfCores = 38)
+    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz'
+    dummy.write()
+    print(f'fitting took {t.time() - start} seconds')
 
 
-    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')        
-    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmall.png', extraFeatures=False, diffCutOff=6) # 3579956 points
-    dummy.resiCorrResults    
-    #Largest difference in residuals correlation
-    dummy.resiCorrResults['Large-Small'] = dummy.resiCorrResults['residSqLarge'] - dummy.resiCorrResults['residSqSmall']
-    dummy.resiCorrResults.sort_values(by='Large-Small', ascending=False, inplace=True)
-    dummy.data = dummy.data.loc[dummy.data['info']['drug'] == '1165;THZ-2-98-01;GDSC1'].loc[dummy.data['info']['fdr'] < 0.01].sort_values(by=('info', 'fdr'), ascending=True)
-    dummy.volcanoPlot('test.png', extraFeatures=False) # 3579956 points
-    dummy.triangulate(0.06, 0.08, 0, 10, 1, interactive=True, diffCutOff=6)
-    dummy.data[('info', 'LargeResi-SmallResi')] = dummy.data[('info', 'residSqLarge')] - dummy.data[('info','residSqSmall')]
-
-
+    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')        
+    # dummy.data.loc[dummy.data['info']['Py'] =='MRPS30'].loc[dummy.data['info']['Px'] == 'MRPL41'].loc[dummy.data['info']['fdr'] < 0.01].sort_values(by=('info', 'fdr'), ascending=True)
+    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugLarge.png', extraFeatures=True) # 3579956 points
     # drugRes.data = drugRes.data.T
     # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes.data, topNumber=10)
 
@@ -88,7 +81,7 @@ if __name__ == '__main__':
     # drugLarge.write()
     # print('done')
 
-    drugSmallPCA:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallPCARegressor.pickle.gz')
-    start = t.time()
-    drugSmallPCA.resiCorr()
-    print(f'drugSmallPCA.resiCorr() took {t.time() - start} seconds')
+    # drugSmallPCA:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallPCARegressor.pickle.gz')
+    # start = t.time()
+    # drugSmallPCA.resiCorr()
+    # print(f'drugSmallPCA.resiCorr() took {t.time() - start} seconds')
