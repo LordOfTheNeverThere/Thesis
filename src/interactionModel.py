@@ -50,7 +50,6 @@ if __name__ == '__main__':
     # dummy.write()
     # print(f'fitting took {t.time() - start} seconds')
 
-    # Delete this 
     dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall = False)
     start = t.time()
     fit = dummy.fit(numOfCores = 38)

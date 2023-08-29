@@ -1953,8 +1953,10 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
             results[key] = results[key] + res2[key]
 
             
-    correctedPValues = multipletests(results[('info', 'logLikePValue')], method="fdr_bh")[1]
-    results[('info', 'fdr')] = list(correctedPValues)
+    correctedPValues = multipletests(results[('info', 'llrPValue')], method="fdr_bh")[1]
+    results[('info', 'fdrLLR')] = list(correctedPValues)
+    correctedPValues = multipletests(results[('info', 'extraSSPValue')], method="fdr_bh")[1]
+    results[('info', 'fdrExtraSS')] = list(correctedPValues)
 
     return results
 
@@ -2077,20 +2079,16 @@ class DRInteractionPxModel(MatrixData):
         samplesCommon = list(set.intersection(
             set(Py.index), set(Px.index), set(drugRes.index), set(M.index)
             ))# samples common to all dataframes
+        samplesCommon.sort()
         
         #number of samples in common, n
         n = len(samplesCommon)
 
-        print(Py)
-        print(Py.describe())
         #subset dataframes to common samples
         Py = Py.loc[samplesCommon]
         Px = Px.loc[samplesCommon]
         drugRes = drugRes.loc[samplesCommon]
         M = M.loc[samplesCommon]
-
-        print(Py)
-        print(Py.describe())
 
 
         
@@ -2147,8 +2145,8 @@ class DRInteractionPxModel(MatrixData):
         res[('info', 'Px')] = [XName]
         res[('info', 'drug')] = [drugName]
         res[('info', 'n')] = [n]
-        res[('info', 'logLikePValue')] = [LogLikeliRatioPVal]
-        res[('info', 'extraPValue')] = [extraPValue]
+        res[('info', 'llrPValue')] = [LogLikeliRatioPVal]
+        res[('info', 'extraSSPValue')] = [extraPValue]
         res[('info', 'llStatistic')] = [lr]
         res[('info', 'intercept')] = [lmLarge.intercept_]
         res[('info', 'residSqLarge')] = [lmLargeResidualsSq.sum()]
@@ -2164,7 +2162,7 @@ class DRInteractionPxModel(MatrixData):
 
         Returns:
             pd.DataFrame: The results of the fitting process, with the following columns: 
-                Py, Px, drug, n, intercept, PxBeta, adherentBeta, semiAdherentBeta, suspensionBeta, unknownBeta, drugResBeta, interactionBeta, logLikePValue, llStatistic
+                Py, Px, drug, n, intercept, PxBeta, adherentBeta, semiAdherentBeta, suspensionBeta, unknownBeta, drugResBeta, interactionBeta, llrPValue, llStatistic
         """        
 
         pararelList =  zip(repeat(self), self.ppis)
@@ -2246,8 +2244,8 @@ class DRInteractionPxModel(MatrixData):
             data.loc[:,('info','residSqDiff')] = data.loc[:,('info','residSqLarge')] - data.loc[:,('info','residSqSmall')]
             data = data.loc[abs(data[('info','residSqDiff')]) > diffCutOff]
         # # Replace 0 p-values with the smallest possible value for so that log10 is defined
-        # data.loc[:,('info','logLikePValue')] = data.loc[:,('info','logLikePValue')].apply(lambda x: x if x != 0 else 1e-323)
-        yValues = -np.log10(data['info']['logLikePValue'])
+        # data.loc[:,('info','llrPValue')] = data.loc[:,('info','llrPValue')].apply(lambda x: x if x != 0 else 1e-323)
+        yValues = -np.log10(data['info']['llrPValue'])
         xValues = data['effectSize']['interaction']
 
         # Matplotlib set main axis font size
@@ -2360,7 +2358,7 @@ class DRInteractionPxModel(MatrixData):
         data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
         betaThresh = data['effectSize']['interaction'].quantile(threhsQuantile) # define a beta threshold based on a quantile given by the use
         data = data.loc[abs(data['effectSize']['interaction']) > betaThresh] # subset data to only include betas above the threshold
-        data = data.sort_values(by=[('info','logLikePValue')], ascending=[True])
+        data = data.sort_values(by=[('info','llrPValue')], ascending=[True])
         #Selecting top
         top = data.iloc[0:topNumber,:]
         #reseting index
@@ -2368,7 +2366,7 @@ class DRInteractionPxModel(MatrixData):
         #iterate samples
         for index, row in top.iterrows():
 
-            pValue = row['info']['logLikePValue']
+            pValue = row['info']['llrPValue']
             effectSize = row['effectSize']['interaction']
             drug = row['info']['drug']
             anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
@@ -2409,16 +2407,16 @@ class DRInteractionPxModel(MatrixData):
         data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
 
         data = data.loc[(data['effectSize']['interaction'] >= volcanoXMin) & (data['effectSize']['interaction'] <= volcanoXMax)]
-        data = data.loc[(-np.log10(data['info']['logLikePValue']) >= volcanoYMin) & (-np.log10(data['info']['logLikePValue']) <= volcanoYMax)]
+        data = data.loc[(-np.log10(data['info']['llrPValue']) >= volcanoYMin) & (-np.log10(data['info']['llrPValue']) <= volcanoYMax)]
         if diffCutOff != 0:
             data.loc[:,('info','residSqDiff')] = data.loc[:,('info','residSqLarge')] - data.loc[:,('info','residSqSmall')]
             data = data.loc[abs(data[('info','residSqDiff')]) > diffCutOff]
 
-        data = data.sort_values(by=[('info','logLikePValue')], ascending=[True])
+        data = data.sort_values(by=[('info','llrPValue')], ascending=[True])
 
         if interactive: #It will show the original dark plot, but it will allow the user to select a point, and scatter it with Drug Response as Color and Size
             
-            yValues = -np.log10(data['info']['logLikePValue'])
+            yValues = -np.log10(data['info']['llrPValue'])
             xValues = data['effectSize']['interaction']
             
             fig = plt.figure(figsize=(60,60), dpi=300)
@@ -2499,7 +2497,7 @@ class DRInteractionPxModel(MatrixData):
         #iterate samples
         for index, row in top.iterrows():
 
-            pValue = row['info']['logLikePValue']
+            pValue = row['info']['llrPValue']
             effectSize = row['effectSize']['interaction']
             drug = row['info']['drug']
             anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
