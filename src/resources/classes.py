@@ -2039,7 +2039,7 @@ class DRInteractionPxModel(MatrixData):
 
         extraSumSquares = largeResidualsSqSum - smallResidualsSqSum
         statisticNumerator = extraSumSquares / q
-        statisticDenominator = smallResidualsSqSum / largeDF
+        statisticDenominator = largeResidualsSqSum / largeDF
 
         statistic = statisticNumerator / statisticDenominator
 
