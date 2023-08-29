@@ -57,6 +57,14 @@ if __name__ == '__main__':
     dummy.write()
     print(f'fitting took {t.time() - start} seconds')
 
+    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall = True)
+    start = t.time()
+    fit = dummy.fit(numOfCores = 38)
+    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz'
+    dummy.write()
+    print(f'fitting took {t.time() - start} seconds')
+
+
 
     # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')        
     # dummy.data.loc[dummy.data['info']['Py'] =='MRPS30'].loc[dummy.data['info']['Px'] == 'MRPL41'].loc[dummy.data['info']['fdr'] < 0.01].sort_values(by=('info', 'fdr'), ascending=True)
