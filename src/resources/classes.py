@@ -2088,6 +2088,9 @@ class DRInteractionPxModel(MatrixData):
         drugRes = drugRes.loc[samplesCommon]
         M = M.loc[samplesCommon]
 
+        print(Py)
+        print(Py.describe())
+
 
         
         if self.standardisePx: # Zscore Px if standardisePx is True
