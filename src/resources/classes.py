@@ -2081,7 +2081,8 @@ class DRInteractionPxModel(MatrixData):
         #number of samples in common, n
         n = len(samplesCommon)
 
-
+        print(Py)
+        print(Py.describe())
         #subset dataframes to common samples
         Py = Py.loc[samplesCommon]
         Px = Px.loc[samplesCommon]
