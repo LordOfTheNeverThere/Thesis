@@ -16,7 +16,7 @@ from statsmodels.stats.multitest import multipletests
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import normalize, QuantileTransformer, StandardScaler
-from scipy.stats import chi2, shapiro
+from scipy.stats import chi2, shapiro, f
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
@@ -2011,6 +2011,42 @@ class DRInteractionPxModel(MatrixData):
         llf = -nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) - nobs2
 
         return llf
+    @staticmethod
+    def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, largePredY:np.ndarray, smallPredY:np.ndarray):
+        """Calculates the extra sum of squares, given the number of covariates in the large and small models, the true Y values and the predicted Y values for both models
+
+        Args:
+            largeNumCov (int): Number of covariates in the large model
+            smallNumCov (int): Number of covariates in the small model
+            trueY (pd.Series): True Y values
+            largePredY (pd.Series): Predicted Y values of the large model
+            smallPredY (pd.Series): Predicted Y values of the small model
+
+        Returns:
+            float: Extra sum of squares pValue
+        """        
+        largeResiduals = trueY - largePredY
+        smallResiduals = trueY - smallPredY
+
+        largeResidualsSq = np.power(largeResiduals, 2)
+        smallResidualsSq = np.power(smallResiduals, 2)
+
+        largeResidualsSqSum = largeResidualsSq.sum()
+        smallResidualsSqSum = smallResidualsSq.sum()
+
+        q = largeNumCov - smallNumCov
+        largeDF = trueY.shape[0] - largeNumCov
+
+        extraSumSquares = largeResidualsSqSum - smallResidualsSqSum
+        statisticNumerator = extraSumSquares / q
+        statisticDenominator = smallResidualsSqSum / largeDF
+
+        statistic = statisticNumerator / statisticDenominator
+
+        pValue = 1 - f.cdf(statistic, q, largeDF)
+
+        return pValue
+
     
     def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, dict]:
         """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
@@ -2095,6 +2131,9 @@ class DRInteractionPxModel(MatrixData):
         lr = 2 * (lmLargeLogLike - lmSmallLogLike)
         LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
 
+        # Extra sum of squares test
+        extraPValue = self.extraSumSquares(xLarge.shape[1], M.shape[1], Py, lmLarge.predict(xLarge), lmSmall.predict(M))
+
         coefs = lmLarge.coef_
         columns = ['Px'] + self.M.columns.tolist() + ['drug'] + ['interaction']
         columns = [('effectSize', col) for col in columns]
@@ -2105,6 +2144,7 @@ class DRInteractionPxModel(MatrixData):
         res[('info', 'drug')] = [drugName]
         res[('info', 'n')] = [n]
         res[('info', 'logLikePValue')] = [LogLikeliRatioPVal]
+        res[('info', 'extraPValue')] = [extraPValue]
         res[('info', 'llStatistic')] = [lr]
         res[('info', 'intercept')] = [lmLarge.intercept_]
         res[('info', 'residSqLarge')] = [lmLargeResidualsSq.sum()]
