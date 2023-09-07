@@ -2013,9 +2013,12 @@ class DRInteractionPxModel(MatrixData):
         llf = -nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) - nobs2
 
         return llf
+    
+
     @staticmethod
     def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, largePredY:np.ndarray, smallPredY:np.ndarray):
-        """Calculates the extra sum of squares, given the number of covariates in the large and small models, the true Y values and the predicted Y values for both models
+        """Calculates the extra sum of squares, given the number of covariates in the large and small models, 
+        the true Y values and the predicted Y values for both models
 
         Args:
             largeNumCov (int): Number of covariates in the large model
@@ -2039,7 +2042,7 @@ class DRInteractionPxModel(MatrixData):
         q = largeNumCov - smallNumCov
         largeDF = trueY.shape[0] - largeNumCov
 
-        extraSumSquares = largeResidualsSqSum - smallResidualsSqSum
+        extraSumSquares = smallResidualsSqSum - largeResidualsSqSum 
         statisticNumerator = extraSumSquares / q
         statisticDenominator = largeResidualsSqSum / largeDF
 
@@ -2134,7 +2137,10 @@ class DRInteractionPxModel(MatrixData):
         LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
 
         # Extra sum of squares test
-        extraPValue = self.extraSumSquares(xLarge.shape[1], M.shape[1], Py, lmLarge.predict(xLarge), lmSmall.predict(M))
+        if self.fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
+            extraPValue = self.extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
+        else:    
+            extraPValue = self.extraSumSquares(xLarge.shape[1], M.shape[1], Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
 
         coefs = lmLarge.coef_
         columns = ['Px'] + self.M.columns.tolist() + ['drug'] + ['interaction']
@@ -2226,7 +2232,8 @@ class DRInteractionPxModel(MatrixData):
             filepath:str, 
             falseDiscoveryRate:float=0.001, 
             pValHzLine:float = 0.01, 
-            extraFeatures:bool = False, 
+            extraFeatures:bool = False,
+            useExtraSS:bool = False,
             diffCutOff:float=0):
         """Volcano plot in order to find statisticall relevant relationships.
 
@@ -2235,17 +2242,28 @@ class DRInteractionPxModel(MatrixData):
             falseDiscoveryRate (float, optional): The corrected p-value at which we start to acknowledge a relevant interaction, independently of how many times an hypothesis was tested . Defaults to 0.01.
             pValHzLine (float, optional): p-value line to draw on the plot, as a reference. Defaults to 0.001.
             extraFeatures (bool, optional): If True, will plot the volcano plot with extra features as hue. All in separare files. The features are: Number of samples in common between Px, Py and Drug, how much the PPI is tested, how large is the fdr penalty, the PPI. Defaults to False.
+            useExtraSS (bool, optional): If True, will use the extra sum of squares p-value instead of the log likelihood p-value. Defaults to False.
+            diffCutOff (float, optional): If not 0, will only plot the points that have a difference in the residuals of the large and small models larger than diffCutOff. Defaults to 0.
         """        
         data = self.data.copy()
+
         # Filter data by false discovery rate
-        data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
+        if useExtraSS:
+            data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
+        else:
+            data = data.loc[data['info']['fdrLLR'] < falseDiscoveryRate]
+
         # Calculate the difference between large and small model's residuals in order to understand what X changes the model the most
         if diffCutOff != 0:
             data.loc[:,('info','residSqDiff')] = data.loc[:,('info','residSqLarge')] - data.loc[:,('info','residSqSmall')]
             data = data.loc[abs(data[('info','residSqDiff')]) > diffCutOff]
         # # Replace 0 p-values with the smallest possible value for so that log10 is defined
         # data.loc[:,('info','llrPValue')] = data.loc[:,('info','llrPValue')].apply(lambda x: x if x != 0 else 1e-323)
-        yValues = -np.log10(data['info']['llrPValue'])
+        if useExtraSS:
+            yValues = -np.log10(data['info']['extraSSPValue'])
+        else:        
+            yValues = -np.log10(data['info']['llrPValue'])
+        
         xValues = data['effectSize']['interaction']
 
         # Matplotlib set main axis font size
