@@ -177,7 +177,7 @@ Tasks:
        1. Find a way to select just a few if there is a too large number.
     5. Re-Select the trully essential genes, since it seems that the p-value and effect size is not a suficient metric since if we consider genes it atleast one sample < 0.01 (Professor set as most restrictive filtration) we will get most of the genes, so not a reliable way to filter
        1. Do a sort of minMax Scalling with the median of the NE and E (NonEssential and Essential, respectively) from the files the professor sent to google chat
-          1. So per sample (??? ask if it is per sample or gene ???) we calculate the median of essential genes medianEss and the counterRespective medianNonEss, we then standardise for each value x in column ((x - medianNonEss) / (medianNonEss - medianEss))
+          1. So per sample we calculate the median of essential genes medianEss and the counterRespective medianNonEss, we then standardise for each value x in column ((x - medianNonEss) / (medianNonEss - medianEss))
              1. So 1std will be the difference in previousSTD / (medianNonEss - medianEss)
              2. So essential genes will have standardiseX < 0 since the greater the essentiality the less the log of fold change, since the fold change becomes a less and lesser ration, less cells survived after testing
              3. And non essential genes constitue the postive numbers
