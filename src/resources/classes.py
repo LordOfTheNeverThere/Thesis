@@ -1960,11 +1960,9 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
 
     return results
 
-def correctFDR(ppi:tuple, data:pd.DataFrame):
-    ppiData = data.query('(@data.Px == @ppi[0]  & @data.Py == @ppi[1]) | (@data.Px == @ppi[1] & @data.Py == @ppi[0] )').copy()
-    pValues = ppiData['extraSSPValue'].copy()
+def correctFDR(ppiData:pd.DataFrame):
+    pValues = ppiData['extraSSPValue']
     correctedPValues = multipletests(pValues, method="fdr_bh")[1]
-    
 
     return correctedPValues
 
@@ -2053,15 +2051,19 @@ class DRInteractionPxModel(MatrixData):
         #Calculate p-value according to F distribution
         pValue = 1 - f.cdf(statistic, q, largeDF)
         data['extraSSPValue'] = pValue
-
         print("Finnished Correcting the p-values")
+
         #Calculate fdr per ppi
-        pararelList =  zip(self.ppis, repeat(data))
+        ppiDataList = [data.query('(@data.Px == @ppi[0]  & @data.Py == @ppi[1]) | (@data.Px == @ppi[1] & @data.Py == @ppi[0] )') for ppi in self.ppis]
+        print(ppiDataList)
+        print(len(ppiDataList))
         start = t.time()
+
         with mp.Pool(numOfCores) as p:
-            results = p.starmap(correctFDR, pararelList)
+            results = p.map(correctFDR, ppiDataList)
 
         print(f"Time taken to correct fdr: {t.time() - start}")
+
         # convert results which is a list of lists to a single list
         results = [item for sublist in results for item in sublist]
         self.data.loc[('info','fdrExtraSS')] = results
