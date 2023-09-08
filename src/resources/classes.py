@@ -1953,7 +1953,8 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
 
     return results
 
-def correctFDR(ppiData:pd.DataFrame):
+def correctFDR(ppi:tuple, data:pd.DataFrame):
+    ppiData = data.query('(@data.Px == @ppi[0]  & @data.Py == @ppi[1]) | (@data.Px == @ppi[1] & @data.Py == @ppi[0] )').copy()
     pValues = ppiData['extraSSPValue']
     correctedPValues = multipletests(pValues, method="fdr_bh")[1]
 
@@ -2047,13 +2048,11 @@ class DRInteractionPxModel(MatrixData):
         print("Finnished Correcting the p-values")
 
         #Calculate fdr per ppi
-        ppiDataList = [data.query('(@data.Px == @ppi[0]  & @data.Py == @ppi[1]) | (@data.Px == @ppi[1] & @data.Py == @ppi[0] )') for ppi in self.ppis]
-        print(ppiDataList)
-        print(len(ppiDataList))
+        pararelList =  zip(self.ppis, repeat(data))
         start = t.time()
 
         with mp.Pool(numOfCores) as p:
-            results = p.map(correctFDR, ppiDataList)
+            results = p.starmap(correctFDR, pararelList)
 
         print(f"Time taken to correct fdr: {t.time() - start}")
 

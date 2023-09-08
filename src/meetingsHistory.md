@@ -188,4 +188,4 @@ Tasks:
           1. Aceepting only genes with skewness in distribution less than -2
           2. We want genes wich are negatively skewed somewhat since that means that they have an handful of observayion where the log fold change is more negative than the majority of the remaining samples. So it is a gene that is non essential for most samples, but for a set of few is essential. These samples are of biological interest since we ought to understand what happens in those samples that makes the cell lines suscepitable to the loss of expression of that gene
        3. The set of genes of this two step filtration should be of interest, since these metric are not purely imperical but have some biological and statistical sense into it, counter respective.
-    6. ~~Make scatterplot have first points of smallest Drug Response or Gene Dependency, by sorting as ascending the drug Response~~
+    6. ~~Make scatterplot have first points of smallest Drug Response or Gene Dependency, by sorting as ascending the drug Response.~~
