@@ -1219,6 +1219,11 @@ class GeneDependency(MatrixData):
         if not fdrDone:
             self.fdrCorrection()
     
+    def resetFilter(self):
+        """Resets the filter to include all genes
+        """        
+        self.genes = self.data.columns
+    
     def fdrCorrection(self)->None:
         """ Apply fdr correction to the pValues of the gene dependency matrix, for each gene
         """        
@@ -1305,35 +1310,20 @@ class GeneDependency(MatrixData):
 
         self.areIdsCorrected = True
 
-    def filterGenes(self, pValThresh:float = 0.025, presentRatioThresh:float = 0.25)->None:
-        """ Filter the genes in the gene dependency matrix, 
-        so that a gene must have a ratio of present values greater or equal to presentRatioThresh,
-        if we only consider samples for each gene that have a pValue less or equal to pValThresh
+    def filterGenes(self)->None:
+        """ 
 
 
         Args:
-            pValThresh (float): Significance level for gene effect size
-            presentRatioThresh (float): Ratio of samples that a gene must have with a p-value less than pValThres
+            
+            
         """
 
         pValues = self.pValues.copy()
         genesFiltered = set()
-        presentThresh = round(presentRatioThresh * pValues.shape[0])
-
-        for gene in pValues.columns:
-
-            geneData = pValues[gene]
-            geneData = geneData[geneData <= pValThresh]
-
-            
-            if geneData.shape[0] >= presentThresh:
-                
-                genesFiltered.add(gene)
         
-        self.genes = genesFiltered
-        print(f"Number of genes after filtration: {len(genesFiltered)}")
-        self.pValThresh = pValThresh
-        self.presentRatioThresh = presentRatioThresh
+        #TODO: The Both filtering Mechanisms
+        
 
     def createInteractionModel(
             self, 
@@ -2597,5 +2587,3 @@ class DRInteractionPxModel(MatrixData):
     
         
 
-
-    
