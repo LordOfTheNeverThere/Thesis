@@ -766,21 +766,24 @@ class ProteinsMatrix(MatrixData):
 
         plt.close()
 
-    def plotPxPyDrugContinous(self, drug:str, ppi:str, drugResponse: DrugResponseMatrix, filepath:str|None, **annotationArgs):
-        """Scatter Plot with the protein expression of two proteins and the drug response of a drug, in a continous manner, unlike plotPxPyDrug.
-        Additionally, the plot can be annotated with the arguments passed to the function. And the Drug Response will be represented with a colorbar and
-        and an overlaying Kernel Distribution Estimation.
+    def plotPxPy3DimContinous(self, interactionName:str, ppi:str, interactor: pd.DataFrame, typeOfInteraction:str, filepath:str|None, **annotationArgs):
+        """Scatter Plot with the protein expression of two proteins and the interactor data as third dim, in a continous manner, unlike plotPxPyDrug.
+        Additionally, the plot can be annotated with the arguments passed to the function. And the Interaction data will be represented with a colorbar and
+        and an overlaying Kernel Distribution Estimation, and with size.
 
         Args:
-            drug (str): name of the drug
+            interactionName (str): name of the interaction present in the interactor Dataframe
             ppi (str): Protein-Protein Interaction (Px;Py)
-            drugResponse (DrugResponseMatrix): Drug Response Matrix
+            interactor (pd.DataFrame): Dataframe that represents the third dim, should have samples as index and interactions as columns
+            typeOfInteraction (str): Type of interaction, can be 'drug response' or 'gene essentiality'
             filepath (str): filepath to save the plot
         """
-        drugResponse = drugResponse.data.T # The drug response matrix is binarised
-        samplesCommon = self.data.index.intersection(drugResponse.index) # We only want to plot the samples that are in both matrices
+        samplesCommon = self.data.index.intersection(interactor.index) # We only want to plot the samples that are in both matrices
         assert len(samplesCommon) > 0, 'There are no samples in common between the protein data and the drug response data'
-        drugResponse = drugResponse.loc[samplesCommon, drug]
+        interactor = interactor.loc[samplesCommon, [interactionName]]
+        # sort drug response so that the smallest shows up first, ascending==True
+        interactor = interactor.sort_values(interactionName, ascending=False)
+        samplesCommon = interactor.index
         proteinData = self.data.loc[samplesCommon, :]
 
         if len(ppi.split('-')) > 0:
@@ -792,14 +795,14 @@ class ProteinsMatrix(MatrixData):
         #standardize the data 
         plottingData = pd.DataFrame(StandardScaler().fit_transform(plottingData) ,columns=plottingData.columns, index=plottingData.index)
 
-        #Add Drugresponse
-        plottingData = plottingData.join(drugResponse, how = 'inner')
+        #Add interactor
+        plottingData = plottingData.join(interactor, how = 'inner')
         print(plottingData)
 
 
         plt.figure(figsize=(10, 10))
-        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=drug, size=drug, palette="viridis", alpha=1, edgecolor='none', s=15)
-        norm = matplotlib.colors.Normalize(vmin=drugResponse.min(), vmax=drugResponse.max())
+        scatter = sns.scatterplot(data=plottingData, x=pxName, y=pyName, hue=interactionName, size=interactionName, palette="viridis", alpha=1, edgecolor='none', s=15)
+        norm = matplotlib.colors.Normalize(vmin=interactor.min(), vmax=interactor.max())
         # Add Colour Map
         sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
         sm.set_array([])
@@ -2440,7 +2443,7 @@ class DRInteractionPxModel(MatrixData):
             anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
             filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
             ppi = row['info']['Py'] + ';' + row['info']['Px']
-            proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, filepath, **anotation)
 
     def triangulate(
             self, 
@@ -2574,7 +2577,7 @@ class DRInteractionPxModel(MatrixData):
             else:
                 filepath = None
             ppi = row['info']['Py'] + ';' + row['info']['Px']
-            proteomics.plotPxPyDrugContinous(drug, ppi, drugRes, filepath, **anotation)
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, filepath, **anotation)
 
 
 
