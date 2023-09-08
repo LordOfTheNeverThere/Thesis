@@ -1954,8 +1954,7 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
     return results
 
 def correctFDR(ppi:tuple, data:pd.DataFrame):
-    ppiData = data.query('(@data.Px == @ppi[0]  & @data.Py == @ppi[1]) | (@data.Px == @ppi[1] & @data.Py == @ppi[0] )').copy()
-    pValues = ppiData['extraSSPValue']
+    pValues = data.query('(@data.Px == @ppi[0]  & @data.Py == @ppi[1]) | (@data.Px == @ppi[1] & @data.Py == @ppi[0] )').loc['extraSSPValue']
     correctedPValues = multipletests(pValues, method="fdr_bh")[1]
 
     return correctedPValues
