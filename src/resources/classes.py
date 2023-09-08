@@ -1964,10 +1964,9 @@ def correctFDR(ppi:tuple, data:pd.DataFrame):
     ppiData = data.query('(@data.Px == @ppi[0]  & @data.Py == @ppi[1]) | (@data.Px == @ppi[1] & @data.Py == @ppi[0] )').copy()
     pValues = ppiData['extraSSPValue'].copy()
     correctedPValues = multipletests(pValues, method="fdr_bh")[1]
-    ppiData.loc[:,'fdrExtraSS'] = correctedPValues
     
 
-    return ppiData
+    return correctedPValues
 
 
 
@@ -2063,10 +2062,9 @@ class DRInteractionPxModel(MatrixData):
             results = p.starmap(correctFDR, pararelList)
 
         print(f"Time taken to correct fdr: {t.time() - start}")
-        results = pd.concat(results, axis=0)
-        newDataframe = pd.DataFrame(results, columns=data.columns)
-        self.data['info'] = newDataframe
-        print(self.data)
+        # convert results which is a list of lists to a single list
+        results = [item for sublist in results for item in sublist]
+        self.data.loc[('info','fdrExtraSS')] = results
         print("Finnished Correcting the fdr")
 
 
