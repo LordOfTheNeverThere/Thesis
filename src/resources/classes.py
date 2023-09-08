@@ -1954,7 +1954,7 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
     return results
 
 def correctFDR(ppi:tuple, data:pd.DataFrame):
-    pValues = data.query('(@data.Px == @ppi[0]  & @data.Py == @ppi[1]) | (@data.Px == @ppi[1] & @data.Py == @ppi[0] )').loc['extraSSPValue']
+    pValues = data.query('(@data.Px == @ppi[0]  & @data.Py == @ppi[1]) | (@data.Px == @ppi[1] & @data.Py == @ppi[0] )')['extraSSPValue']
     correctedPValues = multipletests(pValues, method="fdr_bh")[1]
 
     return correctedPValues
@@ -2018,39 +2018,38 @@ class DRInteractionPxModel(MatrixData):
         """Corrects the Extra Sum of Squares p-value and fdr in self.data 
         by using the Sum Squared Resiudals of the small model and the large model, 
         the number of samples and the number of covariates in the large and small models
-        """        
+        """ 
+        with mp.Pool(numOfCores) as p: #We only initialize all the relevant variables in the child processes once
 
-        data = self.data['info'].copy()
-        smallModelSSE = data['residSqSmall']
-        largeModelSSE = data['residSqLarge']
-        largeModelNumCov = 1 + self.lenM + 1 + 1 # 1 for drug response, lenM for M, 1 for Px, 1 for Px:drugResponse
-        if self.isDrugResSmall:
-            smallModelNumCov = 1 + self.lenM + 1 # 1 for drug response, lenM for M, 1 for Px
-        else:
-            smallModelNumCov = self.lenM + 1 # lenM for M, 1 for Px
-        
-        if self.fitIntercept: # The num of params estimated increases by one if we calculate the intercept
-            largeModelNumCov += 1
-            smallModelNumCov += 1
-        
-        statistic = smallModelSSE - largeModelSSE
-        q = largeModelNumCov - smallModelNumCov
-        n = self.data[('info', 'n')]
-        largeDF = n - largeModelNumCov
-        statisticNumerator = statistic / q
-        statisticDenominator = largeModelSSE / largeDF
-        statistic = statisticNumerator / statisticDenominator
+            data = self.data['info'].copy()
+            smallModelSSE = data['residSqSmall']
+            largeModelSSE = data['residSqLarge']
+            largeModelNumCov = 1 + self.lenM + 1 + 1 # 1 for drug response, lenM for M, 1 for Px, 1 for Px:drugResponse
+            if self.isDrugResSmall:
+                smallModelNumCov = 1 + self.lenM + 1 # 1 for drug response, lenM for M, 1 for Px
+            else:
+                smallModelNumCov = self.lenM + 1 # lenM for M, 1 for Px
+            
+            if self.fitIntercept: # The num of params estimated increases by one if we calculate the intercept
+                largeModelNumCov += 1
+                smallModelNumCov += 1
+            
+            statistic = smallModelSSE - largeModelSSE
+            q = largeModelNumCov - smallModelNumCov
+            n = self.data[('info', 'n')]
+            largeDF = n - largeModelNumCov
+            statisticNumerator = statistic / q
+            statisticDenominator = largeModelSSE / largeDF
+            statistic = statisticNumerator / statisticDenominator
 
-        #Calculate p-value according to F distribution
-        pValue = 1 - f.cdf(statistic, q, largeDF)
-        data['extraSSPValue'] = pValue
-        print("Finnished Correcting the p-values")
+            #Calculate p-value according to F distribution
+            pValue = 1 - f.cdf(statistic, q, largeDF)
+            self.data.loc[:,('info','extraSSPValue')] = pValue
+            print("Finnished Correcting the p-values")
 
-        #Calculate fdr per ppi
-        pararelList =  zip(self.ppis, repeat(data))
-        start = t.time()
-
-        with mp.Pool(numOfCores) as p:
+            #Calculate fdr per ppi
+            pararelList =  zip(self.ppis, repeat(data))
+            start = t.time()
             results = p.starmap(correctFDR, pararelList)
 
         print(f"Time taken to correct fdr: {t.time() - start}")
