@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     
     dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
-    dummy.correctExtraSumSquares(numOfCores=28)
+    dummy.correctExtraSumSquares(numOfCores=20)
     dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/test.pickle.gz'
     dummy.write()
     # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugLargeExtraSS.png', extraFeatures=False, useExtraSS=True) # 3579956 points
