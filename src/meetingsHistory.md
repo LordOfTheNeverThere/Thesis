@@ -179,7 +179,7 @@ Tasks:
        1. Do a sort of minMax Scalling with the median of the NE and E (NonEssential and Essential, respectively) from the files the professor sent to google chat
           1. So per sample we calculate the median of essential genes medianEss and the counterRespective medianNonEss, we then standardise for each value x in column ((x - medianNonEss) / (medianNonEss - medianEss))
              1. So 1std will be the difference in previousSTD / (medianNonEss - medianEss)
-             2. So essential genes will have standardiseX < 0 since the greater the essentiality the less the log of fold change, since the fold change becomes a less and lesser ration, less cells survived after testing
+             2. So essential genes will have standardiseX < 0 since the greater the essentiality the less the log of fold change, since the fold change becomes a less and lesser ratio, less cells survived after testing. Remenber that log fold change is log(Final/Initial)
              3. And non essential genes constitue the postive numbers
              4. If x = medianEss the transformedX = -1
              5. transformedX is only 1 when the x =(2*medianNonEss - medianEss)
