@@ -1313,7 +1313,7 @@ class GeneDependency(MatrixData):
 
         self.areIdsCorrected = True
 
-    def scale(self)->pd.DataFrame:
+    def scaleGenes(self)->pd.DataFrame:
         """ 
         Scale the gene dependency data, 
         with geneDependencyData = (geneDependencyData - median(nonEssentialGenes)) / (median(nonEssentialGenes) - median(essentialGenes))
@@ -1341,8 +1341,8 @@ class GeneDependency(MatrixData):
         return data
 
     def filterGenes(self):
-        pass
-        #TODO: join the two methods of filtering, the median scalling and the skewdness test
+        
+        #
         
         
 
