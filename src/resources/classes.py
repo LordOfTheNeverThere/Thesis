@@ -1953,13 +1953,6 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
 
     return results
 
-def correctFDR(ppi:tuple, data:pd.DataFrame):
-    pValues = data.query('(@data.Px == @ppi[0]  & @data.Py == @ppi[1]) | (@data.Px == @ppi[1] & @data.Py == @ppi[0] )')['extraSSPValue']
-    correctedPValues = multipletests(pValues, method="fdr_bh")[1]
-
-    return correctedPValues
-
-
 
 class DRInteractionPxModel(MatrixData):
     """Linear Model Designed to find interactions between drug response and proteomics data, so the goal is to see what Drug Responses are impacted by a certain ppi (pY, pX)
@@ -2013,56 +2006,6 @@ class DRInteractionPxModel(MatrixData):
         llf = -nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) - nobs2
 
         return llf
-
-    def correctExtraSumSquares(self, numOfCores:int = CPUS):
-        """Corrects the Extra Sum of Squares p-value and fdr in self.data 
-        by using the Sum Squared Resiudals of the small model and the large model, 
-        the number of samples and the number of covariates in the large and small models
-        """ 
-        with mp.Pool(numOfCores) as p: #We only initialize all the relevant variables in the child processes once
-
-            data = self.data['info'].copy()
-            smallModelSSE = data['residSqSmall']
-            largeModelSSE = data['residSqLarge']
-            largeModelNumCov = 1 + self.lenM + 1 + 1 # 1 for drug response, lenM for M, 1 for Px, 1 for Px:drugResponse
-            if self.isDrugResSmall:
-                smallModelNumCov = 1 + self.lenM + 1 # 1 for drug response, lenM for M, 1 for Px
-            else:
-                smallModelNumCov = self.lenM + 1 # lenM for M, 1 for Px
-            
-            if self.fitIntercept: # The num of params estimated increases by one if we calculate the intercept
-                largeModelNumCov += 1
-                smallModelNumCov += 1
-            
-            statistic = smallModelSSE - largeModelSSE
-            q = largeModelNumCov - smallModelNumCov
-            n = self.data[('info', 'n')]
-            largeDF = n - largeModelNumCov
-            statisticNumerator = statistic / q
-            statisticDenominator = largeModelSSE / largeDF
-            statistic = statisticNumerator / statisticDenominator
-
-            #Calculate p-value according to F distribution
-            pValue = 1 - f.cdf(statistic, q, largeDF)
-            self.data.loc[:,('info','extraSSPValue')] = pValue
-            print("Finnished Correcting the p-values")
-
-            #Calculate fdr per ppi
-            pararelList =  zip(self.ppis, repeat(data))
-            start = t.time()
-            results = p.starmap(correctFDR, pararelList)
-
-        print(f"Time taken to correct fdr: {t.time() - start}")
-
-        # convert results which is a list of lists to a single list
-        results = [item for sublist in results for item in sublist]
-        self.data.loc[('info','fdrExtraSS')] = results
-        print("Finnished Correcting the fdr")
-
-
-
-
-
 
     @staticmethod
     def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, largePredY:np.ndarray, smallPredY:np.ndarray):
