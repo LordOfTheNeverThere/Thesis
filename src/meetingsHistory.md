@@ -177,13 +177,13 @@ Tasks:
        1. Find a way to select just a few if there is a too large number.
     5. Re-Select the trully essential genes, since it seems that the p-value and effect size is not a suficient metric since if we consider genes it atleast one sample < 0.01 (Professor set as most restrictive filtration) we will get most of the genes, so not a reliable way to filter
        1. Do a sort of minMax Scalling with the median of the NE and E (NonEssential and Essential, respectively) from the files the professor sent to google chat
-          1. So per sample we calculate the median of essential genes medianEss and the counterRespective medianNonEss, we then standardise for each value x in column ((x - medianNonEss) / (medianNonEss - medianEss))
+          1. ~~So per sample we calculate the median of essential genes medianEss and the counterRespective medianNonEss, we then standardise for each value x in column ((x - medianNonEss) / (medianNonEss - medianEss))~~
              1. So 1std will be the difference in previousSTD / (medianNonEss - medianEss)
              2. So essential genes will have standardiseX < 0 since the greater the essentiality the less the log of fold change, since the fold change becomes a less and lesser ratio, less cells survived after testing. Remenber that log fold change is log(Final/Initial)
              3. And non essential genes constitue the postive numbers
              4. If x = medianEss the transformedX = -1
              5. transformedX is only 1 when the x =(2*medianNonEss - medianEss)
-          2. Then select genes that have at least one sample that is less than -0.5
+          2. Then select genes that have at least one sample that is less than -0.5, or any other value so that we have only genes which are heterogenous in essentiality in at least one sample
        2. After the first filtration we used the filtrated genes on the second filtration, using Fisher's Skewdness test
           1. Aceepting only genes with skewness in distribution less than -2
           2. We want genes wich are negatively skewed somewhat since that means that they have an handful of observayion where the log fold change is more negative than the majority of the remaining samples. So it is a gene that is non essential for most samples, but for a set of few is essential. These samples are of biological interest since we ought to understand what happens in those samples that makes the cell lines suscepitable to the loss of expression of that gene

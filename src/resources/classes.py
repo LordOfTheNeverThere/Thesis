@@ -1313,19 +1313,37 @@ class GeneDependency(MatrixData):
 
         self.areIdsCorrected = True
 
-    def filterGenes(self)->None:
+    def scale(self)->pd.DataFrame:
         """ 
-
-
-        Args:
-            
-            
+        Scale the gene dependency data, 
+        with geneDependencyData = (geneDependencyData - median(nonEssentialGenes)) / (median(nonEssentialGenes) - median(essentialGenes))
+        So that the median of the nonEssentialGenes is 0, and the median of the essential genes is -1, so the more negative the value, 
+        the more essential the gene is. The more positive the value, the more non essential the gene is.
+        
         """
 
-        pValues = self.pValues.copy()
-        genesFiltered = set()
+        data = self.data.copy()
+        setOfEssentialGenes = set(pd.read_csv(PATH + '/external/achillesCommonEssentialControls.csv', index_col=0).index)
+        setOfNonEssentialGenes = set(pd.read_csv(PATH + '/external/achillesNonessentialControls.csv', index_col=0).index)
+        def scale(sample:pd.Series)->pd.Series:
+
+            essentialGenes = sample.loc[[setOfEssentialGenes]]
+            nonEssentialGenes = sample.loc[[setOfNonEssentialGenes]]
+            essentialMedian = essentialGenes.median()
+            nonEssentialMedian = nonEssentialGenes.median()
+            sample = sample.apply(lambda x: (x - nonEssentialMedian) / (nonEssentialMedian - essentialMedian))
+
+            return sample
         
-        #TODO: The Both filtering Mechanisms
+        data = data.apply(scale, axis=0)
+        self.scalledData = data
+
+        return data
+
+    def filterGenes(self):
+        pass
+        #TODO: join the two methods of filtering, the median scalling and the skewdness test
+        
         
 
     def createInteractionModel(
