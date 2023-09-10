@@ -2073,9 +2073,43 @@ class DRInteractionPxModel(MatrixData):
 
         statistic = statisticNumerator / statisticDenominator
 
-        pValue = 1 - f.cdf(statistic, q, largeDF)
+        pValue = f.sf(statistic, q, largeDF)
 
         return pValue
+    
+    def correctExtraSS(self):
+            
+        data = self.data['info'].copy()
+        smallModelSSE = data['residSqSmall']
+        largeModelSSE = data['residSqLarge']
+        largeModelNumCov = 1 + self.lenM + 1 + 1 # 1 for drug response, lenM for M, 1 for Px, 1 for Px:drugResponse
+        if self.isDrugResSmall:
+            smallModelNumCov = 1 + self.lenM + 1 # 1 for drug response, lenM for M, 1 for Px
+        else:
+            smallModelNumCov = self.lenM + 1 # lenM for M, 1 for Px
+        
+        if self.fitIntercept: # The num of params estimated increases by one if we calculate the intercept
+            largeModelNumCov += 1
+            smallModelNumCov += 1
+        
+        statistic = smallModelSSE - largeModelSSE
+        q = largeModelNumCov - smallModelNumCov
+        n = self.data[('info', 'n')]
+        largeDF = n - largeModelNumCov
+        statisticNumerator = statistic / q
+        statisticDenominator = largeModelSSE / largeDF
+        statistic = statisticNumerator / statisticDenominator
+        previousPValue = data['extraSSPValue']
+        #Calculate p-value according to F distribution
+        pValue = f.sf(statistic, q, largeDF)
+        self.data.loc[:,('info','extraSSPValue')] = pValue
+        #difference in change of the pValues
+        pValueDiff = pValue - previousPValue
+        
+        print("Finnished Correcting the p-values")
+
+        return pValueDiff
+
 
     
     def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, dict]:
@@ -2308,8 +2342,8 @@ class DRInteractionPxModel(MatrixData):
         plt.figure(figsize=(20, 20), dpi=300)
         # Plot
         ax = sns.scatterplot(
-            x=xValues,
-            y=yValues,
+            x=xValues.values,
+            y=yValues.values,
             color="k",
             s=15,
             alpha=0.8,
