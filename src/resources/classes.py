@@ -16,7 +16,7 @@ from statsmodels.stats.multitest import multipletests
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import normalize, QuantileTransformer, StandardScaler
-from scipy.stats import chi2, shapiro, f
+from scipy.stats import chi2, shapiro, f, skew
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
@@ -1313,7 +1313,7 @@ class GeneDependency(MatrixData):
 
         self.areIdsCorrected = True
 
-    def scaleGenes(self)->pd.DataFrame:
+    def scaleSamples(self)->pd.DataFrame:
         """ 
         Scale the gene dependency data, 
         with geneDependencyData = (geneDependencyData - median(nonEssentialGenes)) / (median(nonEssentialGenes) - median(essentialGenes))
@@ -1323,26 +1323,41 @@ class GeneDependency(MatrixData):
         """
 
         data = self.data.copy()
-        setOfEssentialGenes = set(pd.read_csv(PATH + '/external/achillesCommonEssentialControls.csv', index_col=0).index)
-        setOfNonEssentialGenes = set(pd.read_csv(PATH + '/external/achillesNonessentialControls.csv', index_col=0).index)
+        
         def scale(sample:pd.Series)->pd.Series:
-
-            essentialGenes = sample.loc[[setOfEssentialGenes]]
-            nonEssentialGenes = sample.loc[[setOfNonEssentialGenes]]
+            setOfEssentialGenes = set(pd.read_csv(PATH + '/external/achillesCommonEssentialControls.csv', index_col=0).index)
+            setOfNonEssentialGenes = set(pd.read_csv(PATH + '/external/achillesNonessentialControls.csv', index_col=0).index)
+            #Only use genes which are present in the sample
+            setOfEssentialGenes = list(set.intersection(set(sample.index), setOfEssentialGenes))
+            setOfNonEssentialGenes = list(set.intersection(set(sample.index), setOfNonEssentialGenes))
+            essentialGenes = sample.loc[setOfEssentialGenes]
+            nonEssentialGenes = sample.loc[setOfNonEssentialGenes]
             essentialMedian = essentialGenes.median()
             nonEssentialMedian = nonEssentialGenes.median()
             sample = sample.apply(lambda x: (x - nonEssentialMedian) / (nonEssentialMedian - essentialMedian))
 
             return sample
         
-        data = data.apply(scale, axis=0)
-        self.scalledData = data
+        data = data.apply(scale, axis=1)
 
         return data
 
-    def filterGenes(self):
+    def filterGenes(self, skewThresh:float = -1.25, medianScallingThresh:float =-0.5):
         
-        #
+        #get median filtered gene dependency data, all samples are equivalente
+        data = self.scaleSamples()
+        print(f"Finnished scaling samples per median of essential and non essential set of genes and selecting only genes with at least one sample of value less than {medianScallingThresh}")
+        genesOfInterest = data.columns[(data < medianScallingThresh).any()]
+        print(f"From all the gene data of shape {data.shape[1]}, from the first filtration the set of genes is of size {len(genesOfInterest)}")
+        data = data.loc[:, genesOfInterest]
+        skewResults = skew(data, axis=0, nan_policy='omit').reshape(1, -1)
+        skewResults = pd.DataFrame(skewResults, columns=data.columns)
+        genesOfInterest = data.columns[(skewResults < skewThresh).any()]
+        print(f"From all the gene data of shape {data.shape[1]}, from the second filtration the set of genes is of size {len(genesOfInterest)}")
+        
+        self.genes = genesOfInterest
+
+
         
         
 

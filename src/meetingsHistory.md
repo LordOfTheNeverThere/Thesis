@@ -158,34 +158,43 @@ Tasks:
             IndexError: ACH-002926 not found in mappingFile
 
 
-    24/8/23
+24/8/23
     1. Regarding the hat on the Model that includes the drug on the Large Model we ought to remove it from fruther analyses if it ever arises again
     2. Only work with the Large Model Model, that is Py ~ Px + M + Drug/Gene + Drug/Gene*Px, the volcano plot of the Small Model Model is strangely worse...
     3. Do the Synthetic data examples that will help understand the DRInteraction Model:
-       1. Starting with Positevely correlated Proteins: beta_Px > 0
+        1. Starting with Positevely correlated Proteins: beta_Px > 0
           1. One where the low IC50 is the linear line and the high IC50 are cluster above -> Expected: beta_int > 0
           2. One where the low IC50 is the linear line and the high IC50 are cluster bellow -> Expected: beta_int < 0
           3. One where the high IC50 is the linear line and the low IC50 are cluster above -> Expected: beta_int < 0
           4. One where the high IC50 is the linear line and the low IC50 are cluster bellow -> Expected: beta_int > 0
-       2. Repeat the same with Negatively Correlated Proteins: beta_Px < 0
+        2. Repeat the same with Negatively Correlated Proteins: beta_Px < 0
             One where the low IC50 is the linear line and the high IC50 are cluster above -> Expected: beta_int > 0 
             One where the low IC50 is the linear line and the high IC50 are cluster bellow -> Expected: beta_int < 0
             One where the high IC50 is the linear line and the low IC50 are cluster above -> Expected: beta_int < 0
             One where the high IC50 is the linear line and the low IC50 are cluster bellow -> Expected: beta_int > 0
-       3. Write a table with +/- on the betas values, and betas from intercept, Px, Drug/gene, Interaction
+        3. Write a table with +/- on the betas values, and betas from intercept, Px, Drug/gene, Interaction
     4. Redo the same Drug Interaction Model but now instead of using ppi that are in corum under a specific fdr in the proteomics matrix, use those ppi seen in string900 and biogrid, since corum is ribossome protein enriched which gives us a not so cool bias, since ribossomal complexes contain many proteins. But it is unlikely that they have a big role on cancer response to drugs.
        1. Find a way to select just a few if there is a too large number.
-    5. Re-Select the trully essential genes, since it seems that the p-value and effect size is not a suficient metric since if we consider genes it atleast one sample < 0.01 (Professor set as most restrictive filtration) we will get most of the genes, so not a reliable way to filter
-       1. Do a sort of minMax Scalling with the median of the NE and E (NonEssential and Essential, respectively) from the files the professor sent to google chat
+    5. ~~Re-Select the trully essential genes, since it seems that the p-value and effect size is not a suficient metric since if we consider genes it atleast one sample < 0.01 (Professor set as most restrictive filtration) we will get most of the genes, so not a reliable way to filter~~
+       1. ~~Do a sort of minMax Scalling with the median of the NE and E (NonEssential and Essential, respectively) from the files the professor sent to google chat~~
           1. ~~So per sample we calculate the median of essential genes medianEss and the counterRespective medianNonEss, we then standardise for each value x in column ((x - medianNonEss) / (medianNonEss - medianEss))~~
              1. So 1std will be the difference in previousSTD / (medianNonEss - medianEss)
              2. So essential genes will have standardiseX < 0 since the greater the essentiality the less the log of fold change, since the fold change becomes a less and lesser ratio, less cells survived after testing. Remenber that log fold change is log(Final/Initial)
              3. And non essential genes constitue the postive numbers
              4. If x = medianEss the transformedX = -1
              5. transformedX is only 1 when the x =(2*medianNonEss - medianEss)
-          2. Then select genes that have at least one sample that is less than -0.5, or any other value so that we have only genes which are heterogenous in essentiality in at least one sample
-       2. After the first filtration we used the filtrated genes on the second filtration, using Fisher's Skewdness test
+          2. ~~Then select genes that have at least one sample that is less than -0.5, or any other value so that we have only genes which are heterogenous in essentiality in at least one sample~~
+       2. ~~After the first filtration we used the filtrated genes on the second filtration, using Fisher's Skewdness test~~
           1. Aceepting only genes with skewness in distribution less than -2
           2. We want genes wich are negatively skewed somewhat since that means that they have an handful of observayion where the log fold change is more negative than the majority of the remaining samples. So it is a gene that is non essential for most samples, but for a set of few is essential. These samples are of biological interest since we ought to understand what happens in those samples that makes the cell lines suscepitable to the loss of expression of that gene
        3. The set of genes of this two step filtration should be of interest, since these metric are not purely imperical but have some biological and statistical sense into it, counter respective.
     6. ~~Make scatterplot have first points of smallest Drug Response or Gene Dependency, by sorting as ascending the drug Response.~~
+
+
+Findings:
+    1. By filtering the gene set in the gene dependency problem, If after the median scalling per sample ((x - medianNonEss) / (medianNonEss - medianEss)), making all samples comparable since they were scalled using the same principle. Where we select only genes that have at least one sample less than -0.5. After wards if we select genes that have a Pearson-Fisher skew less than -1.25 we get a set of 976 genes. geneDependency.filterGenes(skewThresh=-1.25)
+    Finnished scaling samples per median of essential and non essential set of genes and selecting only genes with at least one sample of value less than -0.5,
+
+    From all the gene data of shape 17931, from the first filtration the set of genes is of size 12360 
+
+    From all the gene data of shape 12360, from the second filtration the set of genes is of size 976
