@@ -807,9 +807,9 @@ class ProteinsMatrix(MatrixData):
         sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
         sm.set_array([])
         scatter.get_legend().remove()
-        scatter.figure.colorbar(sm, label='Drug Response')
+        scatter.figure.colorbar(sm, label=typeOfInteraction)
 
-        plt.title('Protein expression \n with Drug Response')
+        plt.title(f'Protein expression \n with {typeOfInteraction}')
         plt.xlabel(str(pxName))
         plt.ylabel(str(pyName))
 
@@ -1939,6 +1939,62 @@ class UnbiasedResidualsLinModel(MatrixData):
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
 
+def modelRegressor(self):
+    regressor = LinearRegression(
+        fit_intercept=self.fitIntercept,
+        copy_X=self.copyX,
+        n_jobs=self.nJobs,
+    )
+    return regressor
+
+
+@staticmethod
+def loglike(y_true, y_pred):
+    nobs = len(y_true)
+    nobs2 = nobs / 2.0
+
+    ssr = np.power(y_true - y_pred, 2).sum()
+
+    llf = -nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) - nobs2
+
+    return llf
+
+@staticmethod
+def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, largePredY:np.ndarray, smallPredY:np.ndarray):
+    """Calculates the extra sum of squares, given the number of covariates in the large and small models, 
+    the true Y values and the predicted Y values for both models
+
+    Args:
+        largeNumCov (int): Number of covariates in the large model
+        smallNumCov (int): Number of covariates in the small model
+        trueY (pd.Series): True Y values
+        largePredY (pd.Series): Predicted Y values of the large model
+        smallPredY (pd.Series): Predicted Y values of the small model
+
+    Returns:
+        float: Extra sum of squares pValue
+    """        
+    largeResiduals = trueY - largePredY
+    smallResiduals = trueY - smallPredY
+
+    largeResidualsSq = np.power(largeResiduals, 2)
+    smallResidualsSq = np.power(smallResiduals, 2)
+
+    largeResidualsSqSum = largeResidualsSq.sum()
+    smallResidualsSqSum = smallResidualsSq.sum()
+
+    q = largeNumCov - smallNumCov
+    largeDF = trueY.shape[0] - largeNumCov
+
+    extraSumSquares = smallResidualsSqSum - largeResidualsSqSum 
+    statisticNumerator = extraSumSquares / q
+    statisticDenominator = largeResidualsSqSum / largeDF
+
+    statistic = statisticNumerator / statisticDenominator
+
+    pValue = f.sf(statistic, q, largeDF)
+
+    return pValue
 
 
 
@@ -1952,12 +2008,122 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
     """    
 
+    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, dict]:
+        """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
+        It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
+        And then builds the OLS models from statsmodels.api library.
+
+        Args:
+            YName (str): Protein Y name
+            XName (str): Protein X name
+            drugName (str): Drug name
+
+        Returns:
+            sm.OLS: larger Linear Model from statsmodels.api library
+            sm.OLS: Smaller Linear Model from statsmodels.api library
+            dict: Results of the linear model in dictionary format, with keys being effect size, p-value and other general info
+        """
+        print(f"Calculating {YName} ~ {XName} + {drugName}")
+        
+        Py = self.proteomics.loc[:,YName]
+        Py = Py.dropna()
+        Px = self.proteomics.loc[:,XName]
+        Px = Px.dropna()
+        M = self.M
+        M = M.dropna(axis=0)
+        drugRes = self.drugRes.loc[:,drugName]
+        drugRes = drugRes.fillna(drugRes.mean())
+
+
+        #get samples common to all dataframes
+        samplesCommon = list(set.intersection(
+            set(Py.index), set(Px.index), set(drugRes.index), set(M.index)
+            ))# samples common to all dataframes
+        samplesCommon.sort()
+        
+        #number of samples in common, n
+        n = len(samplesCommon)
+
+        #subset dataframes to common samples
+        Py = Py.loc[samplesCommon]
+        Px = Px.loc[samplesCommon]
+        drugRes = drugRes.loc[samplesCommon]
+        M = M.loc[samplesCommon]
+
+
+        
+        if self.standardisePx: # Zscore Px if standardisePx is True
+            Px = (Px - Px.mean()) / Px.std()
+            drugRes = (drugRes - drugRes.mean()) / drugRes.std()
+
+        pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
+        pxInteractionDR.name = "interaction" # rename the column to be the interaction term
+
+        #reordering of expressions to build the smaller and larger models
+        # Small Model: Py ~ (Px + M) 
+        # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
+        
+        if self.isDrugResSmall:
+            X = pd.concat([pxInteractionDR], axis=1) 
+            M = pd.concat([Px, M, drugRes], axis=1)
+        else:
+            X = pd.concat([drugRes, pxInteractionDR], axis=1) 
+            M = pd.concat([Px, M], axis=1)
+
+
+        # Fit Confounding, small model
+        lmSmall = modelRegressor(self).fit(M, Py)
+        lmSmallLogLike = loglike(Py, lmSmall.predict(M))
+
+        # Fit Confounding + features, Large model
+        xLarge = pd.concat([M, X], axis=1)
+        # Make sure all columns are strings
+        xLarge.columns = xLarge.columns.astype(str)
+        lmLarge = modelRegressor(self).fit(xLarge, Py)
+        lmLargeLogLike = loglike(Py, lmLarge.predict(xLarge))
+        
+        #Calculating Residuals (Small model)
+        lmSmallResidualsSq = np.power(Py - lmSmall.predict(M), 2)
+
+        #Calculating Residuals (Large model)
+        lmLargeResidualsSq = np.power(Py - lmLarge.predict(xLarge), 2)
+        
+
+        # Log-ratio test
+        lr = 2 * (lmLargeLogLike - lmSmallLogLike)
+        LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
+
+        # Extra sum of squares test
+        if self.fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
+            extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
+        else:    
+            extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
+
+        coefs = lmLarge.coef_
+        columns = ['Px'] + self.M.columns.tolist() + ['drug'] + ['interaction']
+        columns = [('effectSize', col) for col in columns]
+
+        res = {col:[coefs[index]] for index,col in enumerate(columns)}
+        res[('info', 'Py')] = [YName]
+        res[('info', 'Px')] = [XName]
+        res[('info', 'drug')] = [drugName]
+        res[('info', 'n')] = [n]
+        res[('info', 'llrPValue')] = [LogLikeliRatioPVal]
+        res[('info', 'extraSSPValue')] = [extraPValue]
+        res[('info', 'llStatistic')] = [lr]
+        res[('info', 'intercept')] = [lmLarge.intercept_]
+        res[('info', 'residSqLarge')] = [lmLargeResidualsSq.sum()]
+        res[('info', 'residSqSmall')] = [lmSmallResidualsSq.sum()]
+
+        return lmLarge, lmSmall, res
+
+
     for index, drugName in enumerate(self.drugRes):
 
    
         YName = ppi[0]
         XName = ppi[1]
-        _, _, res1= self.getLinearModels(YName, XName, drugName)
+        _, _, res1= getLinearModels(self, YName, XName, drugName)
 
 
 
@@ -1973,7 +2139,7 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         # invert Px and Py to understand if there are one way relationships
         YName = ppi[1]
         XName = ppi[0]
-        _, _, res2= self.getLinearModels(YName, XName, drugName)
+        _, _, res2= getLinearModels(self,YName, XName, drugName)
 
         for key in results: #Update the return object
             results[key] = results[key] + res2[key]
@@ -2020,62 +2186,6 @@ class DRInteractionPxModel(MatrixData):
         self.lenM =  M.shape[1]
 
 
-    def modelRegressor(self):
-        regressor = LinearRegression(
-            fit_intercept=self.fitIntercept,
-            copy_X=self.copyX,
-            n_jobs=self.nJobs,
-        )
-        return regressor
-    
-
-    @staticmethod
-    def loglike(y_true, y_pred):
-        nobs = len(y_true)
-        nobs2 = nobs / 2.0
-
-        ssr = np.power(y_true - y_pred, 2).sum()
-
-        llf = -nobs2 * np.log(2 * np.pi) - nobs2 * np.log(ssr / nobs) - nobs2
-
-        return llf
-
-    @staticmethod
-    def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, largePredY:np.ndarray, smallPredY:np.ndarray):
-        """Calculates the extra sum of squares, given the number of covariates in the large and small models, 
-        the true Y values and the predicted Y values for both models
-
-        Args:
-            largeNumCov (int): Number of covariates in the large model
-            smallNumCov (int): Number of covariates in the small model
-            trueY (pd.Series): True Y values
-            largePredY (pd.Series): Predicted Y values of the large model
-            smallPredY (pd.Series): Predicted Y values of the small model
-
-        Returns:
-            float: Extra sum of squares pValue
-        """        
-        largeResiduals = trueY - largePredY
-        smallResiduals = trueY - smallPredY
-
-        largeResidualsSq = np.power(largeResiduals, 2)
-        smallResidualsSq = np.power(smallResiduals, 2)
-
-        largeResidualsSqSum = largeResidualsSq.sum()
-        smallResidualsSqSum = smallResidualsSq.sum()
-
-        q = largeNumCov - smallNumCov
-        largeDF = trueY.shape[0] - largeNumCov
-
-        extraSumSquares = smallResidualsSqSum - largeResidualsSqSum 
-        statisticNumerator = extraSumSquares / q
-        statisticDenominator = largeResidualsSqSum / largeDF
-
-        statistic = statisticNumerator / statisticDenominator
-
-        pValue = f.sf(statistic, q, largeDF)
-
-        return pValue
     
     def correctExtraSS(self):
             
@@ -2112,112 +2222,6 @@ class DRInteractionPxModel(MatrixData):
 
 
     
-    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, dict]:
-        """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
-        It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
-        And then builds the OLS models from statsmodels.api library.
-
-        Args:
-            YName (str): Protein Y name
-            XName (str): Protein X name
-            drugName (str): Drug name
-
-        Returns:
-            sm.OLS: larger Linear Model from statsmodels.api library
-            sm.OLS: Smaller Linear Model from statsmodels.api library
-            dict: Results of the linear model in dictionary format, with keys being effect size, p-value and other general info
-        """
-        
-        Py = self.proteomics.loc[:,YName]
-        Py = Py.dropna()
-        Px = self.proteomics.loc[:,XName]
-        Px = Px.dropna()
-        M = self.M
-        M = M.dropna(axis=0)
-        drugRes = self.drugRes.loc[:,drugName]
-        drugRes = drugRes.fillna(drugRes.mean())
-
-        #get samples common to all dataframes
-        samplesCommon = list(set.intersection(
-            set(Py.index), set(Px.index), set(drugRes.index), set(M.index)
-            ))# samples common to all dataframes
-        samplesCommon.sort()
-        
-        #number of samples in common, n
-        n = len(samplesCommon)
-
-        #subset dataframes to common samples
-        Py = Py.loc[samplesCommon]
-        Px = Px.loc[samplesCommon]
-        drugRes = drugRes.loc[samplesCommon]
-        M = M.loc[samplesCommon]
-
-
-        
-        if self.standardisePx: # Zscore Px if standardisePx is True
-            Px = (Px - Px.mean()) / Px.std()
-            drugRes = (drugRes - drugRes.mean()) / drugRes.std()
-
-        pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
-        pxInteractionDR.name = "interaction" # rename the column to be the interaction term
-
-        #reordering of expressions to build the smaller and larger models
-        # Small Model: Py ~ (Px + M) 
-        # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
-        
-        if self.isDrugResSmall:
-            X = pd.concat([pxInteractionDR], axis=1) 
-            M = pd.concat([Px, M, drugRes], axis=1)
-        else:
-            X = pd.concat([drugRes, pxInteractionDR], axis=1) 
-            M = pd.concat([Px, M], axis=1)
-
-
-        # Fit Confounding, small model
-        lmSmall = self.modelRegressor().fit(M, Py)
-        lmSmallLogLike = self.loglike(Py, lmSmall.predict(M))
-
-        # Fit Confounding + features, Large model
-        xLarge = pd.concat([M, X], axis=1)
-        # Make sure all columns are strings
-        xLarge.columns = xLarge.columns.astype(str)
-        lmLarge = self.modelRegressor().fit(xLarge, Py)
-        lmLargeLogLike = self.loglike(Py, lmLarge.predict(xLarge))
-        
-        #Calculating Residuals (Small model)
-        lmSmallResidualsSq = np.power(Py - lmSmall.predict(M), 2)
-
-        #Calculating Residuals (Large model)
-        lmLargeResidualsSq = np.power(Py - lmLarge.predict(xLarge), 2)
-        
-
-        # Log-ratio test
-        lr = 2 * (lmLargeLogLike - lmSmallLogLike)
-        LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
-
-        # Extra sum of squares test
-        if self.fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
-            extraPValue = self.extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
-        else:    
-            extraPValue = self.extraSumSquares(xLarge.shape[1], M.shape[1], Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
-
-        coefs = lmLarge.coef_
-        columns = ['Px'] + self.M.columns.tolist() + ['drug'] + ['interaction']
-        columns = [('effectSize', col) for col in columns]
-
-        res = {col:[coefs[index]] for index,col in enumerate(columns)}
-        res[('info', 'Py')] = [YName]
-        res[('info', 'Px')] = [XName]
-        res[('info', 'drug')] = [drugName]
-        res[('info', 'n')] = [n]
-        res[('info', 'llrPValue')] = [LogLikeliRatioPVal]
-        res[('info', 'extraSSPValue')] = [extraPValue]
-        res[('info', 'llStatistic')] = [lr]
-        res[('info', 'intercept')] = [lmLarge.intercept_]
-        res[('info', 'residSqLarge')] = [lmLargeResidualsSq.sum()]
-        res[('info', 'residSqSmall')] = [lmSmallResidualsSq.sum()]
-
-        return lmLarge, lmSmall, res
     
 
     def fit(self, numOfCores = CPUS)->pd.DataFrame:
@@ -2305,6 +2309,7 @@ class DRInteractionPxModel(MatrixData):
             diffCutOff (float, optional): If not 0, will only plot the points that have a difference in the residuals of the large and small models larger than diffCutOff. Defaults to 0.
         """        
         data = self.data.copy()
+        data = data.loc[data['info']['Px']=='RPL12'].loc[data['info']['Py']=='RPL10']
 
         # Filter data by false discovery rate
         if useExtraSS:
@@ -2312,12 +2317,14 @@ class DRInteractionPxModel(MatrixData):
         else:
             data = data.loc[data['info']['fdrLLR'] < falseDiscoveryRate]
 
+
         # Calculate the difference between large and small model's residuals in order to understand what X changes the model the most
         if diffCutOff != 0:
             data.loc[:,('info','residSqDiff')] = data.loc[:,('info','residSqLarge')] - data.loc[:,('info','residSqSmall')]
             data = data.loc[abs(data[('info','residSqDiff')]) > diffCutOff]
         # # Replace 0 p-values with the smallest possible value for so that log10 is defined
         # data.loc[:,('info','llrPValue')] = data.loc[:,('info','llrPValue')].apply(lambda x: x if x != 0 else 1e-323)
+
         if useExtraSS:
             yValues = -np.log10(data['info']['extraSSPValue'])
         else:        
@@ -2383,7 +2390,7 @@ class DRInteractionPxModel(MatrixData):
                 #5th feature (Drug)
                 hueVars['drug'] = {'data': data['info']['drug'], 'varType': 'categorical'}
                 #6th feature (fdr)
-                hueVars['fdr'] = {'data': data['info']['fdr'], 'varType': 'numerical'}
+                hueVars['fdr'] = {'data': data['info']['fdrLLR'], 'varType': 'numerical'}
                 #7th feature (ppi)
                 hueVars['ppi'] = {'data': data['info']['Py'] + ';' + data['info']['Px'], 'varType': 'categorical'}
 
@@ -2432,7 +2439,7 @@ class DRInteractionPxModel(MatrixData):
     def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0.98):
         
         data = self.data.copy()
-        data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
+        data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
         betaThresh = data['effectSize']['interaction'].quantile(threhsQuantile) # define a beta threshold based on a quantile given by the use
         data = data.loc[abs(data['effectSize']['interaction']) > betaThresh] # subset data to only include betas above the threshold
         data = data.sort_values(by=[('info','llrPValue')], ascending=[True])
@@ -2458,6 +2465,7 @@ class DRInteractionPxModel(MatrixData):
             volcanoXMax:float, 
             volcanoYMin:float,
             volcanoYMax:float,
+            typeOfInteraction:str,
             scatter:int = 0,
             filepathMold:str|None='',
             interactive:bool = False,
@@ -2473,7 +2481,7 @@ class DRInteractionPxModel(MatrixData):
             volcanoYMax (float): The maximum -np.log10(p-value) value for the y axis
             scatter (int, optional): The number of associations to scatter. Defaults to 0.
             interactive (bool, optional): If True, it will show the volcano plot with the possibility of selecting a point, and scattering it with Drug Response as Color and Size. Defaults to False.
-
+            typeOfInteraction (str): Type of interaction, can be 'drug response' or 'gene essentiality'
 
 
         Returns:
@@ -2481,7 +2489,7 @@ class DRInteractionPxModel(MatrixData):
         """
         data = self.data.copy()
             # Filter data by false discovery rate
-        data = data.loc[data['info']['fdr'] < falseDiscoveryRate]
+        data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
 
         data = data.loc[(data['effectSize']['interaction'] >= volcanoXMin) & (data['effectSize']['interaction'] <= volcanoXMax)]
         data = data.loc[(-np.log10(data['info']['llrPValue']) >= volcanoYMin) & (-np.log10(data['info']['llrPValue']) <= volcanoYMax)]
@@ -2534,7 +2542,7 @@ class DRInteractionPxModel(MatrixData):
                 plt.close(fig)  # Close the figure
                 print(selected)
                 # Scatter the selected point
-                self.scatter(1, filepathMold, selected)
+                self.scatter(1, filepathMold, typeOfInteraction,selected)
                 
             fig.show()
             # Connect the pick event handler to the scatter plot
@@ -2545,14 +2553,15 @@ class DRInteractionPxModel(MatrixData):
 
         else:
             if scatter > 0:
-                self.scatter(scatter, filepathMold, data)
+                self.scatter(scatter, filepathMold, typeOfInteraction,data)
 
             return data
 
     def scatter(
             self, 
             topNumber:int, 
-            filepathMold:str|None, 
+            filepathMold:str|None,
+            typeOfInteraction:str,
             data:pd.DataFrame = None, 
             drugRes:DrugResponseMatrix = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz'), 
             proteomics:ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')):
@@ -2564,6 +2573,7 @@ class DRInteractionPxModel(MatrixData):
             data (_type_, optional): Data to use instead of the objects full result matrix, comming out of the linear Model. Defaults to None.
             drugRes (DrugResponseMatrix, optional): Drug response Object. Defaults to read(PATH + '/internal/drugResponses/drugResponse.pickle.gz').
             proteomics (ProteinsMatrix, optional): Proteomics Object used for scatter. Defaults to read(PATH + '/internal/proteomics/ogProteomics.pickle.gz').
+            typeOfInteraction (str): Type of interaction, can be 'drug response' or 'gene essentiality'        
         """        
         if data is None:
             data = self.data.copy()
@@ -2583,8 +2593,8 @@ class DRInteractionPxModel(MatrixData):
                 filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
             else:
                 filepath = None
-            ppi = row['info']['Py'] + ';' + row['info']['Px']
-            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, filepath, **anotation)
+            ppi = row['info']['Px'] + ';' + row['info']['Py']
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, **anotation)
 
 
 
