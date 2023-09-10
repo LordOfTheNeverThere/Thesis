@@ -125,7 +125,7 @@ def calcMahalanobis(y:pd.DataFrame, data: pd.DataFrame, cov:pd.DataFrame=None):
     inv_covmat = np.linalg.inv(cov)
     left = np.dot(y_mu.T, inv_covmat)
     mahal = np.dot(left, y_mu).diagonal()
-    pValue = 1 - chi2.cdf(mahal, 3)
+    pValue = chi2.sf(mahal, 3)
 
     return np.sqrt(mahal), pValue
 
