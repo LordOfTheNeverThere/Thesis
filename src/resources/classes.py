@@ -1939,16 +1939,8 @@ class UnbiasedResidualsLinModel(MatrixData):
         proteomics.plotPxPyDrug(drug, ppi, drugResponse, filepath)
 
 
-def modelRegressor(self):
-    regressor = LinearRegression(
-        fit_intercept=self.fitIntercept,
-        copy_X=self.copyX,
-        n_jobs=self.nJobs,
-    )
-    return regressor
 
 
-@staticmethod
 def loglike(y_true, y_pred):
     nobs = len(y_true)
     nobs2 = nobs / 2.0
@@ -1959,7 +1951,7 @@ def loglike(y_true, y_pred):
 
     return llf
 
-@staticmethod
+
 def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, largePredY:np.ndarray, smallPredY:np.ndarray):
     """Calculates the extra sum of squares, given the number of covariates in the large and small models, 
     the true Y values and the predicted Y values for both models
@@ -1997,89 +1989,17 @@ def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, large
     return pValue
 
 
-
-
-def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
-    """Wrapper for fitting the 2 linear models of Py ~ Px and Px ~ Py, so that it can be used in a multiprocessing pool
-
-    Args:
-        ppi (tuple[str, str]): Names of Py and Px
-    Returns:
-        dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
-    """    
-
-    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, dict]:
-        """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
-        It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
-        And then builds the OLS models from statsmodels.api library.
-
-        Args:
-            YName (str): Protein Y name
-            XName (str): Protein X name
-            drugName (str): Drug name
-
-        Returns:
-            sm.OLS: larger Linear Model from statsmodels.api library
-            sm.OLS: Smaller Linear Model from statsmodels.api library
-            dict: Results of the linear model in dictionary format, with keys being effect size, p-value and other general info
-        """
-        print(f"Calculating {YName} ~ {XName} + {drugName}")
+def intLinearRegress(regressor:LinearRegression, Py:pd.DataFrame, M:pd.DataFrame,  X:pd.DataFrame, YName:str, XName:str, drugName:str)->tuple[LinearRegression, LinearRegression, dict]:
         
-        Py = self.proteomics.loc[:,YName]
-        Py = Py.dropna()
-        Px = self.proteomics.loc[:,XName]
-        Px = Px.dropna()
-        M = self.M
-        M = M.dropna(axis=0)
-        drugRes = self.drugRes.loc[:,drugName]
-        drugRes = drugRes.fillna(drugRes.mean())
-
-
-        #get samples common to all dataframes
-        samplesCommon = list(set.intersection(
-            set(Py.index), set(Px.index), set(drugRes.index), set(M.index)
-            ))# samples common to all dataframes
-        samplesCommon.sort()
-        
-        #number of samples in common, n
-        n = len(samplesCommon)
-
-        #subset dataframes to common samples
-        Py = Py.loc[samplesCommon]
-        Px = Px.loc[samplesCommon]
-        drugRes = drugRes.loc[samplesCommon]
-        M = M.loc[samplesCommon]
-
-
-        
-        if self.standardisePx: # Zscore Px if standardisePx is True
-            Px = (Px - Px.mean()) / Px.std()
-            drugRes = (drugRes - drugRes.mean()) / drugRes.std()
-
-        pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
-        pxInteractionDR.name = "interaction" # rename the column to be the interaction term
-
-        #reordering of expressions to build the smaller and larger models
-        # Small Model: Py ~ (Px + M) 
-        # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
-        
-        if self.isDrugResSmall:
-            X = pd.concat([pxInteractionDR], axis=1) 
-            M = pd.concat([Px, M, drugRes], axis=1)
-        else:
-            X = pd.concat([drugRes, pxInteractionDR], axis=1) 
-            M = pd.concat([Px, M], axis=1)
-
-
         # Fit Confounding, small model
-        lmSmall = modelRegressor(self).fit(M, Py)
+        lmSmall = regressor.fit(M, Py)
         lmSmallLogLike = loglike(Py, lmSmall.predict(M))
 
         # Fit Confounding + features, Large model
         xLarge = pd.concat([M, X], axis=1)
         # Make sure all columns are strings
         xLarge.columns = xLarge.columns.astype(str)
-        lmLarge = modelRegressor(self).fit(xLarge, Py)
+        lmLarge = regressor.fit(xLarge, Py)
         lmLargeLogLike = loglike(Py, lmLarge.predict(xLarge))
         
         #Calculating Residuals (Small model)
@@ -2094,20 +2014,20 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
 
         # Extra sum of squares test
-        if self.fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
+        if regressor.intercept_ !=0: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
             extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
         else:    
             extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
 
         coefs = lmLarge.coef_
-        columns = ['Px'] + self.M.columns.tolist() + ['drug'] + ['interaction']
+        columns = ['Px'] + M.columns.tolist() + ['drug'] + ['interaction']
         columns = [('effectSize', col) for col in columns]
 
         res = {col:[coefs[index]] for index,col in enumerate(columns)}
         res[('info', 'Py')] = [YName]
         res[('info', 'Px')] = [XName]
         res[('info', 'drug')] = [drugName]
-        res[('info', 'n')] = [n]
+        res[('info', 'n')] = [Py.shape[0]]
         res[('info', 'llrPValue')] = [LogLikeliRatioPVal]
         res[('info', 'extraSSPValue')] = [extraPValue]
         res[('info', 'llStatistic')] = [lr]
@@ -2118,39 +2038,7 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         return lmLarge, lmSmall, res
 
 
-    for index, drugName in enumerate(self.drugRes):
 
-   
-        YName = ppi[0]
-        XName = ppi[1]
-        _, _, res1= getLinearModels(self, YName, XName, drugName)
-
-
-
-        if index == 0: # If first drug, then we want to create the dictionary that will be used to save the results from all other drugs
-            results = res1 # Create dictionary, results, that will be used to save the results from all other drugs~
-
-        else:
-            for key in results:
-                results[key] = results[key] + res1[key]
-
-
-
-        # invert Px and Py to understand if there are one way relationships
-        YName = ppi[1]
-        XName = ppi[0]
-        _, _, res2= getLinearModels(self,YName, XName, drugName)
-
-        for key in results: #Update the return object
-            results[key] = results[key] + res2[key]
-
-            
-    correctedPValues = multipletests(results[('info', 'llrPValue')], method="fdr_bh")[1]
-    results[('info', 'fdrLLR')] = list(correctedPValues)
-    correctedPValues = multipletests(results[('info', 'extraSSPValue')], method="fdr_bh")[1]
-    results[('info', 'fdrExtraSS')] = list(correctedPValues)
-
-    return results
 
 
 class DRInteractionPxModel(MatrixData):
@@ -2185,6 +2073,13 @@ class DRInteractionPxModel(MatrixData):
         self.drugResLen = interactor.shape[1]
         self.lenM =  M.shape[1]
 
+    def modelRegressor(self):
+        regressor = LinearRegression(
+            fit_intercept=self.fitIntercept,
+            copy_X=self.copyX,
+            n_jobs=self.nJobs,
+        )
+        return regressor
 
     
     def correctExtraSS(self):
@@ -2221,7 +2116,64 @@ class DRInteractionPxModel(MatrixData):
         return pValueDiff
 
 
-    
+    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, pd.DataFrame, pd.DataFrame, pd.DataFrame, str, str, str]:
+        """Perpare the data for a given linear regression for the given Protein X and Y Names
+        It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
+
+        Args:
+            YName (str): Protein Y name
+            XName (str): Protein X name
+            drugName (str): Drug name
+
+        Returns:
+            tuple[LinearRegression, pd.DataFrame, pd.DataFrame, pd.DataFrame, str, str, str]: The unfitted linear regression class, the Y values, the M values, the X values, the Y name, the X name and the drug name
+        """
+        
+        Py = self.proteomics.loc[:,YName]
+        Py = Py.dropna()
+        Px = self.proteomics.loc[:,XName]
+        Px = Px.dropna()
+        M = self.M
+        M = M.dropna(axis=0)
+        drugRes = self.drugRes.loc[:,drugName]
+        drugRes = drugRes.fillna(drugRes.mean())
+
+
+        #get samples common to all dataframes
+        samplesCommon = list(set.intersection(
+            set(Py.index), set(Px.index), set(drugRes.index), set(M.index)
+            ))# samples common to all dataframes
+        samplesCommon.sort()
+        
+
+        #subset dataframes to common samples
+        Py = Py.loc[samplesCommon]
+        Px = Px.loc[samplesCommon]
+        drugRes = drugRes.loc[samplesCommon]
+        M = M.loc[samplesCommon]
+
+
+        
+        if self.standardisePx: # Zscore Px if standardisePx is True
+            Px = (Px - Px.mean()) / Px.std()
+            drugRes = (drugRes - drugRes.mean()) / drugRes.std()
+
+        pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
+        pxInteractionDR.name = "interaction" # rename the column to be the interaction term
+
+        #reordering of expressions to build the smaller and larger models
+        # Small Model: Py ~ (Px + M) 
+        # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
+        
+        if self.isDrugResSmall:
+            X = pd.concat([pxInteractionDR], axis=1) 
+            M = pd.concat([Px, M, drugRes], axis=1)
+        else:
+            X = pd.concat([drugRes, pxInteractionDR], axis=1) 
+            M = pd.concat([Px, M], axis=1)
+
+        return self.modelRegressor(), Py, M, X, YName, XName, drugName
+
     
 
     def fit(self, numOfCores = CPUS)->pd.DataFrame:
@@ -2234,11 +2186,31 @@ class DRInteractionPxModel(MatrixData):
                 Py, Px, drug, n, intercept, PxBeta, adherentBeta, semiAdherentBeta, suspensionBeta, unknownBeta, drugResBeta, interactionBeta, llrPValue, llStatistic
         """        
 
-        pararelList =  zip(repeat(self), self.ppis)
 
+
+        #Create list that will have all the args for intLinearRegress
+        pararelList = []
+
+        for ppi in self.ppis:
+
+            for drugName in self.drugRes:
+
+    
+                YName = ppi[0]
+                XName = ppi[1]
+                res1= self.getLinearModels(YName, XName, drugName)
+                pararelList.append(res1)
+
+
+                # invert Px and Py to understand if there are one way relationships
+                YName = ppi[1]
+                XName = ppi[0]
+                res2= self.getLinearModels(YName, XName, drugName)
+                pararelList.append(res2)
 
         with mp.Pool(numOfCores) as process:
-            pararelResults = process.starmap(processPPIWrapper, pararelList)
+            pararelResults = process.starmap(intLinearRegress, pararelList)
+
         
         
         for index, result in enumerate(pararelResults):
@@ -2252,6 +2224,8 @@ class DRInteractionPxModel(MatrixData):
 
 
         results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results.keys()))
+
+        #TODO: fdr correction
 
         self.data = results
 
