@@ -1989,7 +1989,10 @@ def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, large
     return pValue
 
 
-def intLinearRegress(regressorSmall:LinearRegression, regressorLarge:LinearRegression,Py:pd.DataFrame, M:pd.DataFrame,  X:pd.DataFrame, YName:str, XName:str, drugName:str)->tuple[LinearRegression, LinearRegression, dict]:
+def intLinearRegress(
+        regressorSmall:LinearRegression, regressorLarge:LinearRegression,
+        Py:pd.DataFrame, M:pd.DataFrame,  X:pd.DataFrame, 
+        YName:str, XName:str, drugName:str, columns:list)-> dict:
         
         # Fit Confounding, small model
         lmSmall = regressorSmall.fit(M, Py)
@@ -2014,14 +2017,13 @@ def intLinearRegress(regressorSmall:LinearRegression, regressorLarge:LinearRegre
         LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
 
         # Extra sum of squares test
-        if regressor.intercept_ !=0: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
+        if regressorLarge.intercept_ !=0: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
             extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
         else:    
             extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
 
-        coefs = lmLarge.coef_
-        columns = ['Px'] + M.columns.tolist() + ['drug'] + ['interaction']
-        columns = [('effectSize', col) for col in columns]
+        coefs = list(lmLarge.coef_)
+
 
         res = {col:[coefs[index]] for index,col in enumerate(columns)}
         res[('info', 'Py')] = [YName]
@@ -2035,7 +2037,7 @@ def intLinearRegress(regressorSmall:LinearRegression, regressorLarge:LinearRegre
         res[('info', 'residSqLarge')] = [lmLargeResidualsSq.sum()]
         res[('info', 'residSqSmall')] = [lmSmallResidualsSq.sum()]
 
-        return lmLarge, lmSmall, res
+        return res
 
 
 
@@ -2116,7 +2118,7 @@ class DRInteractionPxModel(MatrixData):
         return pValueDiff
 
 
-    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, pd.DataFrame, pd.DataFrame, pd.DataFrame, str, str, str]:
+    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, pd.DataFrame, pd.DataFrame, pd.DataFrame, str, str, str, list]:
         """Perpare the data for a given linear regression for the given Protein X and Y Names
         It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
 
@@ -2137,7 +2139,6 @@ class DRInteractionPxModel(MatrixData):
         M = M.dropna(axis=0)
         drugRes = self.drugRes.loc[:,drugName]
         drugRes = drugRes.fillna(drugRes.mean())
-        drugRes.name ='drug'
 
 
         #get samples common to all dataframes
@@ -2153,6 +2154,8 @@ class DRInteractionPxModel(MatrixData):
         drugRes = drugRes.loc[samplesCommon]
         M = M.loc[samplesCommon]
 
+        columns = ['Px'] + M.columns.tolist() + ['drug'] + ['interaction']
+        columns = [('effectSize', col) for col in columns]
 
         
         if self.standardisePx: # Zscore Px if standardisePx is True
@@ -2160,6 +2163,7 @@ class DRInteractionPxModel(MatrixData):
             drugRes = (drugRes - drugRes.mean()) / drugRes.std()
 
         pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
+        pxInteractionDR.name = 'interaction'
 
         #reordering of expressions to build the smaller and larger models
         # Small Model: Py ~ (Px + M) 
@@ -2172,7 +2176,9 @@ class DRInteractionPxModel(MatrixData):
             X = pd.concat([drugRes, pxInteractionDR], axis=1) 
             M = pd.concat([Px, M], axis=1)
 
-        return self.modelRegressor(), self.modelRegressor(), Py, M, X, YName, XName, drugName
+
+
+        return self.modelRegressor(), self.modelRegressor(), Py, M, X, YName, XName, drugName, columns
 
     
 
