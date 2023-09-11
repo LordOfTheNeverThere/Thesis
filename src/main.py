@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
 
 
-    # # get gene dependecy data for effect size and its p-value
+    # get gene dependecy data for effect size and its p-value
 
     # effectSizes = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSize.csv', index_col=0)
     # pValues = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSizePValue.csv', index_col=0)
@@ -34,35 +34,18 @@ if __name__ == '__main__':
     ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").index)
     ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
 
-    # #Cofounding Factors, use The samplesheet's growth properties or the 10 PC of the vaeProteomics dataframe    
-    growthProps = pd.get_dummies(samplesheet['growth_properties'])
-    growthProps = growthProps.rename(columns={'Semi-Adherent': 'SemiAdherent'})
 
-    # pca, pcFactors = vaeProteomics.PCA(factorsName='PC', numPC=10)
+    pca, pcFactors = vaeProteomics.PCA(factorsName='PC', numPC=5)
 
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps)
-    start = t.time()
-    fit = dummy.fit(numOfCores = 38)
-    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz'
-    dummy.write()
-    print(f'fitting took {t.time() - start} seconds')
-
-
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall=False)
-    start = t.time()
-    fit = dummy.fit(numOfCores = 38)
-    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz'
-    dummy.write()
-    print(f'fitting took {t.time() - start} seconds')
 
 
     #Filter data to only include genes of interest
     geneDependency.filterGenes() #Default outputs 3468 genes has having at least 0.25 of samples with some statistical significance (pValue < 0.025)
     #Construct the interaction model
-    interactionModel = geneDependency.createInteractionModel(ppisOfInterest, ogProteomics, growthProps, isDrugResSmall=True)
+    interactionModel = geneDependency.createInteractionModel(ppisOfInterest, ogProteomics, pcFactors, isDrugResSmall=True)
     #Fit the interaction model
     start = t.time()
-    interactionModel.fit(numOfCores=38)
+    fit = interactionModel.fit(numOfCores=20)
     #Save the interaction model
     interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelSmall.pickle.gz'
     interactionModel.write()
@@ -74,7 +57,7 @@ if __name__ == '__main__':
     interactionModel = geneDependency.createInteractionModel(ppisOfInterest, ogProteomics, growthProps, isDrugResSmall=False)
     #Fit the interaction model
     start = t.time()
-    interactionModel.fit(numOfCores=38)
+    interactionModel.fit(numOfCores=20)
     interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelLarge.pickle.gz'
     interactionModel.write()
     end = t.time()
