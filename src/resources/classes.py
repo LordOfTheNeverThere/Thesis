@@ -2039,6 +2039,25 @@ def intLinearRegress(
 
         return res
 
+def fdrCorrectionPerPPI(df:pd.DataFrame, ppi:tuple[str,str])->dict:
+    """Performs FDR correction on the p-values of the extra sum of squares and loglikelihood for each PPI
+    """
+    pyName = ppi[0]
+    pxName = ppi[1]
+    results = {}
+
+    data = df.loc[
+    (df['info']['Px'] == pxName) & (df['info']['Py'] == pyName) |
+    (df['info']['Py'] == pyName) & (df['info']['Px'] == pxName)
+    ]
+
+    extraSSPvals = data.loc[('info','extraSSPValue')]
+    llrPvals = data.loc[('info','llrPValue')]
+    results['index'] = list(data.index)
+    results['fdrExtraSS'] = multipletests(extraSSPvals, method="fdr_bh")[1]
+    results['fdrLLR'] = multipletests(llrPvals, method="fdr_bh")[1]
+
+    return results
 
 
 
@@ -2213,6 +2232,8 @@ class DRInteractionPxModel(MatrixData):
                 XName = ppi[0]
                 res2= self.getLinearModels(YName, XName, drugName)
                 pararelList.append(res2)
+        
+        print("Starting to fit the models")
 
         with mp.Pool(numOfCores) as process:
             pararelResults = process.starmap(intLinearRegress, pararelList)
@@ -2230,8 +2251,26 @@ class DRInteractionPxModel(MatrixData):
 
 
         results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results.keys()))
+        
+        print("Finnished fitting the models")
+        print("Starting to correct the p-values")
+        #Calculate the respective fdr values, for both the extra sum of squares and the log likelihood ratio
+        with mp.Pool(numOfCores) as process:
+            pararelResults = process.starmap(fdrCorrectionPerPPI, zip(repeat(results), self.ppis))
+        
 
-        #TODO: fdr correction
+        for index, fdr in enumerate(pararelResults):
+
+            if index == 0:
+                fdrs = fdr
+
+            else:
+                for key in fdr:
+                    fdrs[key] = fdrs[key] + fdr[key]
+
+        #Merge the fdr values with the results
+        results = pd.merge(results, pd.DataFrame(fdrs), left_index=True, right_on='index')
+        print("Finnished correcting the p-values")
 
         self.data = results
 
