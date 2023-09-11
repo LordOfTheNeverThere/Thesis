@@ -198,3 +198,4 @@ Findings:
     From all the gene data of shape 17931, from the first filtration the set of genes is of size 12360 
 
     From all the gene data of shape 12360, from the second filtration the set of genes is of size 976
+    2. The Hat and all the other hats that were seen in the volcano plot, changing y value and ppi were caused by linear regression instability, the effect size of the growthProps were either on the magnitude of the other features, about e-1 or e-2, or due to instability e+12 or e+13. So I replaced the growthProps, that were also problematic on the previous TLS Linear model, due to the same instable nature, with 5 pc's from PCA, that in sum explained 60% of data variation. Perhaps would be unwise to continue to use Growth props in linear regression, maybe it is its sparsity that causes this variability
