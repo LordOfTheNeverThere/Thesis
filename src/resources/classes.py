@@ -2226,6 +2226,8 @@ class DRInteractionPxModel(MatrixData):
                 XName = ppi[0]
                 res2= self.getLinearModels(YName, XName, drugName)
                 pararelList.append(res2)
+        
+        print("Starting to fit the models")
 
         with mp.Pool(numOfCores) as process:
             pararelResults = process.starmap(intLinearRegress, pararelList)
@@ -2243,7 +2245,9 @@ class DRInteractionPxModel(MatrixData):
 
 
         results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results.keys()))
-
+        
+        print("Finnished fitting the models")
+        print("Starting to correct the p-values")
         #Calculate the respective fdr values, for both the extra sum of squares and the log likelihood ratio
         with mp.Pool(numOfCores) as process:
             pararelResults = process.starmap(fdrCorrectionPerPPI, zip(repeat(results), self.ppis))
@@ -2260,7 +2264,7 @@ class DRInteractionPxModel(MatrixData):
 
         #Merge the fdr values with the results
         results = pd.merge(results, pd.DataFrame(fdrs), left_index=True, right_on='index')
-
+        print("Finnished correcting the p-values")
 
         self.data = results
 
