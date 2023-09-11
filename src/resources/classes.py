@@ -2112,6 +2112,8 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         res[('info', 'intercept')] = [lmLarge.intercept_]
         res[('info', 'residSqLarge')] = [lmLargeResidualsSq.sum()]
         res[('info', 'residSqSmall')] = [lmSmallResidualsSq.sum()]
+        res[('info', 'fdrLLR')] = list(multipletests(res[('info', 'llrPValue')], method="fdr_bh")[1])
+        res[('info', 'fdrExtraSS')] = list(multipletests(res[('info', 'extraSSPValue')], method="fdr_bh")[1])
 
         return lmLarge, lmSmall, res
 
@@ -2123,30 +2125,12 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         XName = ppi[1]
         _, _, res1= getLinearModels(self, YName, XName, drugName)
 
-
-
         if index == 0: # If first drug, then we want to create the dictionary that will be used to save the results from all other drugs
             results = res1 # Create dictionary, results, that will be used to save the results from all other drugs~
 
         else:
             for key in results:
                 results[key] = results[key] + res1[key]
-
-
-
-        # invert Px and Py to understand if there are one way relationships
-        YName = ppi[1]
-        XName = ppi[0]
-        _, _, res2= getLinearModels(self,YName, XName, drugName)
-
-        for key in results: #Update the return object
-            results[key] = results[key] + res2[key]
-
-            
-    correctedPValues = multipletests(results[('info', 'llrPValue')], method="fdr_bh")[1]
-    results[('info', 'fdrLLR')] = list(correctedPValues)
-    correctedPValues = multipletests(results[('info', 'extraSSPValue')], method="fdr_bh")[1]
-    results[('info', 'fdrExtraSS')] = list(correctedPValues)
 
     return results
 
@@ -2171,6 +2155,11 @@ class DRInteractionPxModel(MatrixData):
                 **readerKwargs):
         
         super().__init__(filepath, data, **readerKwargs)
+        newSet = set()
+        for pair in ppis:
+            newSet.add(pair)
+            newSet.add(tuple(reversed(pair))) # Add the reverse of the pair, so that we can check for one way relationships 
+        ppis = newSet
         self.ppis = ppis
         self.proteomics = proteomics.data
         self.drugRes = interactor
@@ -2307,8 +2296,6 @@ class DRInteractionPxModel(MatrixData):
             diffCutOff (float, optional): If not 0, will only plot the points that have a difference in the residuals of the large and small models larger than diffCutOff. Defaults to 0.
         """        
         data = self.data.copy()
-        data = data.loc[data['info']['Px']=='RPL12'].loc[data['info']['Py']=='RPL10']
-
         # Filter data by false discovery rate
         if useExtraSS:
             data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
@@ -2434,12 +2421,12 @@ class DRInteractionPxModel(MatrixData):
                     plt.close()
         
 
-    def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0.98):
+    def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, typeOfInteraction:str, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0):
         
         data = self.data.copy()
         data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
-        betaThresh = data['effectSize']['interaction'].quantile(threhsQuantile) # define a beta threshold based on a quantile given by the use
-        data = data.loc[abs(data['effectSize']['interaction']) > betaThresh] # subset data to only include betas above the threshold
+        # betaThresh = data['effectSize']['interaction'].quantile(threhsQuantile) # define a beta threshold based on a quantile given by the use
+        # data = data.loc[abs(data['effectSize']['interaction']) > betaThresh] # subset data to only include betas above the threshold
         data = data.sort_values(by=[('info','llrPValue')], ascending=[True])
         #Selecting top
         top = data.iloc[0:topNumber,:]
@@ -2454,8 +2441,8 @@ class DRInteractionPxModel(MatrixData):
             anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
             anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
             filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
-            ppi = row['info']['Py'] + ';' + row['info']['Px']
-            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, filepath, **anotation)
+            ppi = row['info']['Px'] + ';' + row['info']['Py']
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, typeOfInteraction,filepath, **anotation)
 
     def triangulate(
             self, 
