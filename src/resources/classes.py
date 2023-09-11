@@ -1947,7 +1947,7 @@ def modelRegressor(self):
     return regressor
 
 
-@staticmethod
+
 def loglike(y_true, y_pred):
     nobs = len(y_true)
     nobs2 = nobs / 2.0
@@ -1958,7 +1958,7 @@ def loglike(y_true, y_pred):
 
     return llf
 
-@staticmethod
+
 def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, largePredY:np.ndarray, smallPredY:np.ndarray):
     """Calculates the extra sum of squares, given the number of covariates in the large and small models, 
     the true Y values and the predicted Y values for both models
