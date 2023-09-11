@@ -1989,17 +1989,17 @@ def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, large
     return pValue
 
 
-def intLinearRegress(regressor:LinearRegression, Py:pd.DataFrame, M:pd.DataFrame,  X:pd.DataFrame, YName:str, XName:str, drugName:str)->tuple[LinearRegression, LinearRegression, dict]:
+def intLinearRegress(regressorSmall:LinearRegression, regressorLarge:LinearRegression,Py:pd.DataFrame, M:pd.DataFrame,  X:pd.DataFrame, YName:str, XName:str, drugName:str)->tuple[LinearRegression, LinearRegression, dict]:
         
         # Fit Confounding, small model
-        lmSmall = regressor.fit(M, Py)
+        lmSmall = regressorSmall.fit(M, Py)
         lmSmallLogLike = loglike(Py, lmSmall.predict(M))
 
         # Fit Confounding + features, Large model
         xLarge = pd.concat([M, X], axis=1)
         # Make sure all columns are strings
         xLarge.columns = xLarge.columns.astype(str)
-        lmLarge = regressor.fit(xLarge, Py)
+        lmLarge = regressorLarge.fit(xLarge, Py)
         lmLargeLogLike = loglike(Py, lmLarge.predict(xLarge))
         
         #Calculating Residuals (Small model)
@@ -2116,7 +2116,7 @@ class DRInteractionPxModel(MatrixData):
         return pValueDiff
 
 
-    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, pd.DataFrame, pd.DataFrame, pd.DataFrame, str, str, str]:
+    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, pd.DataFrame, pd.DataFrame, pd.DataFrame, str, str, str]:
         """Perpare the data for a given linear regression for the given Protein X and Y Names
         It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
 
@@ -2172,7 +2172,7 @@ class DRInteractionPxModel(MatrixData):
             X = pd.concat([drugRes, pxInteractionDR], axis=1) 
             M = pd.concat([Px, M], axis=1)
 
-        return self.modelRegressor(), Py, M, X, YName, XName, drugName
+        return self.modelRegressor(), self.modelRegressor(), Py, M, X, YName, XName, drugName
 
     
 
