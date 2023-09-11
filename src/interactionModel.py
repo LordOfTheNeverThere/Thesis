@@ -35,43 +35,29 @@ if __name__ == '__main__':
     # pd.set_option('display.max_colwidth', -1)
 
 
-    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall = False)
-    # start = t.time()
-    # fit = dummy.fit(numOfCores = 38)
-    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz'
-    # dummy.write()
-    # print(f'fitting took {t.time() - start} seconds')
+    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall = False)
+    start = t.time()
+    fit = dummy.fit(numOfCores = 38)
+    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz'
+    dummy.write()
+    print(f'fitting took {t.time() - start} seconds')
 
-    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall = True)
-    # start = t.time()
-    # fit = dummy.fit(numOfCores = 38)
-    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz'
-    # dummy.write()
-    # print(f'fitting took {t.time() - start} seconds')
+    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall = True)
+    start = t.time()
+    fit = dummy.fit(numOfCores = 38)
+    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz'
+    dummy.write()
+    print(f'fitting took {t.time() - start} seconds')
 
 
 
 
     
-    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
-    difference = dummy.correctExtraSS()
-    # find how many entries are the same in each column
-    def countDuplicates(column):
-        return len(column) - len(set(column))
-    for column in dummy.data['info'].columns:
-        print(f'{column}: {countDuplicates(dummy.data["info"][column])}')
-    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugLargeExtraSS.png', extraFeatures=False, useExtraSS=False) 
-    dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
+    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
+    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugLargeExtraSS.png', extraFeatures=False, useExtraSS=False) 
+    # dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
     # drugRes.data = drugRes.data.T
     # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes.data, topNumber=10)
-
-    #Test Py = RPL12, Px = RPL10, drug=299;OSI-027;GDSC1
-    ppisOfInterest = {('RPL12', 'RPL10')}
-    drugRes.data = drugRes.data.loc[:,['299;OSI-027;GDSC1']]
-    trial = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall = False)
-    fit = trial.fit(numOfCores = 2)
-    data = trial.data.copy()
-    data.loc[data['info']['Px'] == 'RPL10'].loc[data['info']['Py'] == 'RPL12']
 
 
 
