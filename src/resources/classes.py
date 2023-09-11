@@ -2137,6 +2137,7 @@ class DRInteractionPxModel(MatrixData):
         M = M.dropna(axis=0)
         drugRes = self.drugRes.loc[:,drugName]
         drugRes = drugRes.fillna(drugRes.mean())
+        drugRes.name ='drug'
 
 
         #get samples common to all dataframes
@@ -2159,7 +2160,6 @@ class DRInteractionPxModel(MatrixData):
             drugRes = (drugRes - drugRes.mean()) / drugRes.std()
 
         pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
-        pxInteractionDR.name = "interaction" # rename the column to be the interaction term
 
         #reordering of expressions to build the smaller and larger models
         # Small Model: Py ~ (Px + M) 
