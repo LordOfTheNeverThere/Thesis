@@ -53,16 +53,6 @@ if __name__ == '__main__':
     print(f'Time to fit model: {end - start}')
 
 
-    #Construct another one with gene data as parte of the large model
-    interactionModel = geneDependency.createInteractionModel(ppisOfInterest, ogProteomics, growthProps, isDrugResSmall=False)
-    #Fit the interaction model
-    start = t.time()
-    interactionModel.fit(numOfCores=20)
-    interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelLarge.pickle.gz'
-    interactionModel.write()
-    end = t.time()
-    print(f'Time to fit model: {end - start}')
-
 
 
 

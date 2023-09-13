@@ -35,19 +35,19 @@ if __name__ == '__main__':
     # pd.set_option('display.max_colwidth', -1)
 
 
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, pcFactors, isDrugResSmall = False)
-    start = t.time()
-    fit = dummy.fit(numOfCores = 38)
-    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz'
-    dummy.write()
-    print(f'fitting took {t.time() - start} seconds')
+    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, pcFactors, isDrugResSmall = False)
+    # start = t.time()
+    # fit = dummy.fit(numOfCores = 38)
+    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz'
+    # dummy.write()
+    # print(f'fitting took {t.time() - start} seconds')
 
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, pcFactors, isDrugResSmall = True)
-    start = t.time()
-    fit = dummy.fit(numOfCores = 38)
-    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz'
-    dummy.write()
-    print(f'fitting took {t.time() - start} seconds')
+    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, pcFactors, isDrugResSmall = True)
+    # start = t.time()
+    # fit = dummy.fit(numOfCores = 38)
+    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz'
+    # dummy.write()
+    # print(f'fitting took {t.time() - start} seconds')
 
 
 
@@ -55,11 +55,11 @@ if __name__ == '__main__':
     
 
 
-    # dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, growthProps, isDrugResSmall = False)
-    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugLargeExtraSS.png', extraFeatures=False, useExtraSS=True) 
-    # dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
-    # drugRes.data = drugRes.data.T
-    # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes.data, topNumber=10)
+    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmallExtraSS.png', extraFeatures=True, useExtraSS=True) 
+    dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
+    drugRes.data = drugRes.data.T
+    dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes.data, topNumber=10)
 
     # #Test Py = RPL12, Px = RPL10, drug=299;OSI-027;GDSC1
     # drugRes.data = drugRes.data.loc[:,['299;OSI-027;GDSC1']]
