@@ -2049,7 +2049,7 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         M = M.loc[samplesCommon]
 
         # Check if any of the predictors are constant
-        if !Px[Px.std() == 0].empty or !drugRes[drugRes.std() == 0].empty or !M[M.std() == 0].empty:
+        if not Px[Px.std() == 0].empty and drugRes[drugRes.std() == 0].empty and M[M.std() == 0].empty:
             return None, None, None
 
 
