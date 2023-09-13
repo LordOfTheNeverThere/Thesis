@@ -1,10 +1,4 @@
-from resources import PATH, read, DRInteractionPxModel, PairwiseCorrMatrix, ProteinsMatrix
-import time as t
-import pandas as pd
-from statsmodels.stats.multitest import multipletests
-import numpy as np
-import matplotlib.pyplot as plt
-
+ 
 
         
 
@@ -56,10 +50,14 @@ if __name__ == '__main__':
 
 
     dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')
-    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmallExtraSS.png', extraFeatures=True, useExtraSS=True) 
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmallllr.png', extraFeatures=True, useExtraSS=False) 
     dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
     drugRes.data = drugRes.data.T
     dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes.data, topNumber=10)
+
+
+    dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
+    dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugLargelllr.png', extraFeatures=True, useExtraSS=False) 
 
     # #Test Py = RPL12, Px = RPL10, drug=299;OSI-027;GDSC1
     # drugRes.data = drugRes.data.loc[:,['299;OSI-027;GDSC1']]
