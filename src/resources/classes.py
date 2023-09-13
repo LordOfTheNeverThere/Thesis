@@ -2007,7 +2007,7 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
     """    
 
-    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, dict]:
+    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression|None, LinearRegression|None, dict|None]:
         """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
         It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
         And then builds the OLS models from statsmodels.api library.
@@ -2047,6 +2047,10 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         Px = Px.loc[samplesCommon]
         drugRes = drugRes.loc[samplesCommon]
         M = M.loc[samplesCommon]
+
+        # Check if any of the predictors are constant
+        if !Px[Px.std() == 0].empty or !drugRes[drugRes.std() == 0].empty or !M[M.std() == 0].empty:
+            return None, None, None
 
 
         
