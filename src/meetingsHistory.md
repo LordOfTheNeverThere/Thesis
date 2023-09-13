@@ -160,7 +160,7 @@ Tasks:
 
 24/8/23
     1. ~~Regarding the hat on the Model that includes the drug on the Large Model we ought to remove it from fruther analyses if it ever arises again~~
-    2. Only work with the Large Model Model, that is Py ~ Px + M + Drug/Gene + Drug/Gene*Px, the volcano plot of the Small Model Model is strangely worse... (Well let's see)
+    2. ~~Only work with the Large Model Model, that is Py ~ Px + M + Drug/Gene + Drug/Gene*Px, the volcano plot of the Small Model Model is strangely worse... (Well let's see)~~
     3. Do the Synthetic data examples that will help understand the DRInteraction Model:
         1. Starting with Positevely correlated Proteins: beta_Px > 0
           1. One where the low IC50 is the linear line and the high IC50 are cluster above -> Expected: beta_int > 0
@@ -199,3 +199,14 @@ Findings:
 
     From all the gene data of shape 12360, from the second filtration the set of genes is of size 976
     2. The Hat and all the other hats that were seen in the volcano plot, changing y value and ppi were caused by linear regression instability, the effect size of the growthProps were either on the magnitude of the other features, about e-1 or e-2, or due to instability e+12 or e+13. So I replaced the growthProps, that were also problematic on the previous TLS Linear model, due to the same instable nature, with 5 pc's from PCA, that in sum explained 60% of data variation. Perhaps would be unwise to continue to use Growth props in linear regression, maybe it is its sparsity that causes this variability
+
+13/09/23
+    1. In all linear regressions done in order to avoid any numerical instability, make sure that no regressions are made, with features that have no variability, std = 0
+    2. Justify why the choice of -1.25 as a skewness threshold, do like an histogram and say we selected x = -1.25 or whatever then drawing a line.
+    3. Redo the interaction linear model:
+       1. The best model should be DR ~ M + Px + Py + Px*Py
+          1. With this model we can find cases where:
+             1. The Drug Response alters the Pearson correlation, which was the aim of the first model thus replacing it in functionality. By testing the interaction term PxPy
+             2. If Px alters DR alone, so as Px increases so does DR, this biological mechanism does not correspond to the change of the stoichometry of the Px-Py complex since this test captures changes even if the slope between Px and Py remains the same. So this corresponds to another mechanism
+             3. If Py alters Dr alone, idem idem idem
+          2. And it will require half the time since we do not need to reverse the PPI's
