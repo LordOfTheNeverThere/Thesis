@@ -2007,7 +2007,12 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
     """    
 
-    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression|None, LinearRegression|None, dict|None]:
+    def getLinearModels(self, 
+                        Y:pd.DataFrame, 
+                        X:pd.DataFrame, 
+                        interactor:pd.DataFrame,
+                        M:pd.DataFrame,
+                        ) -> tuple[dict|None, dict|None]:
         """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
         It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
         And then builds the OLS models from statsmodels.api library.
@@ -2022,20 +2027,24 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
             sm.OLS: Smaller Linear Model from statsmodels.api library
             dict: Results of the linear model in dictionary format, with keys being effect size, p-value and other general info
         """
+        # yChar:str = formula.split('~')[0].strip()
+        # xChars:list[str] = formula.split('~')[1].split('+')
+        # #find elemnt with * for the interaction term
+        # for elem in xChars:
+        #     if '*' in elem:	
+        #         interactionMembers = elem.split('*')
+
         
-        Py = self.proteomics.loc[:,YName]
-        Py = Py.dropna()
-        Px = self.proteomics.loc[:,XName]
-        Px = Px.dropna()
-        M = self.M
+
+        Y = Y.fillna(interactor.mean())
+        X = X.dropna()
         M = M.dropna(axis=0)
-        drugRes = self.drugRes.loc[:,drugName]
-        drugRes = drugRes.fillna(drugRes.mean())
+        interactor = interactor.dropna()
 
 
         #get samples common to all dataframes
         samplesCommon = list(set.intersection(
-            set(Py.index), set(Px.index), set(drugRes.index), set(M.index)
+            set(Y.index), set(X.index), set(interactor.index), set(M.index)
             ))# samples common to all dataframes
         samplesCommon.sort()
         
@@ -2043,83 +2052,67 @@ def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
         n = len(samplesCommon)
 
         #subset dataframes to common samples
-        Py = Py.loc[samplesCommon]
-        Px = Px.loc[samplesCommon]
-        drugRes = drugRes.loc[samplesCommon]
+        Y = Y.loc[samplesCommon]
+        X = X.loc[samplesCommon]
+        interactor = interactor.loc[samplesCommon]
         M = M.loc[samplesCommon]
 
         # Check if any of the predictors are constant
-        if not Px[Px.std() == 0].empty and drugRes[drugRes.std() == 0].empty and M[M.std() == 0].empty:
-            return None, None, None
+        if not X[X.std() == 0].empty and interactor[interactor.std() == 0].empty and M[M.std() == 0].empty:
+            return None, None
 
-
-        
-        if self.standardisePx: # Zscore Px if standardisePx is True
-            Px = (Px - Px.mean()) / Px.std()
-            drugRes = (drugRes - drugRes.mean()) / drugRes.std()
-
-        pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
-        pxInteractionDR.name = "interaction" # rename the column to be the interaction term
+        X = (X - X.mean()) / X.std()
+        interactor = (interactor - interactor.mean()) / interactor.std()
+        M = (M - M.mean()) / M.std()
+        interaction = interactor.mul(X, axis=0) 
 
         #reordering of expressions to build the smaller and larger models
-        # Small Model: Py ~ (Px + M) 
-        # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
-        
-        if self.isDrugResSmall:
-            X = pd.concat([pxInteractionDR], axis=1) 
-            M = pd.concat([Px, M, drugRes], axis=1)
-        else:
-            X = pd.concat([drugRes, pxInteractionDR], axis=1) 
-            M = pd.concat([Px, M], axis=1)
-
-
-        # Fit Confounding, small model
-        lmSmall = modelRegressor(self).fit(M, Py)
-        lmSmallLogLike = loglike(Py, lmSmall.predict(M))
-
-        # Fit Confounding + features, Large model
-        xLarge = pd.concat([M, X], axis=1)
+        # Large Model: Y ~ X + M + interactor + interaction
+        xLarge = pd.concat([X, M, interactor, interaction], axis=1)
         # Make sure all columns are strings
         xLarge.columns = xLarge.columns.astype(str)
-        lmLarge = modelRegressor(self).fit(xLarge, Py)
-        lmLargeLogLike = loglike(Py, lmLarge.predict(xLarge))
+        # 1st small Model : Y ~ X + M + interactor, test interaction
+        xSmall = [pd.concat([X, M, interactor], axis=1)]
+        # 2nd small Model : Y ~ X + M + interaction, test interactor
+        xSmall.append(pd.concat([X, M, interaction], axis=1))
+        # 3rd small Model : Y ~ M + interactor + interaction, test X
+        xSmall.append(pd.concat([M, interactor, interaction], axis=1))
+        tested = ['interactionPValue','interactorPValue', 'XPValue']
         
-        #Calculating Residuals (Small model)
-        lmSmallResidualsSq = np.power(Py - lmSmall.predict(M), 2)
+        lmLarge = modelRegressor(self).fit(xLarge, Y)
+        # lmLargeLogLike = loglike(Y, lmLarge.predict(xLarge))
+        info = dict()
+        for index, x in enumerate(xSmall):
+            x.columns = x.columns.astype(str)
+            lmSmall = modelRegressor(self).fit(x, Y)
 
-        #Calculating Residuals (Large model)
-        lmLargeResidualsSq = np.power(Py - lmLarge.predict(xLarge), 2)
-        
+            # # llr
+            # lmSmallLogLike = loglike(Y, lmSmall.predict(x))
+            # lmSmallResidualsSq = np.power(Y - lmSmall.predict(x), 2)
+            # lr = 2 * (lmLargeLogLike - lmSmallLogLike)
+            # LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
 
-        # Log-ratio test
-        lr = 2 * (lmLargeLogLike - lmSmallLogLike)
-        LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
+            # Extra sum of squares test
+            if self.fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
+                extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
+            else:    
+                extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
 
-        # Extra sum of squares test
-        if self.fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
-            extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
-        else:    
-            extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
+            info[tested[index]] = [extraPValue]
+            info[f'fdr{tested[index]}'] = list(multipletests(extraPValue, method="fdr_bh")[1])
+
+
+        info['Py'] = [YName]
+        info['Px'] = [XName]
+        info['drug'] = [drugName]
+        info['n'] = [n]
 
         coefs = lmLarge.coef_
-        columns = ['Px'] + self.M.columns.tolist() + ['drug'] + ['interaction']
-        columns = [('effectSize', col) for col in columns]
+        columns = ['Y'] + self.M.columns.tolist() + ['interactor'] + ['interaction']
+        effectSize = {col:[coefs[index]] for index,col in enumerate(columns)}
+        effectSize['intercept'] = [lmLarge.intercept_]
 
-        res = {col:[coefs[index]] for index,col in enumerate(columns)}
-        res[('info', 'Py')] = [YName]
-        res[('info', 'Px')] = [XName]
-        res[('info', 'drug')] = [drugName]
-        res[('info', 'n')] = [n]
-        res[('info', 'llrPValue')] = [LogLikeliRatioPVal]
-        res[('info', 'extraSSPValue')] = [extraPValue]
-        res[('info', 'llStatistic')] = [lr]
-        res[('info', 'intercept')] = [lmLarge.intercept_]
-        res[('info', 'residSqLarge')] = [lmLargeResidualsSq.sum()]
-        res[('info', 'residSqSmall')] = [lmSmallResidualsSq.sum()]
-        res[('info', 'fdrLLR')] = list(multipletests(res[('info', 'llrPValue')], method="fdr_bh")[1])
-        res[('info', 'fdrExtraSS')] = list(multipletests(res[('info', 'extraSSPValue')], method="fdr_bh")[1])
-
-        return lmLarge, lmSmall, res
+        return info, effectSize
 
 
     for index, drugName in enumerate(self.drugRes):
