@@ -2119,7 +2119,7 @@ def modelWrapper(Y: pd.DataFrame, X: pd.DataFrame, M: pd.DataFrame, interactor: 
     return res
 
 
-class DRInteractionPxModel(MatrixData):
+class DRPxPyInteractionPxModel(MatrixData):
     """Linear Model Designed to find interactions between drug response and proteomics data, so the goal is to see what Drug Responses are impacted by a certain ppi (pY, pX)
 
     Args:
@@ -2566,3 +2566,586 @@ class DRInteractionPxModel(MatrixData):
             proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, **anotation)
 
 
+
+def processPPIWrapper(self, ppi:tuple[str, str]) -> dict:
+    """Wrapper for fitting the 2 linear models of Py ~ Px and Px ~ Py, so that it can be used in a multiprocessing pool
+
+    Args:
+        ppi (tuple[str, str]): Names of Py and Px
+    Returns:
+        dict: The results of the 2 linear models, one for Py ~ Px and the other for Px ~ Py
+    """    
+
+    def getLinearModels(self, YName, XName, drugName) -> tuple[LinearRegression, LinearRegression, dict]:
+        """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
+        It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
+        And then builds the OLS models from statsmodels.api library.
+
+        Args:
+            YName (str): Protein Y name
+            XName (str): Protein X name
+            drugName (str): Drug name
+
+        Returns:
+            sm.OLS: larger Linear Model from statsmodels.api library
+            sm.OLS: Smaller Linear Model from statsmodels.api library
+            dict: Results of the linear model in dictionary format, with keys being effect size, p-value and other general info
+        """
+        
+        Py = self.proteomics.loc[:,YName]
+        Py = Py.dropna()
+        Px = self.proteomics.loc[:,XName]
+        Px = Px.dropna()
+        M = self.M
+        M = M.dropna(axis=0)
+        drugRes = self.drugRes.loc[:,drugName]
+        drugRes = drugRes.fillna(drugRes.mean())
+
+
+        #get samples common to all dataframes
+        samplesCommon = list(set.intersection(
+            set(Py.index), set(Px.index), set(drugRes.index), set(M.index)
+            ))# samples common to all dataframes
+        samplesCommon.sort()
+        
+        #number of samples in common, n
+        n = len(samplesCommon)
+
+        #subset dataframes to common samples
+        Py = Py.loc[samplesCommon]
+        Px = Px.loc[samplesCommon]
+        drugRes = drugRes.loc[samplesCommon]
+        M = M.loc[samplesCommon]
+
+
+        
+        if self.standardisePx: # Zscore Px if standardisePx is True
+            Px = (Px - Px.mean()) / Px.std()
+            drugRes = (drugRes - drugRes.mean()) / drugRes.std()
+
+        pxInteractionDR = drugRes.mul(Px, axis=0) # dR * Px
+        pxInteractionDR.name = "interaction" # rename the column to be the interaction term
+
+        #reordering of expressions to build the smaller and larger models
+        # Small Model: Py ~ (Px + M) 
+        # Large Model: Py ~ (Px + M) + (dr + Px:dR) 
+        
+        if self.isDrugResSmall:
+            X = pd.concat([pxInteractionDR], axis=1) 
+            M = pd.concat([Px, M, drugRes], axis=1)
+        else:
+            X = pd.concat([drugRes, pxInteractionDR], axis=1) 
+            M = pd.concat([Px, M], axis=1)
+
+
+        # Fit Confounding, small model
+        lmSmall = modelRegressor(self).fit(M, Py)
+        lmSmallLogLike = loglike(Py, lmSmall.predict(M))
+
+        # Fit Confounding + features, Large model
+        xLarge = pd.concat([M, X], axis=1)
+        # Make sure all columns are strings
+        xLarge.columns = xLarge.columns.astype(str)
+        lmLarge = modelRegressor(self).fit(xLarge, Py)
+        lmLargeLogLike = loglike(Py, lmLarge.predict(xLarge))
+        
+        #Calculating Residuals (Small model)
+        lmSmallResidualsSq = np.power(Py - lmSmall.predict(M), 2)
+
+        #Calculating Residuals (Large model)
+        lmLargeResidualsSq = np.power(Py - lmLarge.predict(xLarge), 2)
+        
+
+        # Log-ratio test
+        lr = 2 * (lmLargeLogLike - lmSmallLogLike)
+        LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
+
+        # Extra sum of squares test
+        if self.fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
+            extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
+        else:    
+            extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Py, lmLarge.predict(xLarge), lmSmall.predict(M)) 
+
+        coefs = lmLarge.coef_
+        columns = ['Px'] + self.M.columns.tolist() + ['drug'] + ['interaction']
+        columns = [('effectSize', col) for col in columns]
+
+        res = {col:[coefs[index]] for index,col in enumerate(columns)}
+        res[('info', 'Py')] = [YName]
+        res[('info', 'Px')] = [XName]
+        res[('info', 'drug')] = [drugName]
+        res[('info', 'n')] = [n]
+        res[('info', 'llrPValue')] = [LogLikeliRatioPVal]
+        res[('info', 'extraSSPValue')] = [extraPValue]
+        res[('info', 'llStatistic')] = [lr]
+        res[('info', 'intercept')] = [lmLarge.intercept_]
+        res[('info', 'residSqLarge')] = [lmLargeResidualsSq.sum()]
+        res[('info', 'residSqSmall')] = [lmSmallResidualsSq.sum()]
+        res[('info', 'fdrLLR')] = list(multipletests(res[('info', 'llrPValue')], method="fdr_bh")[1])
+        res[('info', 'fdrExtraSS')] = list(multipletests(res[('info', 'extraSSPValue')], method="fdr_bh")[1])
+
+        return lmLarge, lmSmall, res
+
+
+    for index, drugName in enumerate(self.drugRes):
+
+   
+        YName = ppi[0]
+        XName = ppi[1]
+        _, _, res1= getLinearModels(self, YName, XName, drugName)
+
+        if index == 0: # If first drug, then we want to create the dictionary that will be used to save the results from all other drugs
+            results = res1 # Create dictionary, results, that will be used to save the results from all other drugs~
+
+        else:
+            for key in results:
+                results[key] = results[key] + res1[key]
+
+    return results
+
+
+class PyPxDrugInteractionModel(MatrixData):
+    """Linear Model Designed to find interactions between drug response and proteomics data, so the goal is to see what Drug Responses are impacted by a certain ppi (pY, pX)
+
+    Args:
+        MatrixData (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    def __init__(self, ppis:Iterable[tuple[str,str]],
+                proteomics:ProteinsMatrix, 
+                interactor:pd.DataFrame, 
+                M:pd.DataFrame|pd.Series, 
+                isDrugResSmall:bool = True, 
+                fitIntercept=True, copyX=True, 
+                standardisePx = True, nJobs:int=4, 
+                filepath:str=None, data:pd.DataFrame=None, 
+                **readerKwargs):
+        
+        super().__init__(filepath, data, **readerKwargs)
+        newSet = set()
+        for pair in ppis:
+            newSet.add(pair)
+            newSet.add(tuple(reversed(pair))) # Add the reverse of the pair, so that we can check for one way relationships 
+        ppis = newSet
+        self.ppis = ppis
+        self.proteomics = proteomics.data
+        self.drugRes = interactor
+        self.M = M
+        self.isDrugResSmall = isDrugResSmall
+        self.fitIntercept = fitIntercept
+        self.copyX = copyX
+        self.standardisePx = standardisePx
+        self.nJobs = nJobs
+        self.drugResLen = interactor.shape[1]
+        self.lenM =  M.shape[1]
+
+
+    
+    def correctExtraSS(self):
+            
+        data = self.data['info'].copy()
+        smallModelSSE = data['residSqSmall']
+        largeModelSSE = data['residSqLarge']
+        largeModelNumCov = 1 + self.lenM + 1 + 1 # 1 for drug response, lenM for M, 1 for Px, 1 for Px:drugResponse
+        if self.isDrugResSmall:
+            smallModelNumCov = 1 + self.lenM + 1 # 1 for drug response, lenM for M, 1 for Px
+        else:
+            smallModelNumCov = self.lenM + 1 # lenM for M, 1 for Px
+        
+        if self.fitIntercept: # The num of params estimated increases by one if we calculate the intercept
+            largeModelNumCov += 1
+            smallModelNumCov += 1
+        
+        statistic = smallModelSSE - largeModelSSE
+        q = largeModelNumCov - smallModelNumCov
+        n = self.data[('info', 'n')]
+        largeDF = n - largeModelNumCov
+        statisticNumerator = statistic / q
+        statisticDenominator = largeModelSSE / largeDF
+        statistic = statisticNumerator / statisticDenominator
+        previousPValue = data['extraSSPValue']
+        #Calculate p-value according to F distribution
+        pValue = f.sf(statistic, q, largeDF)
+        self.data.loc[:,('info','extraSSPValue')] = pValue
+        #difference in change of the pValues
+        pValueDiff = pValue - previousPValue
+        
+        print("Finnished Correcting the p-values")
+
+        return pValueDiff
+
+
+    
+    
+
+    def fit(self, numOfCores = CPUS)->pd.DataFrame:
+        """Fit each Px and Py pair towards every drug in the drugRes dataframe.
+            Calculate the Log likelihood p-value for the null hypothesis that the smaller model is correct, so the larger model does not add any covariate which is statistically significant.
+            Or so to say the wilk's or likelihood ratio test.
+
+        Returns:
+            pd.DataFrame: The results of the fitting process, with the following columns: 
+                Py, Px, drug, n, intercept, PxBeta, adherentBeta, semiAdherentBeta, suspensionBeta, unknownBeta, drugResBeta, interactionBeta, llrPValue, llStatistic
+        """        
+
+        pararelList =  zip(repeat(self), self.ppis)
+
+
+        with mp.Pool(numOfCores) as process:
+            pararelResults = process.starmap(processPPIWrapper, pararelList)
+        
+        
+        for index, result in enumerate(pararelResults):
+
+            if index == 0:
+                results = result
+
+            else:
+                for key in result:
+                    results[key] = results[key] + result[key]
+
+
+        results = pd.DataFrame(results, columns = pd.MultiIndex.from_tuples(results.keys()))
+
+        self.data = results
+
+        return results
+
+
+
+    def resiCorr(self)->pd.DataFrame:
+        """Calculates the correlation between the residuals of the large model and each drug and the residuals of the small model and each drug.
+        Using analysis of Variance or ANOVA Linear models, where we use categorical vars (drugs) to explain the variance in the residuals of the large and small models.
+
+
+        Returns:
+            pd.DataFrame: The correlation between the residuals of the large model and each drug and the residuals of the small model and each drug.
+        """   
+        data = self.data.copy()
+        #get only relevant columns
+        anovaData = pd.DataFrame(columns=['residSqSmall', 'residSqLarge', 'drug'])
+        anovaData['drug'] = data['info']['drug']
+        anovaData['residSqLarge'] = data['info']['residSqLarge']
+        anovaData['residSqSmall'] = data['info']['residSqSmall']
+
+        from resources import Anova
+        modelLarge = Anova(anovaData, False)
+        modelSmall = Anova(anovaData, False)
+
+        modelLarge = modelLarge.fitOneWay('drug', 'residSqLarge' )
+        modelSmall = modelSmall.fitOneWay('drug', 'residSqSmall')
+
+        coefsLarge = modelLarge.params
+        coefsSmall = modelSmall.params
+
+        #join both Dataframes to get the coefficients when y is the large or small model, with the respective column names
+        self.resiCorrResults = pd.concat([coefsLarge, coefsSmall], axis=1, keys=['residSqLarge', 'residSqSmall'])
+
+        return self.resiCorrResults
+    
+    
+    def volcanoPlot(
+            self, 
+            filepath:str, 
+            falseDiscoveryRate:float=0.001, 
+            pValHzLine:float = 0.01, 
+            extraFeatures:bool = False,
+            useExtraSS:bool = False,
+            diffCutOff:float=0):
+        """Volcano plot in order to find statisticall relevant relationships.
+
+        Args:
+            filepath (str): Path to save the plot.
+            falseDiscoveryRate (float, optional): The corrected p-value at which we start to acknowledge a relevant interaction, independently of how many times an hypothesis was tested . Defaults to 0.01.
+            pValHzLine (float, optional): p-value line to draw on the plot, as a reference. Defaults to 0.001.
+            extraFeatures (bool, optional): If True, will plot the volcano plot with extra features as hue. All in separare files. The features are: Number of samples in common between Px, Py and Drug, how much the PPI is tested, how large is the fdr penalty, the PPI. Defaults to False.
+            useExtraSS (bool, optional): If True, will use the extra sum of squares p-value instead of the log likelihood p-value. Defaults to False.
+            diffCutOff (float, optional): If not 0, will only plot the points that have a difference in the residuals of the large and small models larger than diffCutOff. Defaults to 0.
+        """        
+        data = self.data.copy()
+        # Filter data by false discovery rate
+        if useExtraSS:
+            data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
+        else:
+            data = data.loc[data['info']['fdrLLR'] < falseDiscoveryRate]
+
+
+        # Calculate the difference between large and small model's residuals in order to understand what X changes the model the most
+        if diffCutOff != 0:
+            data.loc[:,('info','residSqDiff')] = data.loc[:,('info','residSqLarge')] - data.loc[:,('info','residSqSmall')]
+            data = data.loc[abs(data[('info','residSqDiff')]) > diffCutOff]
+        # # Replace 0 p-values with the smallest possible value for so that log10 is defined
+        # data.loc[:,('info','llrPValue')] = data.loc[:,('info','llrPValue')].apply(lambda x: x if x != 0 else 1e-323)
+
+        if useExtraSS:
+            yValues = -np.log10(data['info']['extraSSPValue'])
+        else:        
+            yValues = -np.log10(data['info']['llrPValue'])
+        
+        xValues = data['effectSize']['interaction']
+
+        # Matplotlib set main axis font size
+        plt.rcParams["axes.titlesize"] = 22
+
+        # Matplotlib set legend font size
+        plt.rcParams["legend.fontsize"] = 22
+
+        # Matplotlib set tick label font size
+        plt.rcParams["axes.labelsize"] = 22
+
+        # Matplotlib set tick label font size
+        plt.rcParams["xtick.labelsize"] = 22
+        plt.rcParams["ytick.labelsize"] = 22
+
+
+        plt.figure(figsize=(20, 20), dpi=300)
+        # Plot
+        ax = sns.scatterplot(
+            x=xValues.values,
+            y=yValues.values,
+            color="k",
+            s=15,
+            alpha=0.8,
+            edgecolors="none",
+            rasterized=True,
+        )
+
+        # Labels
+        ax.set_xlabel(r"$\beta$")
+        ax.set_ylabel(r"$-\log_{10}(p-value)$")
+
+        # Grid
+        ax.axvline(0, c="k", lw=0.5, ls="--")
+        pValHzLine = 0.05  # Replace this value with the desired p-value
+        ax.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
+
+        # Title
+        ax.set_title(f"Volcano plot")
+        ax.legend()
+
+        self.volcanoPath = filepath
+        plt.savefig(filepath, bbox_inches="tight")
+        plt.close()
+
+
+        if extraFeatures:
+                hueVars = {} # List to store all the extra vars to be used as hue in the scatter plot
+                #1st feature (Number of samples in common between Px, Py and Drug)
+                hueVars['samples'] = {'data': data['info']['n'], 'varType': 'numerical'}
+                #2nd feature (Number of other associations of that PPI with other drug, how much the PPI is tested, how large is the fdr penalty)
+                valuesCount = data.loc[:,[('info','Py'),('info', 'Px')]].value_counts()
+                hueVars['#tested']= {'data': data.apply(lambda row: valuesCount[row[('info','Py')], row[('info', 'Px')]], axis=1), 'varType': 'numerical'}
+                #3rd feature (Py)
+                hueVars['Py'] = {'data': data['info']['Py'], 'varType': 'categorical'}
+                #4th feature (Px)
+                hueVars['Px'] = {'data': data['info']['Px'], 'varType': 'categorical'}
+                #5th feature (Drug)
+                hueVars['drug'] = {'data': data['info']['drug'], 'varType': 'categorical'}
+                #6th feature (fdr)
+                hueVars['fdr'] = {'data': data['info']['fdrLLR'], 'varType': 'numerical'}
+                #7th feature (ppi)
+                hueVars['ppi'] = {'data': data['info']['Py'] + ';' + data['info']['Px'], 'varType': 'categorical'}
+
+                for hueVar in hueVars: # Iterate over all the extra features, and used them as hue in the scatterPlots
+
+                    plt.figure(figsize=(20, 20), dpi=300)
+                    ax = sns.scatterplot(
+                        x=xValues,
+                        y=yValues,
+                        hue=hueVars[hueVar]['data'],
+                        palette= sns.color_palette("viridis", as_cmap=True) if hueVars[hueVar]['varType'] == 'numerical' else sns.color_palette("hls", len(hueVars[hueVar]['data'].unique())) ,  
+                        legend= hueVars[hueVar]['varType'] == 'numerical',       # Set the legend parameter to False
+                        s=15,
+                        alpha=0.8,
+                        edgecolors="none",
+                        rasterized=True,
+                    )
+
+                    # Labels
+                    ax.set_xlabel(r"$\beta$")
+                    ax.set_ylabel(r"$-\log_{10}(p-value)$")
+
+                    # Grid
+                    ax.axvline(0, c="k", lw=0.5, ls="--")
+                    pValHzLine = 0.05  # Replace this value with the desired p-value
+                    ax.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
+
+                    # Title and Legend
+                    ax.set_title(f"Volcano plot with {hueVar} as hue")
+                    ax.legend()
+
+                    if hueVars[hueVar]['varType'] == 'numerical':
+                        norm = matplotlib.colors.Normalize(vmin=hueVars[hueVar]['data'].min(), vmax=hueVars[hueVar]['data'].max())
+                        sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+                        sm.set_array([])
+                        ax.get_legend().remove()
+                        ax.figure.colorbar(sm, label=str(hueVar))
+
+
+                    # Save the plot
+                    huePath = filepath.split('.png')[0] + hueVar + '.png'
+                    plt.savefig(huePath, bbox_inches="tight")
+                    plt.close()
+        
+
+    def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, typeOfInteraction:str, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0):
+        
+        data = self.data.copy()
+        data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
+        # betaThresh = data['effectSize']['interaction'].quantile(threhsQuantile) # define a beta threshold based on a quantile given by the use
+        # data = data.loc[abs(data['effectSize']['interaction']) > betaThresh] # subset data to only include betas above the threshold
+        data = data.sort_values(by=[('info','llrPValue')], ascending=[True])
+        #Selecting top
+        top = data.iloc[0:topNumber,:]
+        #reseting index
+        top = top.reset_index(drop=True)
+        #iterate samples
+        for index, row in top.iterrows():
+
+            pValue = row['info']['llrPValue']
+            effectSize = row['effectSize']['interaction']
+            drug = row['info']['drug']
+            anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
+            anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
+            filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
+            ppi = row['info']['Px'] + ';' + row['info']['Py']
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, typeOfInteraction,filepath, **anotation)
+
+    def triangulate(
+            self, 
+            volcanoXMin:float,
+            volcanoXMax:float, 
+            volcanoYMin:float,
+            volcanoYMax:float,
+            typeOfInteraction:str,
+            scatter:int = 0,
+            filepathMold:str|None='',
+            interactive:bool = False,
+            diffCutOff:float = 0,
+            falseDiscoveryRate:float = 0.01
+            )->pd.DataFrame:
+        """Triangulate the model results data according to the volcano plot thresholds
+
+        Args:
+            volcanoXMin (float): The minimum interaction effect size value for the x axis
+            volcanoXMax (float): The maximum interaction effect size value for the x axis
+            volcanoYMin (float): The minimum -np.log10(p-value) value for the y axis
+            volcanoYMax (float): The maximum -np.log10(p-value) value for the y axis
+            scatter (int, optional): The number of associations to scatter. Defaults to 0.
+            interactive (bool, optional): If True, it will show the volcano plot with the possibility of selecting a point, and scattering it with Drug Response as Color and Size. Defaults to False.
+            typeOfInteraction (str): Type of interaction, can be 'drug response' or 'gene essentiality'
+
+
+        Returns:
+            pd.DataFrame: Data according to the volcano plot thresholds
+        """
+        data = self.data.copy()
+            # Filter data by false discovery rate
+        data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
+
+        data = data.loc[(data['effectSize']['interaction'] >= volcanoXMin) & (data['effectSize']['interaction'] <= volcanoXMax)]
+        data = data.loc[(-np.log10(data['info']['llrPValue']) >= volcanoYMin) & (-np.log10(data['info']['llrPValue']) <= volcanoYMax)]
+        if diffCutOff != 0:
+            data.loc[:,('info','residSqDiff')] = data.loc[:,('info','residSqLarge')] - data.loc[:,('info','residSqSmall')]
+            data = data.loc[abs(data[('info','residSqDiff')]) > diffCutOff]
+
+        data = data.sort_values(by=[('info','llrPValue')], ascending=[True])
+
+        if interactive: #It will show the original dark plot, but it will allow the user to select a point, and scatter it with Drug Response as Color and Size
+            
+            yValues = -np.log10(data['info']['llrPValue'])
+            xValues = data['effectSize']['interaction']
+            
+            fig = plt.figure(figsize=(60,60), dpi=300)
+            ax = fig.add_subplot(111)
+
+            ax = sns.scatterplot(
+                x=xValues,
+                y=yValues,
+                color="k",
+                s=15,
+                alpha=0.8,
+                edgecolors="none",
+                rasterized=True,
+                picker=True,
+                ax=ax
+            )
+
+            # Labels
+            ax.set_xlabel(r"$\beta$")
+            ax.set_ylabel(r"$-\log_{10}(p-value)$")
+
+            # Grid
+            ax.axvline(0, c="k", lw=0.5, ls="--")
+            #Change x and y range according to the volcano plot thresholds
+            ax.set_xlim(volcanoXMin, volcanoXMax)
+            ax.set_ylim(volcanoYMin, volcanoYMax)
+
+            # Title
+            ax.set_title(f"Volcano plot")
+
+            # Function to handle pick events
+            def picker(event):
+
+                
+                ind = event.ind[0]  # Get the index of the selected point
+                selected = data.iloc[[ind],:] # The double bracket is so that the retrieved object is a dataframe and not a series
+                plt.gcf().canvas.mpl_disconnect(mouseEvent)  # Disconnect the pick event handler
+                plt.close(fig)  # Close the figure
+                print(selected)
+                # Scatter the selected point
+                self.scatter(1, filepathMold, typeOfInteraction,selected)
+                
+            fig.show()
+            # Connect the pick event handler to the scatter plot
+            mouseEvent = plt.gcf().canvas.mpl_connect("pick_event", picker)
+            
+            
+
+
+        else:
+            if scatter > 0:
+                self.scatter(scatter, filepathMold, typeOfInteraction,data)
+
+            return data
+
+    def scatter(
+            self, 
+            topNumber:int, 
+            filepathMold:str|None,
+            typeOfInteraction:str,
+            data:pd.DataFrame = None, 
+            drugRes:DrugResponseMatrix = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz'), 
+            proteomics:ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')):
+        """ Scatter the first topNumber associations in data or self.data
+
+        Args:
+            topNumber (int): Number of associations to scatter
+            filepathMold (str): Filepath template to save the scatter plots
+            data (_type_, optional): Data to use instead of the objects full result matrix, comming out of the linear Model. Defaults to None.
+            drugRes (DrugResponseMatrix, optional): Drug response Object. Defaults to read(PATH + '/internal/drugResponses/drugResponse.pickle.gz').
+            proteomics (ProteinsMatrix, optional): Proteomics Object used for scatter. Defaults to read(PATH + '/internal/proteomics/ogProteomics.pickle.gz').
+            typeOfInteraction (str): Type of interaction, can be 'drug response' or 'gene essentiality'        
+        """        
+        if data is None:
+            data = self.data.copy()
+        
+        top = data.iloc[0:topNumber,:]
+        #reseting index
+        top = top.reset_index(drop=True)
+        #iterate samples
+        for index, row in top.iterrows():
+
+            pValue = row['info']['llrPValue']
+            effectSize = row['effectSize']['interaction']
+            drug = row['info']['drug']
+            anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
+            anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
+            if filepathMold is not None:
+                filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
+            else:
+                filepath = None
+            ppi = row['info']['Px'] + ';' + row['info']['Py']
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, **anotation)
