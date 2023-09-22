@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     dummy = DRPxPyInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, pcFactors)
     start = t.time()
-    fit = dummy.fit(numOfCores = 2)
+    fit = dummy.fit(numOfCores = 38)
     dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/neoDrugRegressor.pickle.gz'
     dummy.write()
     print(f'fitting took {t.time() - start} seconds')
