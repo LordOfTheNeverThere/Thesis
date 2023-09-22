@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time as t
 from statsmodels.stats.multitest import multipletests
-from resources import GeneDependency, DRInteractionPxModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
+from resources import GeneDependency, DRPxPyInteractionPxModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
 
 
         
@@ -35,10 +35,9 @@ if __name__ == '__main__':
     # pd.set_option('display.width', None)
     # pd.set_option('display.max_colwidth', -1)
 
-
-    dummy = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, pcFactors)
+    dummy = DRPxPyInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, pcFactors)
     start = t.time()
-    fit = dummy.fit(numOfCores = 20)
+    fit = dummy.fit(numOfCores = 2)
     dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/neoDrugRegressor.pickle.gz'
     dummy.write()
     print(f'fitting took {t.time() - start} seconds')

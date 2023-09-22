@@ -1992,9 +1992,91 @@ def extraSumSquares(largeNumCov: int, smallNumCov:int, trueY:pd.DataFrame, large
 
 def ppiWrapper(
         ppi:tuple[str, str], 
-        self: DRInteractionPxModel)-> Iterable[tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, bool, bool, int]]:
+        self: DRPxPyInteractionPxModel)-> dict:
     
     dataframesList = list()
+
+    def modelRegressor(fitIntercept, copyX, nJobs):
+        regressor = LinearRegression(
+            fit_intercept=fitIntercept,
+            copy_X=copyX,
+            n_jobs=nJobs,
+        )
+        return regressor
+    
+    def linearModel(Y: pd.DataFrame, X: pd.DataFrame, M: pd.DataFrame, interactor: pd.DataFrame, fitIntercept:bool, copyX:bool, nJobs:int) -> dict:
+        """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
+        It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
+        And then builds the OLS models from statsmodels.api library.
+
+        Args:
+            YName (str): Protein Y name
+            XName (str): Protein X name
+            drugName (str): Drug name
+
+        Returns:
+            sm.OLS: larger Linear Model from statsmodels.api library
+            sm.OLS: Smaller Linear Model from statsmodels.api library
+            dict: Results of the linear model in dictionary format, with keys being effect size, p-value and other general info
+        """
+        # yChar:str = formula.split('~')[0].strip()
+        # xChars:list[str] = formula.split('~')[1].split('+')
+        # #find elemnt with * for the interaction term
+        # for elem in xChars:
+        #     if '*' in elem:	
+        #         interactionMembers = elem.split('*')
+
+        interaction = interactor.iloc[:,0].mul(X.iloc[:,0], axis=0)
+        interaction.name ='interaction'
+
+
+        #reordering of expressions to build the smaller and larger models
+        # Large Model: Y ~ X + M + interactor + interaction
+        xLarge = pd.concat([X, M, interactor, interaction], axis=1)
+        # Make sure all columns are strings
+        xLarge.columns = xLarge.columns.astype(str)
+        # 1st small Model : Y ~ X + M + interactor, test interaction
+        xSmall = [pd.concat([X, M, interactor], axis=1)]
+        # 2nd small Model : Y ~ X + M + interaction, test interactor
+        xSmall.append(pd.concat([X, M, interaction], axis=1))
+        # 3rd small Model : Y ~ M + interactor + interaction, test X
+        xSmall.append(pd.concat([M, interactor, interaction], axis=1))
+        tested = ['interactionPValue','interactorPValue', 'XPValue']
+        lmLarge =modelRegressor(fitIntercept,copyX, nJobs).fit(xLarge, Y)
+        # lmLargeLogLike = loglike(Y, lmLarge.predict(xLarge))
+
+        coefs = lmLarge.coef_.tolist()[0]
+        columns = ['X'] + M.columns.tolist() + ['interactor'] + ['interaction']
+        res = {f"{col}ES":[coefs[index]] for index,col in enumerate(columns)}
+
+        for index, x in enumerate(xSmall):
+            x.columns = x.columns.astype(str)
+            lmSmall = modelRegressor(fitIntercept,copyX, nJobs).fit(x, Y)
+
+            # # llr
+            # lmSmallLogLike = loglike(Y, lmSmall.predict(x))
+            # lmSmallResidualsSq = np.power(Y - lmSmall.predict(x), 2)
+            # lr = 2 * (lmLargeLogLike - lmSmallLogLike)
+            # LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
+
+            # Extra sum of squares test
+            if fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
+                extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
+            else:    
+                extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
+
+            res[tested[index]] = extraPValue.tolist()
+            res[f'fdr{tested[index]}'] = list(multipletests(extraPValue, method="fdr_bh")[1])
+
+
+        res['Y'] = [Y.columns[0]]
+        res['X'] = [X.columns[0]]
+        res['interactor'] = [interactor.columns[0]]
+        res['n'] = [Y.shape[0]]
+        res['interceptES'] = [lmLarge.intercept_[0]]
+
+        return res
+
 
     for drug in self.drugRes.columns:
 
@@ -2029,94 +2111,14 @@ def ppiWrapper(
         X = (X - X.mean()) / X.std()
         interactor = (interactor - interactor.mean()) / interactor.std()
         M = (M - M.mean()) / M.std()
+
+        res = linearModel(Y, X, M, interactor, self.fitIntercept, self.copyX, self.nJobs)
     	
-        dataframesList.append((Y, X, M, interactor, self.fitIntercept, self.copyX, self.nJobs))
-
-    return dataframesList
-
-def modelRegressor(fitIntercept, copyX, nJobs):
-    regressor = LinearRegression(
-        fit_intercept=fitIntercept,
-        copy_X=copyX,
-        n_jobs=nJobs,
-    )
-    return regressor
-
-
-
-
-def modelWrapper(Y: pd.DataFrame, X: pd.DataFrame, M: pd.DataFrame, interactor: pd.DataFrame, fitIntercept:bool, copyX:bool, nJobs:int) -> dict:
-    """Get the Linear Models (Larger and Smaller) for the given Protein X and Y Names
-    It does this by subsetting the proteomics, drugRes, and M dataframes to only include samples common to all dataframes.
-    And then builds the OLS models from statsmodels.api library.
-
-    Args:
-        YName (str): Protein Y name
-        XName (str): Protein X name
-        drugName (str): Drug name
-
-    Returns:
-        sm.OLS: larger Linear Model from statsmodels.api library
-        sm.OLS: Smaller Linear Model from statsmodels.api library
-        dict: Results of the linear model in dictionary format, with keys being effect size, p-value and other general info
-    """
-    # yChar:str = formula.split('~')[0].strip()
-    # xChars:list[str] = formula.split('~')[1].split('+')
-    # #find elemnt with * for the interaction term
-    # for elem in xChars:
-    #     if '*' in elem:	
-    #         interactionMembers = elem.split('*')
-
-    interaction = interactor.iloc[:,0].mul(X.iloc[:,0], axis=0)
-    interaction.name ='interaction'
-
-
-    #reordering of expressions to build the smaller and larger models
-    # Large Model: Y ~ X + M + interactor + interaction
-    xLarge = pd.concat([X, M, interactor, interaction], axis=1)
-    # Make sure all columns are strings
-    xLarge.columns = xLarge.columns.astype(str)
-    # 1st small Model : Y ~ X + M + interactor, test interaction
-    xSmall = [pd.concat([X, M, interactor], axis=1)]
-    # 2nd small Model : Y ~ X + M + interaction, test interactor
-    xSmall.append(pd.concat([X, M, interaction], axis=1))
-    # 3rd small Model : Y ~ M + interactor + interaction, test X
-    xSmall.append(pd.concat([M, interactor, interaction], axis=1))
-    tested = ['interactionPValue','interactorPValue', 'XPValue']
-    lmLarge =modelRegressor(fitIntercept,copyX, nJobs).fit(xLarge, Y)
-    # lmLargeLogLike = loglike(Y, lmLarge.predict(xLarge))
-
-    coefs = lmLarge.coef_.tolist()[0]
-    columns = ['X'] + M.columns.tolist() + ['interactor'] + ['interaction']
-    res = {f"{col}ES":[coefs[index]] for index,col in enumerate(columns)}
-
-    for index, x in enumerate(xSmall):
-        x.columns = x.columns.astype(str)
-        lmSmall = modelRegressor(fitIntercept,copyX, nJobs).fit(x, Y)
-
-        # # llr
-        # lmSmallLogLike = loglike(Y, lmSmall.predict(x))
-        # lmSmallResidualsSq = np.power(Y - lmSmall.predict(x), 2)
-        # lr = 2 * (lmLargeLogLike - lmSmallLogLike)
-        # LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
-
-        # Extra sum of squares test
-        if fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
-            extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
-        else:    
-            extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
-
-        res[tested[index]] = extraPValue.tolist()
-        res[f'fdr{tested[index]}'] = list(multipletests(extraPValue, method="fdr_bh")[1])
-
-
-    res['Y'] = [Y.columns[0]]
-    res['X'] = [X.columns[0]]
-    res['interactor'] = [interactor.columns[0]]
-    res['n'] = [Y.shape[0]]
-    res['interceptES'] = [lmLarge.intercept_[0]]
+        
 
     return res
+
+
 
 
 class DRPxPyInteractionPxModel(MatrixData):
@@ -2195,23 +2197,10 @@ class DRPxPyInteractionPxModel(MatrixData):
                 Py, Px, drug, n, intercept, PxBeta, adherentBeta, semiAdherentBeta, suspensionBeta, unknownBeta, drugResBeta, interactionBeta, llrPValue, llStatistic
         """
         pararelList = zip(self.ppis, repeat(self))
-        start = t.time()
+
         with mp.Pool(numOfCores) as process:
             pararelResults = process.starmap(ppiWrapper, pararelList)
-        print(f"Finished fitting in {t.time() - start} seconds")
-        for index, pararelResult in enumerate(pararelResults):
 
-            if index == 0:
-                pararelList = pararelResult
-            else:
-                
-                pararelList = pararelList + pararelResult
-            
-        start = t.time()
-        with mp.Pool(numOfCores) as process:
-            pararelResults = process.starmap(modelWrapper, pararelList)
-        print(f"Finished fitting in {t.time() - start} seconds")
-        
         for index, result in enumerate(pararelResults):
 
             if index == 0:
@@ -2220,7 +2209,7 @@ class DRPxPyInteractionPxModel(MatrixData):
             else:
                 for key in result:
                     results[key] = results[key] + result[key]
-
+            
        
         results = pd.DataFrame(results, columns = results.keys())
 
