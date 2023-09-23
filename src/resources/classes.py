@@ -1994,7 +1994,6 @@ def ppiWrapper(
         ppi:tuple[str, str], 
         self: DRPxPyInteractionPxModel)-> dict:
     
-    dataframesList = list()
 
     def modelRegressor(fitIntercept, copyX, nJobs):
         regressor = LinearRegression(
@@ -2078,7 +2077,7 @@ def ppiWrapper(
         return res
 
 
-    for drug in self.drugRes.columns:
+    for index, drug in enumerate(self.drugRes.columns):
 
         Y = self.drugRes.loc[:,[drug]]
         X = self.proteomics.loc[:,[ppi[0]]]
@@ -2113,10 +2112,17 @@ def ppiWrapper(
         M = (M - M.mean()) / M.std()
 
         res = linearModel(Y, X, M, interactor, self.fitIntercept, self.copyX, self.nJobs)
+
+        if index == 0: # In the first iteration we create the dictionary
+
+            dataDict = res
+        else:
+            for key in res: #Append values of each iteration in the dictionary per key
+                dataDict[key] = dataDict[key] + res[key]
     	
         
 
-    return res
+    return dataDict
 
 
 
