@@ -211,3 +211,4 @@ Findings:
              3. If Py alters Dr alone, idem idem idem
           2. And it will require half the time since we do not need to reverse the PPI's
     4. Regarding the convergence of subsampling of Proeteomics75PV using GLS (Calculating AUC), pick one of the subsampling levels where the whole distribution is above the orange line, and repeat the subsampling and AUC calculation 100 times or more to understand if the distribution closes up to the orange line or not... Since I cannot show that chart and expect for people not to question why that subsampling level has more recalling power than all samples... If this test converged to the orange line we would be safe from the prying eyes of reviewers
+    5. Make boxplor/histo of the p-values of the 3 tests in the new model. In order to show what mechanism is mostly associated with the drug response. It seams that PxPy has less small pValues than Px and Py alone
