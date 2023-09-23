@@ -2101,10 +2101,11 @@ def ppiWrapper(
         interactor = interactor.loc[samplesCommon]
         M = M.loc[samplesCommon]
 
-        # Check if any of the predictors are constant
-        # if not X[X.std() == 0].empty and interactor[interactor.std() == 0].empty and M[M.std() == 0].empty:
-        #     print(f"X, interactor and M are constant for {ppi} and {drug}, skipping")
-        #     continue TODO:Correct Error
+        if (X.std() == 0).any() or (interactor.std() == 0).any() or (M.std() == 0).any():
+            print(f"X std is {X.std()}, interactor std is {interactor.std()} and M std is {M.std()} for {ppi} and {drug}, skipping")
+            print(f"X, interactor and M are constant for {ppi} and {drug}, skipping")
+            continue
+
 
 
         X = (X - X.mean()) / X.std()
