@@ -2093,6 +2093,9 @@ def ppiWrapper(
         samplesCommon = list(set.intersection(
             set(Y.index), set(X.index), set(interactor.index), set(M.index)
             ))# samples common to all dataframes
+        if len(samplesCommon)==0: 
+            print(f"No samples in common between X, Y, M and interactor for {ppi} and {drug}, skipping")
+            continue
         samplesCommon.sort()
 
         #subset dataframes to common samples
