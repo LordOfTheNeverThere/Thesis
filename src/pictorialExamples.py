@@ -65,31 +65,31 @@ if __name__ == '__main__':
             Px = Px + np.random.normal(0, 0.1, lineSamplesNum)
             Py = 1.5*Px + np.random.normal(0, 0.7, lineSamplesNum)
 
-            PxCluster = np.random.normal(4, 1, clusterSamplesNum)
+            PxCluster = np.random.normal(0, 1.2, clusterSamplesNum)
             PxCluster = PxCluster + np.random.normal(0, 0.1, clusterSamplesNum)
 
             if clusterAbove:
                 
-                PyCluster = 1.5*PxCluster + np.random.normal(0, 1, clusterSamplesNum) + 4
+                PyCluster = 0.25*PxCluster + np.random.normal(0, 1, clusterSamplesNum) + 4
 
             else:
 
-                PyCluster = 1.5*PxCluster + np.random.normal(0, 1, clusterSamplesNum) - 8
+                PyCluster = 0.25*PxCluster + np.random.normal(0, 1, clusterSamplesNum) - 4
         else:
             Px = np.random.normal(0, 1, lineSamplesNum)
             Px = Px + np.random.normal(0, 0.1, lineSamplesNum)
             Py = -1.5*Px - np.random.normal(0, 0.7, lineSamplesNum)
 
-            PxCluster = np.random.normal(4, 1, clusterSamplesNum)
+            PxCluster = np.random.normal(0, 1.2, clusterSamplesNum)
             PxCluster = PxCluster + np.random.normal(0, 0.1, clusterSamplesNum)
 
             if clusterAbove:
                 
-                PyCluster = -1.5*PxCluster + np.random.normal(0, 1, clusterSamplesNum) + 8
+                PyCluster = -0.15*PxCluster + np.random.normal(0, 1, clusterSamplesNum) + 4
 
             else:
 
-                PyCluster = -1.5*PxCluster + np.random.normal(0, 1, clusterSamplesNum) - 4
+                PyCluster = -0.15*PxCluster + np.random.normal(0, 1, clusterSamplesNum) - 4
 
         Px = np.concatenate((Px, PxCluster))
         Py = np.concatenate((Py, PyCluster))
