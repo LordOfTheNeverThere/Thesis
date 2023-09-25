@@ -33,7 +33,7 @@ if __name__ == '__main__':
         sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
         sm.set_array([])
         scatter.get_legend().remove()
-        scatter.figure.colorbar(sm, label='Drug Response')
+        scatter.figure.colorbar(sm, label=DRName)
 
         plt.title(f'Protein expression \n with Drug Response')
         plt.xlabel(str(xName))
@@ -116,4 +116,4 @@ if __name__ == '__main__':
                 results = getExample(proteinsCorrelated, normallyHighDR, clusterAbove)
                 index = results.pop('index')
                 results = pd.DataFrame(results, index=index)
-                plotPictorial(results, f'pictorialExampleProteinsCorrelated={proteinsCorrelated}NormallyHigh={normallyHighDR}ClusterAbove={clusterAbove}.png')
+                plotPictorial(results, f'pictorialExampleProteinsCorrelated={proteinsCorrelated}NormallyHigh={normallyHighDR}ClusterAbove={clusterAbove}.png', 'Px', 'DR', 'Py')
