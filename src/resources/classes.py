@@ -2240,9 +2240,9 @@ class DRPxPyInteractionPxModel(MatrixData):
         data = self.data.copy()
         #get only relevant columns
         anovaData = pd.DataFrame(columns=['residSqSmall', 'residSqLarge', 'drug'])
-        anovaData['drug'] = data['info']['drug']
-        anovaData['residSqLarge'] = data['info']['residSqLarge']
-        anovaData['residSqSmall'] = data['info']['residSqSmall']
+        anovaData['drug'] = data['drug']
+        anovaData['residSqLarge'] = data['residSqLarge']
+        anovaData['residSqSmall'] = data['residSqSmall']
 
         from resources import Anova
         modelLarge = Anova(anovaData, False)
@@ -2263,10 +2263,10 @@ class DRPxPyInteractionPxModel(MatrixData):
     def volcanoPlot(
             self, 
             filepath:str, 
+            pValCol:str,
             falseDiscoveryRate:float=0.001, 
-            pValHzLine:float = 0.01, 
+            pValHzLine:float = 0.0001, 
             extraFeatures:bool = False,
-            useExtraSS:bool = False,
             diffCutOff:float=0):
         """Volcano plot in order to find statisticall relevant relationships.
 
@@ -2280,25 +2280,19 @@ class DRPxPyInteractionPxModel(MatrixData):
         """        
         data = self.data.copy()
         # Filter data by false discovery rate
-        if useExtraSS:
-            data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
-        else:
-            data = data.loc[data['info']['fdrLLR'] < falseDiscoveryRate]
-
+        varName = pValCol.split('PValue')[0]
+        data = data.loc[data[f'fdr{pValCol}'] < falseDiscoveryRate]
 
         # Calculate the difference between large and small model's residuals in order to understand what X changes the model the most
         if diffCutOff != 0:
-            data.loc[:,('info','residSqDiff')] = data.loc[:,('info','residSqLarge')] - data.loc[:,('info','residSqSmall')]
-            data = data.loc[abs(data[('info','residSqDiff')]) > diffCutOff]
+            data.loc[:,'residSqDiff'] = data.loc[:,'residSqLarge'] - data.loc[:,'residSqSmall']
+            data = data.loc[abs(data['residSqDiff']) > diffCutOff]
         # # Replace 0 p-values with the smallest possible value for so that log10 is defined
         # data.loc[:,('info','llrPValue')] = data.loc[:,('info','llrPValue')].apply(lambda x: x if x != 0 else 1e-323)
 
-        if useExtraSS:
-            yValues = -np.log10(data['info']['extraSSPValue'])
-        else:        
-            yValues = -np.log10(data['info']['llrPValue'])
+        yValues = data.loc[:,pValCol]
         
-        xValues = data['effectSize']['interaction']
+        xValues = data.loc[:,f"{varName}ES"]
 
         # Matplotlib set main axis font size
         plt.rcParams["axes.titlesize"] = 22
@@ -2336,7 +2330,7 @@ class DRPxPyInteractionPxModel(MatrixData):
         ax.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
 
         # Title
-        ax.set_title(f"Volcano plot")
+        ax.set_title(f"Volcano plot using {varName}")
         ax.legend()
 
         self.volcanoPath = filepath
