@@ -43,7 +43,7 @@ if __name__ == '__main__':
     print(f'fitting took {t.time() - start} seconds')
 
     
-    # dummy:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/neoDrugRegressor.pickle.gz')
     # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmallllr.png', extraFeatures=True, useExtraSS=False) 
     # dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
     # drugRes.data = drugRes.data.T
