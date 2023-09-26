@@ -44,38 +44,10 @@ if __name__ == '__main__':
 
     
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/neoDrugRegressor.pickle.gz')
-    # dummy.volcanoPlot('volcanoPlotDrInteractionPxModelDrugSmallllr.png', extraFeatures=True, useExtraSS=False) 
+    dummy.pValsHistogram('pValsHistogramCorum.png')
+    dummy.volcanoPlot('volcanoPlotModelVInteraction.png', 'interactionPValue', extraFeatures=False) 
+    #TODO: Make methood that plots the pValues histogram of the model for all three different pValues
     # dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
     # drugRes.data = drugRes.data.T
     # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes.data, topNumber=10)
 
-    # # #Test Py = RPL12, Px = RPL10, drug=299;OSI-027;GDSC1
-    # drugRes.data = drugRes.data.loc[:,['299;OSI-027;GDSC1']]
-    # ppisOfInterest = {('RPL10', 'RPL12')}
-    # trial = DRInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, pcFactors)
-    # fit = trial.fit(numOfCores = 2)
-    # data = trial.data.copy()
-    # data.loc[data['info']['Px'] == 'RPL12'].loc[data['info']['Py'] == 'RPL10'].loc[data['info']['drug'] == '299;OSI-027;GDSC1']
-    # data.loc[data['info']['Py'] == 'RPL12'].loc[data['info']['Px'] == 'RPL10'].loc[data['info']['drug'] == '299;OSI-027;GDSC1']
-    # trial.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes,typeOfInteraction='Drug Response', falseDiscoveryRate=1)
-
-
-    # # Calculate the effect size of the factor {drug} in linear model on the model's residuals, for small and large model, for all drugs
-    # drugSmall:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallRegressor.pickle.gz')
-    # start = t.time()
-    # drugSmall.resiCorr()
-    # print(f'drugSmall.resiCorr() took {t.time() - start} seconds')
-    # drugSmall.write()
-    # print('done')
-
-    # drugLarge:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugLargeRegressor.pickle.gz')
-    # start = t.time()
-    # drugLarge.resiCorr()
-    # print(f'drugLarge.resiCorr() took {t.time() - start} seconds')
-    # drugLarge.write()
-    # print('done')
-
-    # drugSmallPCA:DRInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/drugSmallPCARegressor.pickle.gz')
-    # start = t.time()
-    # drugSmallPCA.resiCorr()
-    # print(f'drugSmallPCA.resiCorr() took {t.time() - start} seconds')

@@ -1356,16 +1356,14 @@ class GeneDependency(MatrixData):
         print(f"From all the gene data of shape {data.shape[1]}, from the second filtration the set of genes is of size {len(genesOfInterest)}")
         
         self.genes = genesOfInterest
-
-
-        
         
 
     def createInteractionModel(
             self, 
             ppis:Iterable[tuple[str, str]], 
             proteomics :ProteinsMatrix, 
-            M:pd.DataFrame | pd.Series, **modelKwargs) ->DRInteractionPxModel:
+            modelClass,
+            M:pd.DataFrame | pd.Series, **modelKwargs) -> DRPxPyInteractionPxModel|PyPxDrugInteractionModel:
         
         """Creates an Interaction Model using instead of the Drug Response (samples*drug), 
         it uses the gene dependency data (samples*genes)
@@ -1373,6 +1371,7 @@ class GeneDependency(MatrixData):
         Args:
             ppis (Iterable[tuple[str, str]]): PPIS to use in the interaction model
             proteomics (ProteinsMatrix): Proteomics data to use in the interaction model
+            modelClass (DRPxPyInteractionPxModel|PxPyInteractionPxModel): Class of the interaction model to use
             M (DataFrame | Series[Unknown]): Possible Confouding factors to use in the interaction model
 
         Returns:
@@ -1387,7 +1386,7 @@ class GeneDependency(MatrixData):
         print(f"From all the gene data of shape {self.data.shape}, we only use {geneDependencyData.shape}")
 
         #Get Interaction Model
-        interactionModel = DRInteractionPxModel(ppis, proteomics, geneDependencyData, M, isGeneData = True, **modelKwargs)
+        interactionModel = modelClass(ppis, proteomics, geneDependencyData, M, isGeneData = True, **modelKwargs)
 
         return interactionModel
 
@@ -2226,6 +2225,26 @@ class DRPxPyInteractionPxModel(MatrixData):
         self.data = results
 
         return results
+
+    def pValsHistogram(self, filepath:str=''):
+
+        data = self.data.copy()
+        data = data.loc[:, ['interactionPValue', 'interactorPValue', 'XPValue']]
+        data = data.melt(var_name='pValType', value_name='pVal')
+        grid = sns.FacetGrid(data, col="pValType")
+
+        grid.map(sns.histplot, "pVal", bins=100, kde=True, kde_kws={'bw_adjust':0.8})
+        #Make histograms more sofisticated
+        grid.set_titles(col_template="{col_name}")
+        grid.set_axis_labels("p-value", "Frequency")
+        plt.tight_layout(pad = 4)
+        plt.subplots_adjust(hspace=0.5, wspace=0.2)
+
+        if filepath !='':
+            plt.savefig(filepath, dpi=600)
+        else:
+            plt.show()
+
 
 
 
