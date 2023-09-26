@@ -2280,8 +2280,9 @@ class DRPxPyInteractionPxModel(MatrixData):
         """        
         data = self.data.copy()
         # Filter data by false discovery rate
-        varName = pValCol.split('PValue')[0]
-        data = data.loc[data[f'fdr{pValCol}'] < falseDiscoveryRate]
+        varCol = f"{pValCol.split('PValue')[0]}ES"
+        fdrCol = f'fdr{pValCol}'
+        data = data.loc[data[fdrCol] < falseDiscoveryRate]
 
         # Calculate the difference between large and small model's residuals in order to understand what X changes the model the most
         if diffCutOff != 0:
@@ -2292,7 +2293,7 @@ class DRPxPyInteractionPxModel(MatrixData):
 
         yValues = data.loc[:,pValCol]
         
-        xValues = data.loc[:,f"{varName}ES"]
+        xValues = data.loc[:,varCol]
 
         # Matplotlib set main axis font size
         plt.rcParams["axes.titlesize"] = 22
@@ -2330,7 +2331,7 @@ class DRPxPyInteractionPxModel(MatrixData):
         ax.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
 
         # Title
-        ax.set_title(f"Volcano plot using {varName}")
+        ax.set_title(f"Volcano plot using {pValCol}")
         ax.legend()
 
         self.volcanoPath = filepath
@@ -2341,20 +2342,20 @@ class DRPxPyInteractionPxModel(MatrixData):
         if extraFeatures:
                 hueVars = {} # List to store all the extra vars to be used as hue in the scatter plot
                 #1st feature (Number of samples in common between Px, Py and Drug)
-                hueVars['samples'] = {'data': data['info']['n'], 'varType': 'numerical'}
+                hueVars['samples'] = {'data': data['n'], 'varType': 'numerical'}
                 #2nd feature (Number of other associations of that PPI with other drug, how much the PPI is tested, how large is the fdr penalty)
-                valuesCount = data.loc[:,[('info','Py'),('info', 'Px')]].value_counts()
-                hueVars['#tested']= {'data': data.apply(lambda row: valuesCount[row[('info','Py')], row[('info', 'Px')]], axis=1), 'varType': 'numerical'}
+                valuesCount = data.loc[:,['Py','Px']].value_counts()
+                hueVars['#tested']= {'data': data.apply(lambda row: valuesCount[row['Py'], row['Px']], axis=1), 'varType': 'numerical'}
                 #3rd feature (Py)
-                hueVars['Py'] = {'data': data['info']['Py'], 'varType': 'categorical'}
+                hueVars['Py'] = {'data': data['interactor'], 'varType': 'categorical'}
                 #4th feature (Px)
-                hueVars['Px'] = {'data': data['info']['Px'], 'varType': 'categorical'}
+                hueVars['Px'] = {'data': data['X'], 'varType': 'categorical'}
                 #5th feature (Drug)
-                hueVars['drug'] = {'data': data['info']['drug'], 'varType': 'categorical'}
+                hueVars['drug'] = {'data': data['Y'], 'varType': 'categorical'}
                 #6th feature (fdr)
-                hueVars['fdr'] = {'data': data['info']['fdrLLR'], 'varType': 'numerical'}
+                hueVars['fdr'] = {'data': data[fdrCol], 'varType': 'numerical'}
                 #7th feature (ppi)
-                hueVars['ppi'] = {'data': data['info']['Py'] + ';' + data['info']['Px'], 'varType': 'categorical'}
+                hueVars['ppi'] = {'data': data['X'] + ';' + data['interactor'], 'varType': 'categorical'}
 
                 for hueVar in hueVars: # Iterate over all the extra features, and used them as hue in the scatterPlots
 
@@ -2398,13 +2399,16 @@ class DRPxPyInteractionPxModel(MatrixData):
                     plt.close()
         
 
-    def scatterTheTopVolcano(self, filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, typeOfInteraction:str, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0):
+    def scatterTheTopVolcano(self, pValCol:str,filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, typeOfInteraction:str, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0):
         
         data = self.data.copy()
-        data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
+        fdrCol = f'fdr{pValCol}'
+        varCol = f"{pValCol.split('PValue')[0]}ES"
+
+        data = data.loc[data[fdrCol] < falseDiscoveryRate]
         # betaThresh = data['effectSize']['interaction'].quantile(threhsQuantile) # define a beta threshold based on a quantile given by the use
         # data = data.loc[abs(data['effectSize']['interaction']) > betaThresh] # subset data to only include betas above the threshold
-        data = data.sort_values(by=[('info','llrPValue')], ascending=[True])
+        data = data.sort_values(by=pValCol, ascending=[True])
         #Selecting top
         top = data.iloc[0:topNumber,:]
         #reseting index
@@ -2412,13 +2416,14 @@ class DRPxPyInteractionPxModel(MatrixData):
         #iterate samples
         for index, row in top.iterrows():
 
-            pValue = row['info']['llrPValue']
-            effectSize = row['effectSize']['interaction']
-            drug = row['info']['drug']
+            pValue = row[pValCol]
+            effectSize = row[varCol]
+            drug = ['interactor']
             anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
             anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
             filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
-            ppi = row['info']['Px'] + ';' + row['info']['Py']
+            ppi = row['X'] + ';' + row['interactor']
+            
             proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, typeOfInteraction,filepath, **anotation)
 
     def triangulate(
@@ -2428,6 +2433,7 @@ class DRPxPyInteractionPxModel(MatrixData):
             volcanoYMin:float,
             volcanoYMax:float,
             typeOfInteraction:str,
+            pValCol:str,
             scatter:int = 0,
             filepathMold:str|None='',
             interactive:bool = False,
@@ -2450,21 +2456,23 @@ class DRPxPyInteractionPxModel(MatrixData):
             pd.DataFrame: Data according to the volcano plot thresholds
         """
         data = self.data.copy()
+        fdrCol = f'fdr{pValCol}'
+        varCol = f"{pValCol.split('PValue')[0]}ES"
             # Filter data by false discovery rate
-        data = data.loc[data['info']['fdrExtraSS'] < falseDiscoveryRate]
+        data = data.loc[data[fdrCol] < falseDiscoveryRate]
 
-        data = data.loc[(data['effectSize']['interaction'] >= volcanoXMin) & (data['effectSize']['interaction'] <= volcanoXMax)]
-        data = data.loc[(-np.log10(data['info']['llrPValue']) >= volcanoYMin) & (-np.log10(data['info']['llrPValue']) <= volcanoYMax)]
+        data = data.loc[(data[varCol] >= volcanoXMin) & (data[varCol] <= volcanoXMax)]
+        data = data.loc[(-np.log10(data[pValCol]) >= volcanoYMin) & (-np.log10(data[pValCol]) <= volcanoYMax)]
         if diffCutOff != 0:
-            data.loc[:,('info','residSqDiff')] = data.loc[:,('info','residSqLarge')] - data.loc[:,('info','residSqSmall')]
-            data = data.loc[abs(data[('info','residSqDiff')]) > diffCutOff]
+            data.loc[:,'residSqDiff'] = data.loc[:,'residSqLarge'] - data.loc[:,'residSqSmall']
+            data = data.loc[abs(data['residSqDiff']) > diffCutOff]
 
-        data = data.sort_values(by=[('info','llrPValue')], ascending=[True])
+        data = data.sort_values(by=pValCol, ascending=[True])
 
         if interactive: #It will show the original dark plot, but it will allow the user to select a point, and scatter it with Drug Response as Color and Size
             
-            yValues = -np.log10(data['info']['llrPValue'])
-            xValues = data['effectSize']['interaction']
+            yValues = -np.log10(data[pValCol])
+            xValues = data[varCol]
             
             fig = plt.figure(figsize=(60,60), dpi=300)
             ax = fig.add_subplot(111)
@@ -2492,7 +2500,7 @@ class DRPxPyInteractionPxModel(MatrixData):
             ax.set_ylim(volcanoYMin, volcanoYMax)
 
             # Title
-            ax.set_title(f"Volcano plot")
+            ax.set_title(f"Volcano plot using {pValCol}")
 
             # Function to handle pick events
             def picker(event):
