@@ -2310,7 +2310,7 @@ class DRPxPyInteractionPxModel(MatrixData):
         # # Replace 0 p-values with the smallest possible value for so that log10 is defined
         # data.loc[:,('info','llrPValue')] = data.loc[:,('info','llrPValue')].apply(lambda x: x if x != 0 else 1e-323)
 
-        yValues = data.loc[:,pValCol]
+        yValues = -np.log10(data.loc[:,pValCol])
         
         xValues = data.loc[:,varCol]
 
@@ -2331,8 +2331,8 @@ class DRPxPyInteractionPxModel(MatrixData):
         plt.figure(figsize=(20, 20), dpi=300)
         # Plot
         ax = sns.scatterplot(
-            x=xValues.values,
-            y=yValues.values,
+            x=xValues,
+            y=yValues,
             color="k",
             s=15,
             alpha=0.8,
@@ -2346,7 +2346,6 @@ class DRPxPyInteractionPxModel(MatrixData):
 
         # Grid
         ax.axvline(0, c="k", lw=0.5, ls="--")
-        pValHzLine = 0.05  # Replace this value with the desired p-value
         ax.axhline(-np.log10(pValHzLine), c="k", lw=0.5, ls="--", label=f"p-value = {pValHzLine}")
 
         # Title
@@ -2363,8 +2362,8 @@ class DRPxPyInteractionPxModel(MatrixData):
                 #1st feature (Number of samples in common between Px, Py and Drug)
                 hueVars['samples'] = {'data': data['n'], 'varType': 'numerical'}
                 #2nd feature (Number of other associations of that PPI with other drug, how much the PPI is tested, how large is the fdr penalty)
-                valuesCount = data.loc[:,['Py','Px']].value_counts()
-                hueVars['#tested']= {'data': data.apply(lambda row: valuesCount[row['Py'], row['Px']], axis=1), 'varType': 'numerical'}
+                valuesCount = data.loc[:,['interactor','X']].value_counts()
+                hueVars['#tested']= {'data': data.apply(lambda row: valuesCount[row['interactor'], row['X']], axis=1), 'varType': 'numerical'}
                 #3rd feature (Py)
                 hueVars['Py'] = {'data': data['interactor'], 'varType': 'categorical'}
                 #4th feature (Px)
