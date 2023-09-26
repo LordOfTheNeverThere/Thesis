@@ -44,6 +44,7 @@ if __name__ == '__main__':
 
     
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/neoDrugRegressor.pickle.gz')
+    dummy.pValsHistogram('pValsHistogramCorum.png')
     dummy.volcanoPlot('volcanoPlotModelVInteractionCorum.png', 'interactionPValue', extraFeatures=True) 
     dummy.volcanoPlot('volcanoPlotModelVPyCorum.png', 'interactorPValue', extraFeatures=True) 
     dummy.volcanoPlot('volcanoPlotModelVPxCorum.png', 'XPValue', extraFeatures=True)
