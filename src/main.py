@@ -42,12 +42,12 @@ if __name__ == '__main__':
     #Filter data to only include genes of interest
     geneDependency.filterGenes() #Default outputs 3468 genes has having at least 0.25 of samples with some statistical significance (pValue < 0.025)
     #Construct the interaction model
-    interactionModel = geneDependency.createInteractionModel(ppisOfInterest, ogProteomics, pcFactors, isDrugResSmall=True)
+    interactionModel = geneDependency.createInteractionModel(DRPxPyInteractionPxModel,ppisOfInterest, ogProteomics, pcFactors, isDrugResSmall=True)
     #Fit the interaction model
     start = t.time()
-    fit = interactionModel.fit(numOfCores=20)
+    fit = interactionModel.fit(numOfCores=38)
     #Save the interaction model
-    interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelSmall.pickle.gz'
+    interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz'
     interactionModel.write()
     end = t.time()
     print(f'Time to fit model: {end - start}')
