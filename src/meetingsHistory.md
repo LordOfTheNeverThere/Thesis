@@ -161,7 +161,7 @@ Tasks:
 24/8/23
     1. ~~Regarding the hat on the Model that includes the drug on the Large Model we ought to remove it from fruther analyses if it ever arises again~~
     2. ~~Only work with the Large Model Model, that is Py ~ Px + M + Drug/Gene + Drug/Gene*Px, the volcano plot of the Small Model Model is strangely worse... (Well let's see)~~
-    3. Do the Synthetic data examples that will help understand the DRInteraction Model:
+    3. ~~Do the Synthetic data examples that will help understand the DRInteraction Model:~~
         1. Starting with Positevely correlated Proteins: beta_Px > 0
           1. One where the low IC50 is the linear line and the high IC50 are cluster above -> Expected: beta_int > 0
           2. One where the low IC50 is the linear line and the high IC50 are cluster bellow -> Expected: beta_int < 0
