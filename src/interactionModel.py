@@ -44,11 +44,6 @@ if __name__ == '__main__':
 
     
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/neoDrugRegressor.pickle.gz')
-    dummy.pValsHistogram('pValsHistogramCorum.png')
-    dummy.volcanoPlot('volcanoPlotModelVInteractionCorum.png', 'interactionPValue', extraFeatures=True) 
-    dummy.volcanoPlot('volcanoPlotModelVPyCorum.png', 'interactorPValue', extraFeatures=True) 
-    dummy.volcanoPlot('volcanoPlotModelVPxCorum.png', 'XPValue', extraFeatures=True)
-    #TODO: Make methood that plots the pValues histogram of the model for all three different pValues
     # dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
     # drugRes.data = drugRes.data.T
     # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes.data, topNumber=10)
