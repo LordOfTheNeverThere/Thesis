@@ -1360,18 +1360,18 @@ class GeneDependency(MatrixData):
 
     def createInteractionModel(
             self, 
+            modelClass,
             ppis:Iterable[tuple[str, str]], 
             proteomics :ProteinsMatrix, 
-            modelClass,
             M:pd.DataFrame | pd.Series, **modelKwargs) -> DRPxPyInteractionPxModel|PyPxDrugInteractionModel:
         
         """Creates an Interaction Model using instead of the Drug Response (samples*drug), 
         it uses the gene dependency data (samples*genes)
 
         Args:
+            modelClass (DRPxPyInteractionPxModel|PxPyInteractionPxModel): Class of the interaction model to use
             ppis (Iterable[tuple[str, str]]): PPIS to use in the interaction model
             proteomics (ProteinsMatrix): Proteomics data to use in the interaction model
-            modelClass (DRPxPyInteractionPxModel|PxPyInteractionPxModel): Class of the interaction model to use
             M (DataFrame | Series[Unknown]): Possible Confouding factors to use in the interaction model
 
         Returns:
