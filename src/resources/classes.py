@@ -1342,16 +1342,39 @@ class GeneDependency(MatrixData):
 
         return data
 
-    def filterGenes(self, skewThresh:float = -1.25, medianScallingThresh:float =-0.5):
-        
+    def filterGenes(self, skewThresh:float = -1.25, medianScallingThresh:float =-0.5, skewnessHist:bool = False):
+        """This method filters the genes in the gene dependency matrix, 
+        only genes with at least one sample of value less than medianScallingThresh are selected &&
+        from those only genes with a skewness less than skewThresh are kept
+
+        Args:
+            skewnessHist (bool) Default False: Should we plot the histogram of the skewness of the genes? Do you need it :D ?
+            skewThresh (float, optional): _description_. Defaults to -1.25.
+            medianScallingThresh (float, optional): _description_. Defaults to -0.5.
+        """
         #get median filtered gene dependency data, all samples are equivalente
         data = self.scaleSamples()
         print(f"Finnished scaling samples per median of essential and non essential set of genes and selecting only genes with at least one sample of value less than {medianScallingThresh}")
         genesOfInterest = data.columns[(data < medianScallingThresh).any()]
         print(f"From all the gene data of shape {data.shape[1]}, from the first filtration the set of genes is of size {len(genesOfInterest)}")
         data = data.loc[:, genesOfInterest]
-        skewResults = skew(data, axis=0, nan_policy='omit').reshape(1, -1)
-        skewResults = pd.DataFrame(skewResults, columns=data.columns)
+        skewResults = skew(data, axis=0, nan_policy='omit')
+        skewData = pd.Series(skewResults, index=data.columns)
+
+        
+
+        if skewnessHist:
+            #histogram
+            sns.histplot(skewData.values, binwidth = 0.25, kde=True, line_kws={'linewidth': 0.8})
+            plt.xlabel('Skewness')
+            plt.ylabel('Frequency')
+            #make horizontal line ate skewThresh
+            plt.axvline(skewThresh, color='red', linestyle='dashed', linewidth=1)
+            plt.title('Histogram of the skewness of the genes')
+            plt.tight_layout(pad=2)
+            plt.show()
+            plt.close()
+
         genesOfInterest = data.columns[(skewResults < skewThresh).any()]
         print(f"From all the gene data of shape {data.shape[1]}, from the second filtration the set of genes is of size {len(genesOfInterest)}")
         
