@@ -212,3 +212,25 @@ Findings:
           2. And it will require half the time since we do not need to reverse the PPI's
     4. Regarding the convergence of subsampling of Proeteomics75PV using GLS (Calculating AUC), pick one of the subsampling levels where the whole distribution is above the orange line, and repeat the subsampling and AUC calculation 100 times or more to understand if the distribution closes up to the orange line or not... Since I cannot show that chart and expect for people not to question why that subsampling level has more recalling power than all samples... If this test converged to the orange line we would be safe from the prying eyes of reviewers
     5. ~~Make boxplor/histo of the p-values of the 3 tests in the new model. In order to show what mechanism is mostly associated with the drug response. It seams that PxPy has less small pValues than Px and Py alone~~
+
+
+29/9/23
+    1. WRITEEEEEEE! 
+       1. Revise what was written before, and see what must be rewritten and what must be added! The algorithmic part is the one which will need more looking up too
+       2. Send each finnished chapter to the Professor, to ease revision
+       3. You can't put everything on the thesis, focus on the interaction (The other two terms were alrealdy done extensively) term imagery and meaning, but the leftovers in the annex
+          1. An example:
+             1. Introduce Model V for DR, saying that you used Corum ppis with a certain threshold
+             2. Show volcano plot (The drug one is interesting, put the others in annex)
+             3. Say that you did exactly the same for another set of protein, String900 union Biogrid
+             4. Show volcano plot (The drug one is interesting, put the others in annex)
+             5. Show list of most significant association, like top 10, in both cases, compare them, they should have some similarities, but not completely equal.
+             6. Repeat the same process but now for Gene Dependency.   
+   
+    2. If model IV will be included in the thesis, understand better if The Professor wants it included!
+       1. See if the top 30 associations seen in the model IV are included in model's V associations, this should be the case, since model V is an improvement from V. Report this
+    3. Revise the Signs in the pictorial Examples
+    4. Add a biological meaning to it, by associating the sign of the beta of interaction term or combination of signs of other betas with change in Drug Response (Ideally create an association which is simple and holds up in all cases in the same manner)
+    5. We have 8 possibilities in our models, see how many association we have for each of the eigth classes (after fdr cut off), then plot a volcano plot with this classes as hue, also do an heatmap
+       1. In addition we can add a method that adds a new column in each association that says what class it belongs (Begin writting first, at leat a bit)
+    6. The 3 distributions of the three pValues of Model V has an artefact, there is suposed to be an uniform distribution, with an inflation on the small p-values. Professor said to look up the internet to find what is it? (After starting writting)
