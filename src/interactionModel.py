@@ -43,7 +43,19 @@ if __name__ == '__main__':
     # print(f'fitting took {t.time() - start} seconds')
 
     
-    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/neoDrugRegressor.pickle.gz')
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
+    dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
+    
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}GeneDependency.png', col, extraFeatures = True)
+
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900andBiogrid/interactionModelV.pickle.gz')
+    dummy.pValsHistogram('pValsHistogramString900andBiogrid.png')
+    
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}.png', col, extraFeatures = True)
+
+
     # dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
     # drugRes.data = drugRes.data.T
     # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes.data, topNumber=10)

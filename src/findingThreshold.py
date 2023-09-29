@@ -154,18 +154,24 @@ def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int]
 if __name__ == '__main__':
     
     proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75PVProteomics.pickle.gz')
+    corum:ppiDataset = read(PATH + '/external/ppiDataset/corum.pickle.gz')
+    sampleNum = 5
+    for iteration in range(0, 10000):
+        sampledProteins = ProteinsMatrix(None,  proteinsData.data.sample(n=sampleNum, axis=0, random_state=42))
+        pairwiseCorr = sampledProteins.getGLSCorr('Mean')
+        AUC = pairwiseCorr.aucCalculator(corum.name, 'Mean', 'p-value', True)
 
-    subsamplingList = list(range(5,950,5))
-    repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
+    # subsamplingList = list(range(5,950,5))
+    # repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
 
-    start = time.time()
-    randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList, False, True)
-    end = time.time()
-    sumOfTime = end-start
-    print(sumOfTime)
-    start = time.time()
-    randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList, True, True)
-    end = time.time()
-    sumOfTime = end-start
-    print(sumOfTime)
+    # start = time.time()
+    # randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList, False, True)
+    # end = time.time()
+    # sumOfTime = end-start
+    # print(sumOfTime)
+    # start = time.time()
+    # randomSubSamplingAUC(proteinsData, subsamplingList, repeatsList, True, True)
+    # end = time.time()
+    # sumOfTime = end-start
+    # print(sumOfTime)
 
