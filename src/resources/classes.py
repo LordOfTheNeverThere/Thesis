@@ -1375,7 +1375,7 @@ class GeneDependency(MatrixData):
             plt.show()
             plt.close()
 
-        genesOfInterest = data.columns[(skewResults < skewThresh).any()]
+        genesOfInterest = skewData.index[(skewData < skewThresh)]
         print(f"From all the gene data of shape {data.shape[1]}, from the second filtration the set of genes is of size {len(genesOfInterest)}")
         
         self.genes = genesOfInterest
