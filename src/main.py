@@ -31,9 +31,8 @@ if __name__ == '__main__':
     # using only corum ppis that we were able to recall, with high confidence
     vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
     vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
-    ppisOfInterest = set(vaeGLSPairwise.data.query("corum ==1 and fdr < 0.01").index)
+    ppisOfInterest = set(vaeGLSPairwise.data.query("stringHighest == 1 & biogrid == 1 ").index)
     ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
-
 
     pca, pcFactors = vaeProteomics.PCA(factorsName='PC', numPC=5)
 
@@ -45,7 +44,7 @@ if __name__ == '__main__':
     interactionModel = geneDependency.createInteractionModel(DRPxPyInteractionPxModel,ppisOfInterest, ogProteomics, pcFactors, isDrugResSmall=True)
     #Fit the interaction model
     start = t.time()
-    fit = interactionModel.fit(numOfCores=38)
+    fit = interactionModel.fit(numOfCores=44)
     #Save the interaction model
     interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz'
     interactionModel.write()
