@@ -31,7 +31,7 @@ if __name__ == '__main__':
     # using only corum ppis that we were able to recall, with high confidence
     vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
     vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
-    ppisOfInterest = set(vaeGLSPairwise.data.query("stringHighest == 1 | biogrid == 1 ").index)
+    ppisOfInterest = set(vaeGLSPairwise.data.query("(stringHighest == 1 | biogrid == 1) & fdr < 0.01").index)
     ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
 
     pca, pcFactors = vaeProteomics.PCA(factorsName='PC', numPC=5)
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     dummy = DRPxPyInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, pcFactors)
     start = t.time()
     fit = dummy.fit(numOfCores = 38)
-    dummy.filepath = PATH + '/internal/interactionModel/String900andBiogrid/interactionModelV.pickle.gz'
+    dummy.filepath = PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz'
     dummy.write()
     print(f'fitting took {t.time() - start} seconds')
 
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     start = t.time()
     fit = interactionModel.fit(numOfCores=38)
     #Save the interaction model
-    interactionModel.filepath = PATH + '/internal/geneInteractionModel/String900andBiogrid/interactionModelV.pickle.gz'
+    interactionModel.filepath = PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz'
     interactionModel.write()
     end = t.time()
     print(f'Time to fit model: {end - start}')
