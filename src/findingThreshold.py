@@ -79,6 +79,7 @@ def getAUCvsThresholdPlot(pairwiseCorrData: pd.DataFrame) -> None:
 
 def variousRepeatsWrapper(iteration: int, sampleNum: int, proteinsData: ProteinsMatrix, glmCoefs: bool = False, pValueAUC:bool = False):
     corum:ppiDataset = read(PATH + '/external/ppiDataset/corum.pickle.gz')
+    corum.name = 'corum'
     sampledProteins = ProteinsMatrix(None,  proteinsData.data.sample(n=sampleNum, axis=0, random_state=iteration * sampleNum))
 
     #get Pairwise Correlations
@@ -153,13 +154,37 @@ def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int]
 
 if __name__ == '__main__':
     
-    proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75PVProteomics.pickle.gz')
+    proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75%PVProteomics.pickle.gz')
     corum:ppiDataset = read(PATH + '/external/ppiDataset/corum.pickle.gz')
-    sampleNum = 5
-    for iteration in range(0, 10000):
-        sampledProteins = ProteinsMatrix(None,  proteinsData.data.sample(n=sampleNum, axis=0, random_state=42))
+    corum.name = 'corum'
+    sampleNum = 185
+    iterationNum = 1000
+    aucList = []
+
+    for iteration in range(0, iterationNum):
+        start = time.time()
+        sampledProteins = ProteinsMatrix(None,  proteinsData.data.sample(n=sampleNum, axis=0, random_state=RANDOMSTATE))
         pairwiseCorr = sampledProteins.getGLSCorr('Mean')
-        AUC = pairwiseCorr.aucCalculator(corum.name, 'Mean', 'p-value', True)
+        PairwiseCorrMatrix.addGroundTruth(pairwiseCorr, corum.ppis, corum.name)
+        aucList.append(pairwiseCorr.aucCalculator(corum.name, 'Mean', 'p-value', True))
+        print(time.time() - start)
+
+    aucData = pd.Series(aucList)
+
+    globalPairwiseCorr: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr75PV.pickle.gz')
+    corumAUC = globalPairwiseCorr.aucs['p-value']['corum']
+    _, ax = plt.subplots(figsize=(40, 8))
+
+    ax.boxplot(aucData, labels=[f'{sampleNum}| (n == {iterationNum})'])
+    ax.set_ylabel("AUC", fontsize=14)
+    ax.set_xlabel("Sampling Number", fontsize=14)
+    ax.axhline(y=corumAUC, color='red', linestyle='-', label='Corum AUC using p-values -> (Base Model))')
+    ax.axhline(y=0.9*corumAUC, color='blue', linestyle=':', label="90% of Base Model's AUC")
+    ax.axhline(y=0.8*corumAUC, color='blue',linestyle=':', label="80% of Base Model's AUC")
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+    plt.show()
+
+
 
     # subsamplingList = list(range(5,950,5))
     # repeatsList= [round(900/repeat) + 5 if round(900/repeat) >= 4 and round(900/repeat) <= 100 else 100 if round(900/repeat)*2 > 100 else 5  for repeat in subsamplingList]
