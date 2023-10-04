@@ -154,7 +154,7 @@ def randomSubSamplingAUC(proteinsData: ProteinsMatrix, subsampleSizes: list[int]
 
 if __name__ == '__main__':
     
-    proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75%PVProteomics.pickle.gz')
+    proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75PVProteomics.pickle.gz')
     corum:ppiDataset = read(PATH + '/external/ppiDataset/corum.pickle.gz')
     corum.name = 'corum'
     sampleNum = 185
