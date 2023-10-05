@@ -222,7 +222,7 @@ Findings:
           1. An example:
              1. Introduce Model V for DR, saying that you used Corum ppis with a certain threshold
              2. Show volcano plot (The drug one is interesting, put the others in annex)
-             3. Say that you did exactly the same for another set of protein, String900 union Biogrid
+             3. Say that you did exactly the same for another set of protein, String900 union Biogrid, and fds < 0.01
              4. Show volcano plot (The drug one is interesting, put the others in annex)
              5. Show list of most significant association, like top 10, in both cases, compare them, they should have some similarities, but not completely equal.
              6. Repeat the same process but now for Gene Dependency.   
