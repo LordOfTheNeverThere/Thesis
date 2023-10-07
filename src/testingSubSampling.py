@@ -46,7 +46,7 @@ if __name__ == '__main__':
             pararelList =  zip(repeat(proteinsData.data.loc[sampleSet,:]), repeat(sampleNum), range(0, iterationNum))
             # use multiprocessing to speed up sampling
             
-            with mp.Pool(38) as process:
+            with mp.Pool(8) as process:
                 aucList = process.starmap(sampling, pararelList)
 
 
