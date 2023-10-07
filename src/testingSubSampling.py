@@ -5,21 +5,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import multiprocessing as mp
-from resources import GeneDependency, DRPxPyInteractionPxModel, PyPxDrugInteractionModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix, CPUS
+from resources import CPUS, GeneDependency, DRPxPyInteractionPxModel, PyPxDrugInteractionModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
 
-def sampling(proteinsData: pd.DataFrame, sampleNum: int, iterationNum: int):
-
-    aucData = {}
-    corum = read(PATH + '/external/ppiDataset/corum.pickle.gz')
-    corum.name = 'corum'
-    sampledProteins = ProteinsMatrix(None,  proteinsData.sample(n=sampleNum, axis=0, random_state=iterationNum*sampleNum))
-    pairwiseCorr = sampledProteins.getGLSCorr('Mean')
-    PairwiseCorrMatrix.addGroundTruth(pairwiseCorr, corum.ppis, corum.name)
-    auc = pairwiseCorr.aucCalculator(corum.name, 'Mean', 'p-value', True)
-    aucData['auc'] =  auc
-    aucData['sampleNum'] = sampleNum
-    aucData['meanMVSet'] = round(sampledProteins.data.isna().sum(axis=1).mean())
+def sampling(sampleNum: int, sampleList: list):
     
+    iterationNum = 1000
+    proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75PVProteomics.pickle.gz')
+    proteinsData =  proteinsData.data.loc[sampleList,:]
+    aucData = {'auc':[], 'sampleNum':[], 'meanMVSet':[]}
+    
+    for iteration in range(0, iterationNum):
+               
+        corum = read(PATH + '/external/ppiDataset/corum.pickle.gz')
+        corum.name = 'corum'
+        sampledProteins = ProteinsMatrix(None,  proteinsData.sample(n=sampleNum, axis=0, random_state=iteration*sampleNum))
+        pairwiseCorr = sampledProteins.getGLSCorr('Mean')
+        PairwiseCorrMatrix.addGroundTruth(pairwiseCorr, corum.ppis, corum.name)
+        auc = pairwiseCorr.aucCalculator(corum.name, 'Mean', 'p-value', True)
+        aucData['auc'] = aucData['auc'] +  [auc]
+        aucData['sampleNum'] = aucData['sampleNum'] + [sampleNum]
+        aucData['meanMVSet'] = aucData['meanMVSet'] + [round(sampledProteins.data.isna().sum(axis=1).mean())]
+        
     return aucData
 
 if __name__ == '__main__':
@@ -39,9 +45,7 @@ if __name__ == '__main__':
     presentSet = list(sampleNans.sort_values(ascending=True).head(350).index)
     sets = [missingSet, presentSet]
 
-    iterationNum = 1000
     sampleNums = [80, 250]
-    proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75PVProteomics.pickle.gz')
     globalPairwiseCorr: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr75PV.pickle.gz')
     corumAUC = globalPairwiseCorr.aucs['p-value']['corum']
 
@@ -51,19 +55,21 @@ if __name__ == '__main__':
     pararelList = []
     for sampleSet in sets:
         for sampleNum in sampleNums:
-            for iteration in range(0, iterationNum):
-                pararelList = pararelList + [(proteinsData.data.loc[sampleSet,:], sampleNum, iteration)]
+            pararelList.append((sampleNum, sampleSet))
     
-    with mp.Pool(37) as process:
+    with mp.Pool(CPUS) as process:
         aucList = process.starmap(sampling, pararelList)
 
-    for auc in aucList:
-        aucData['auc'].append(auc['auc'])
-        aucData['sampleNum'].append(auc['sampleNum'])
-        aucData['meanMVSet'].append(auc['meanMVSet'])
+    for index, auc in enumerate(aucList):
+
+        aucData['auc'] = aucData['auc'] + auc['auc']
+        aucData['sampleNum'] = aucData['sampleNum'] + auc['sampleNum']
+        aucData['meanMVSet'] = aucData['meanMVSet'] + auc['meanMVSet']
+        
 
 
     aucData = pd.DataFrame(aucData)
+    print(aucData)
     grid = sns.FacetGrid(aucData, row="meanMVSet", col="sampleNum")
 
     grid.map(sns.boxplot, "auc")
