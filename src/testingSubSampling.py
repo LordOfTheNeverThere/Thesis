@@ -32,7 +32,7 @@ if __name__ == '__main__':
     presentSet = list(sampleNans.sort_values(ascending=True).head(350).index)
     sets = [missingSet, presentSet]
 
-    iterationNum = 3
+    iterationNum = 100
     sampleNums = [80, 250]
     proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75%PVProteomics.pickle.gz')
     globalPairwiseCorr: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr75PV.pickle.gz')
