@@ -2138,6 +2138,11 @@ def ppiWrapper(
         M = (M - M.mean()) / M.std()
 
         res = linearModel(Y, X, M, interactor, self.fitIntercept, self.copyX, self.nJobs)
+        tested = ['interactionPValue','interactorPValue', 'XPValue']
+        
+        for pVal in tested:
+            res[f'fdr{pVal}'] = list(multipletests(res[pVal], method="fdr_bh")[1])
+
 
         if index == 0: # In the first iteration we create the dictionary
 
@@ -2440,7 +2445,7 @@ class DRPxPyInteractionPxModel(MatrixData):
                     plt.close()
         
 
-    def scatterTheTopVolcano(self, pValCol:str,filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, typeOfInteraction:str, falseDiscoveryRate:float=0.10, topNumber:int=2, threhsQuantile:float=0):
+    def scatterTheTopVolcano(self, pValCol:str,filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, typeOfInteraction:str, falseDiscoveryRate:float=0.01, topNumber:int=2, threhsQuantile:float=0):
         
         data = self.data.copy()
         fdrCol = f'fdr{pValCol}'
@@ -2466,6 +2471,21 @@ class DRPxPyInteractionPxModel(MatrixData):
             ppi = row['X'] + ';' + row['interactor']
             
             proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, typeOfInteraction,filepath, **anotation)
+
+    def getTopTable(self, topNumber:int, pValCol:str, filepath:str, falseDiscoveryRate:float=0.01):
+
+        data = self.data.copy()
+        fdrCol = f'fdr{pValCol}'
+
+        data = data.loc[data[fdrCol] < falseDiscoveryRate]
+
+        data = data.sort_values(by=pValCol, ascending=[True])
+        #Selecting top
+        top = data.iloc[0:topNumber,:]
+
+        top.to_csv(filepath, index=False)
+
+
 
     def triangulate(
             self, 

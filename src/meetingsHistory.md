@@ -215,22 +215,27 @@ Findings:
 
 
 29/9/23
-    1. WRITEEEEEEE! 
-       1. Revise what was written before, and see what must be rewritten and what must be added! The algorithmic part is the one which will need more looking up too
-       2. Send each finnished chapter to the Professor, to ease revision
-       3. You can't put everything on the thesis, focus on the interaction (The other two terms were alrealdy done extensively) term imagery and meaning, but the leftovers in the annex
-          1. An example:
-             1. Introduce Model V for DR, saying that you used Corum ppis with a certain threshold
-             2. Show volcano plot (The drug one is interesting, put the others in annex)
-             3. Say that you did exactly the same for another set of protein, String900 union Biogrid, and fds < 0.01
-             4. Show volcano plot (The drug one is interesting, put the others in annex)
-             5. Show list of most significant association, like top 10, in both cases, compare them, they should have some similarities, but not completely equal.
-             6. Repeat the same process but now for Gene Dependency.   
-   
-    2. If model IV will be included in the thesis, understand better if The Professor wants it included!
-       1. See if the top 30 associations seen in the model IV are included in model's V associations, this should be the case, since model V is an improvement from V. Report this
-    3. Revise the Signs in the pictorial Examples
-    4. Add a biological meaning to it, by associating the sign of the beta of interaction term or combination of signs of other betas with change in Drug Response (Ideally create an association which is simple and holds up in all cases in the same manner)
-    5. We have 8 possibilities in our models, see how many association we have for each of the eigth classes (after fdr cut off), then plot a volcano plot with this classes as hue, also do an heatmap
-       1. In addition we can add a method that adds a new column in each association that says what class it belongs (Begin writting first, at leat a bit)
-    6. The 3 distributions of the three pValues of Model V has an artefact, there is suposed to be an uniform distribution, with an inflation on the small p-values. Professor said to look up the internet to find what is it? (After starting writting)
+ 1. WRITEEEEEEE! 
+    1. Revise what was written before, and see what must be rewritten and what must be added! The algorithmic part is the one which will need more looking up too
+    2. Send each finnished chapter to the Professor, to ease revision
+    3. You can't put everything on the thesis, focus on the interaction (The other two terms were alrealdy done extensively) term imagery and meaning, but the leftovers in the annex
+       1. An example:
+          1. Introduce Model V for DR, saying that you used Corum ppis with a certain threshold
+          2. Show volcano plot (The drug one is interesting, put the others in annex)
+          3. Say that you did exactly the same for another set of protein, String900 union Biogrid, and fds < 0.01
+          4. Show volcano plot (The drug one is interesting, put the others in annex)
+          5. Show list of most significant association, like top 10, in both cases, compare them, they should have some similarities, but not completely equal.
+          6. Repeat the same process but now for Gene Dependency.   
+
+ 2. If model IV will be included in the thesis, understand better if The Professor wants it included!
+    1. See if the top 30 associations seen in the model IV are included in model's V associations, this should be the case, since model V is an improvement from V. Report this
+ 3. ~~Revise the Signs in the pictorial Examples~~
+ 4. ~~Add a biological meaning to it, by associating the sign of the beta of interaction term or combination of signs of other betas with change in Drug Response (Ideally create an association which is simple and holds up in all cases in the same manner)~~
+ 5. We have 8 possibilities in our models, see how many association we have for each of the eigth classes (after fdr cut off), then plot a volcano plot with this classes as hue, also do an heatmap
+    1. In addition we can add a method that adds a new column in each association that says what class it belongs (Begin writting first, at leat a bit)
+ 6. The 3 distributions of the three pValues of Model V has an artefact, there is suposed to be an uniform distribution, with an inflation on the small p-values. Professor said to look up the internet to find what is it? (After starting writting)
+
+6/10/23:
+1. Regarding the subsampling artefact, in order to try to find out if it happens when we subsample a medium number of samples due to sampling we might not be including outliers that in the full proteomics would decrease or increase the correlation in absolute value, and making the matter worse the inputting by the mean would mean that we would need more outliershy samples to break this general effect perserved in the mean, do the following:
+   1. Get two sets of samples, one with only samples with the lowest missing Values, other with highest missing value rate, within the selected few proteins of the inputted dataset.
+   2. For each select two distant subsampling numbers, that share the characteristic of having higher auc than all the matrix of inputted proteomics

@@ -43,17 +43,33 @@ if __name__ == '__main__':
     # print(f'fitting took {t.time() - start} seconds')
 
     
-    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-    dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
-    
-    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-        dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}GeneDependency.png', col, extraFeatures = True)
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
 
-    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900andBiogrid/interactionModelV.pickle.gz')
-    dummy.pValsHistogram('pValsHistogramString900andBiogrid.png')
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        dummy.getTopTable(30, col, filepath = f'topTable{col}CorumDR.csv')
+
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
+
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        dummy.getTopTable(30, col, filepath = f'topTable{col}CorumGeneDependency.csv')
+
+
+
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
+    dummy.pValsHistogram('pValsHistogramString900andBiogridDR.png')
     
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-        dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}.png', col, extraFeatures = True)
+        dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}DR.png', col, extraFeatures = True)
+        dummy.getTopTable(30, col, filepath = f'topTable{col}String900orBiogridDR.csv')
+
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz')
+    dummy.pValsHistogram('pValsHistogramString900andBiogridGeneDependency.png')
+    
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}GeneDependecy.png', col, extraFeatures = True)
+        dummy.getTopTable(30, col, filepath = f'topTable{col}String900orBiogridGeneDependency.csv')
+
+
 
 
     # dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
