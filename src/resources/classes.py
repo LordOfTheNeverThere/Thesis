@@ -2273,6 +2273,44 @@ class DRPxPyInteractionPxModel(MatrixData):
         else:
             plt.show()
 
+    def correctFDR(self):
+        """Corrects the fdr of the p-values of the interactions, interactors and Px. In case it was wrongfully done prevously,
+        circumventing the need to re run the model
+        """
+        df = self.data.copy()
+        finalDf = pd.DataFrame(columns=df.columns)
+
+        # Perform FDR correction for each unique combination
+        
+        for index, row in uniqueCombinations.iterrows():
+            proteinX = row['X']
+            proteinY = row['interactor']
+            
+            # Filter the DataFrame for the specific combination of ProteinX and ProteinY
+            subsetDf = df[(df['X'] == proteinX) & (df['interactor'] == proteinY)]
+
+            
+            for pValCol in ['interactionPValue', 'interactorPValue', 'XPValue']:
+                varCol = f"{pValCol.split('PValue')[0]}ES"
+                fdrCol = f'fdr{pValCol}'
+                # Extract the p-values for this combination
+                pValues = subsetDf[pValCol].values
+                
+                # Perform FDR correction using statsmodels
+                _, pValuesCor, _, _ = multipletests(pValues, method='fdr_bh')
+
+            
+                # Update the original DataFrame with the corrected p-values
+                subsetDf.loc[:,fdrCol] = pValuesCor
+
+            
+            # Append the results to the corrected_df DataFrame
+            finalDf = pd.concat([finalDf, subsetDf], axis=0, ignore_index=True)
+
+        # Update data
+        self.data = finalDf
+        print(finalDf)
+
 
 
 
