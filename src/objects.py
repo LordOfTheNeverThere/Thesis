@@ -20,6 +20,13 @@ if __name__ == '__main__':
 
     ogProteomics = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
     vaeProteomics = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
+    pv75MeanProteomics = read(PATH + '/internal/proteomics/mean75%PVProteomics.pickle.gz')
+    pv80MeanProteomics = read(PATH + '/internal/proteomics/mean80%PVProteomics.pickle.gz')
+    #How was pv75MeanProteomics created?
+    pv75MeanDf:pd.DataFrame = ogProteomics.data.copy()
+    pv75MeanDf = pv75MeanDf.dropna(axis=1, thresh=round(0.75*pv75MeanDf.shape[0]))
+    pv75MeanDf = pv75MeanDf.fillna(dict(pv75MeanDf.mean()))
+
 
 
     #Drug Response
