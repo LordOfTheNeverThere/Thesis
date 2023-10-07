@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     iterationNum = 1000
     sampleNums = [80, 250]
-    proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75%PVProteomics.pickle.gz')
+    proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75PVProteomics.pickle.gz')
     globalPairwiseCorr: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr75PV.pickle.gz')
     corumAUC = globalPairwiseCorr.aucs['p-value']['corum']
 
