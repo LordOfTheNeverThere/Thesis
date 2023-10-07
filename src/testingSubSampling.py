@@ -8,13 +8,20 @@ import multiprocessing as mp
 from resources import GeneDependency, DRPxPyInteractionPxModel, PyPxDrugInteractionModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix, CPUS
 
 def sampling(proteinsData: pd.DataFrame, sampleNum: int, iterationNum: int):
+
+    aucData = {}
     corum = read(PATH + '/external/ppiDataset/corum.pickle.gz')
     corum.name = 'corum'
     sampledProteins = ProteinsMatrix(None,  proteinsData.sample(n=sampleNum, axis=0, random_state=iterationNum*sampleNum))
     pairwiseCorr = sampledProteins.getGLSCorr('Mean')
     PairwiseCorrMatrix.addGroundTruth(pairwiseCorr, corum.ppis, corum.name)
     auc = pairwiseCorr.aucCalculator(corum.name, 'Mean', 'p-value', True)
-    return auc
+    aucData['auc'] =  auc
+    aucData['sampleNum'] = sampleNum
+    aucData['meanMVSet'] = round(sampledProteins.data.isna().sum(axis=1).mean())
+    
+    return aucData
+
 if __name__ == '__main__':
 
     ogProteomics = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
@@ -40,20 +47,21 @@ if __name__ == '__main__':
 
     
     aucData = {'auc':[], 'sampleNum':[], 'meanMVSet':[]}
+
+    pararelList = []
     for sampleSet in sets:
         for sampleNum in sampleNums:
-            
-            pararelList =  zip(repeat(proteinsData.data.loc[sampleSet,:]), repeat(sampleNum), range(0, iterationNum))
-            # use multiprocessing to speed up sampling
-            
-            with mp.Pool(8) as process:
-                aucList = process.starmap(sampling, pararelList)
+            for iteration in range(0, iterationNum):
+                pararelList = pararelList + [(proteinsData.data.loc[sampleSet,:], sampleNum, iteration)]
+    
+    with mp.Pool(37) as process:
+        aucList = process.starmap(sampling, pararelList)
 
+    for auc in aucList:
+        aucData['auc'].append(auc['auc'])
+        aucData['sampleNum'].append(auc['sampleNum'])
+        aucData['meanMVSet'].append(auc['meanMVSet'])
 
-            aucListLen = len(aucList)
-            aucData['auc'] = aucData['auc'] + aucList
-            aucData['sampleNum'] = aucData['sampleNum'] + list(repeat(sampleNum, aucListLen))
-            aucData['meanMVSet'] = aucData['meanMVSet'] + list(repeat(round(sampleNans.loc[sampleSet].mean()), aucListLen))
 
     aucData = pd.DataFrame(aucData)
     grid = sns.FacetGrid(aucData, row="meanMVSet", col="sampleNum")
