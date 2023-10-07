@@ -2279,6 +2279,7 @@ class DRPxPyInteractionPxModel(MatrixData):
         """
         df = self.data.copy()
         finalDf = pd.DataFrame(columns=df.columns)
+        uniqueCombinations = df[['X', 'interactor']].drop_duplicates()
 
         # Perform FDR correction for each unique combination
         
