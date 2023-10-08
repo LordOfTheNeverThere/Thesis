@@ -2351,7 +2351,7 @@ class DRPxPyInteractionPxModel(MatrixData):
             self, 
             filepath:str, 
             pValCol:str,
-            falseDiscoveryRate:float=0.001, 
+            falseDiscoveryRate:float=0.01, 
             pValHzLine:float = 0.0001, 
             extraFeatures:bool = False,
             diffCutOff:float=0):
