@@ -57,7 +57,7 @@ if __name__ == '__main__':
         for sampleNum in sampleNums:
             pararelList.append((sampleNum, sampleSet))
     
-    with mp.Pool(4) as process:
+    with mp.Pool(1) as process:
         aucList = process.starmap(sampling, pararelList)
 
     for index, auc in enumerate(aucList):
