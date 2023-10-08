@@ -2155,7 +2155,12 @@ def ppiWrapper(
 
     return dataDict
 
-def correctFDRWrapper(subsetDf:pd.DataFrame):
+def correctFDRWrapper(row, df:pd.DataFrame):
+
+    proteinX = row[1]['X']
+    proteinY = row[1]['interactor']
+    # Filter the DataFrame for the specific combination of ProteinX and ProteinY
+    subsetDf = df.loc[(df.loc[:,'X'] == proteinX) & (df.loc[:,'interactor'] == proteinY)].copy()
 
     
     for pValCol in ['interactionPValue', 'interactorPValue', 'XPValue']:
@@ -2298,21 +2303,10 @@ class DRPxPyInteractionPxModel(MatrixData):
         df = self.data.copy()
         finalDf = pd.DataFrame(columns=df.columns)
         uniqueCombinations = df[['X', 'interactor']].drop_duplicates()
-
-        # Perform FDR correction for each unique combination
-        pararelList = []
-        for index, row in uniqueCombinations.iterrows():
-
-            proteinX = row['X']
-            proteinY = row['interactor']
-            # Filter the DataFrame for the specific combination of ProteinX and ProteinY
-            subsetDf = df.loc[(df.loc[:,'X'] == proteinX) & (df.loc[:,'interactor'] == proteinY)].copy()
-            
-            pararelList.append(subsetDf)
+        pararelList = zip(uniqueCombinations.iterrows(), repeat(df))
         
         with mp.Pool(numOfCores) as process:
-            results = process.map(correctFDRWrapper, pararelList)
-
+            results = process.starmap(correctFDRWrapper, pararelList)
         finalDf = pd.concat(results, axis=0, ignore_index=True)
 
         # Update data

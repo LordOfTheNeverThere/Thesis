@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
         dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}DR.png', col, extraFeatures = True)
-        dummy.getTopTable(30, col, filepath = f'topTableCorum{col}DR.csv')
+        #dummy.getTopTable(30, col, filepath = f'topTableCorum{col}DR.csv')
     
     dummy.write()
 
@@ -58,8 +58,8 @@ if __name__ == '__main__':
     dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
 
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-        dummy.getTopTable(30, col, filepath = f'topTableCorum{col}GeneDependency.csv')
         dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}GeneDependency.png', col, extraFeatures = True)
+        #dummy.getTopTable(30, col, filepath = f'topTableCorum{col}GeneDependency.csv')
     
     dummy.write()
 
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
         dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}DR.png', col, extraFeatures = True)
-        dummy.getTopTable(30, col, filepath = f'topTableString900orBiogrid{col}DR.csv')
+        #dummy.getTopTable(30, col, filepath = f'topTableString900orBiogrid{col}DR.csv')
     
     dummy.write()
 
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
         dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}GeneDependecy.png', col, extraFeatures = True)
-        dummy.getTopTable(30, col, filepath = f'topTableString900orBiogrid{col}GeneDependency.csv')
+        #dummy.getTopTable(30, col, filepath = f'topTableString900orBiogrid{col}GeneDependency.csv')
     
     dummy.write()
 
