@@ -45,14 +45,14 @@ if __name__ == '__main__':
 
     dummy = DRPxPyInteractionPxModel(corum, ogProteomics, drugRes.data, pcFactors)
     start = t.time()
-    fit = dummy.fit(numOfCores=45)
+    fit = dummy.fit(numOfCores=38)
     dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz'
     dummy.write()
     print(f'fitting took {t.time() - start} seconds')
 
     dummy = DRPxPyInteractionPxModel(biogridString, ogProteomics, drugRes.data, pcFactors)
     start = t.time()
-    fit = dummy.fit(numOfCores=45)
+    fit = dummy.fit(numOfCores=38)
     dummy.filepath = PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz'
     dummy.write()
     print(f'fitting took {t.time() - start} seconds')
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     interactionModel = geneDependency.createInteractionModel(DRPxPyInteractionPxModel, corum, ogProteomics, pcFactors)
     #Fit the interaction model
     start = t.time()
-    fit = interactionModel.fit(numOfCores=45)
+    fit = interactionModel.fit(numOfCores=38)
     #Save the interaction model
     interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz'
     interactionModel.write()
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     interactionModel = geneDependency.createInteractionModel(DRPxPyInteractionPxModel, biogridString, ogProteomics, pcFactors)
     #Fit the interaction model
     start = t.time()
-    fit = interactionModel.fit(numOfCores=45)
+    fit = interactionModel.fit(numOfCores=38)
     #Save the interaction model
     interactionModel.filepath = PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz'
     interactionModel.write()
