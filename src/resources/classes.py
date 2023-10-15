@@ -2079,14 +2079,13 @@ def ppiWrapper(
             lr = 2 * (lmLargeLogLike - lmSmallLogLike)
             LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
 
-            # Extra sum of squares test
-            if fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
-                extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
-            else:    
-                extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
+            # # Extra sum of squares test
+            # if fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
+            #     extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
+            # else:    
+            #     extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
 
-            res[tested[index]] = extraPValue.tolist()
-            res[f"{tested[index]}LLR"] = LogLikeliRatioPVal.tolist()
+            res[tested[index]] = LogLikeliRatioPVal.tolist()
 
 
         res['Y'] = [Y.columns[0]]
@@ -2146,13 +2145,10 @@ def ppiWrapper(
                 dataDict[key] = dataDict[key] + res[key]
 
     testedESS = ['interactionPValue','interactorPValue', 'XPValue']
-    testedLLR = ['interactionPValueLLR','interactorPValueLLR', 'XPValueLLR']
     #Calculate fdr correction for ppi
     for pVal in testedESS:
         dataDict[f'fdr{pVal}'] = list(multipletests(dataDict[pVal], method="fdr_bh")[1])
-    
-    for pVal in testedLLR:
-        dataDict[f'fdr{pVal}LLR'] = list(multipletests(dataDict[pVal], method="fdr_bh")[1])
+
     	
         
 
