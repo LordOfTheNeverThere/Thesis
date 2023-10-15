@@ -1,5 +1,5 @@
 import pandas as pd
-from resources import PATH, CPUS, read, DrugResponseMatrix, DRInteractionPxModel, ResiduesMatrix, ProteinsMatrix, PairwiseCorrMatrix
+from resources import PATH, CPUS, read, DrugResponseMatrix, GeneDependency, ResiduesMatrix, ProteinsMatrix, PairwiseCorrMatrix
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from typing import Iterable
@@ -36,6 +36,8 @@ if __name__ == '__main__':
     #Samplesheet
     samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
 
+    #Gene Dependency
+    geneDependency:GeneDependency = read(PATH + '/internal/geneInteractionModel/geneDependency.pickle.gz')
 
     
 
