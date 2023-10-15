@@ -234,6 +234,7 @@ Findings:
  5. We have 8 possibilities in our models, see how many association we have for each of the eigth classes (after fdr cut off), then plot a volcano plot with this classes as hue, also do an heatmap
     1. In addition we can add a method that adds a new column in each association that says what class it belongs (Begin writting first, at leat a bit)
  6. The 3 distributions of the three pValues of Model V has an artefact, there is suposed to be an uniform distribution, with an inflation on the small p-values. Professor said to look up the internet to find what is it? (After starting writting)
+    1. After research you found out that something is wrong with your statistical test, maybe the p-value is being calculated on the wrong distro, revise the code, and then rerun the code, in this step you will need aproxametely 3 days, for the 3 models, seen in http://varianceexplained.org/statistics/interpreting-pvalue-histogram/
 
 6/10/23:
 1. Regarding the subsampling artefact, in order to try to find out if it happens when we subsample a medium number of samples due to sampling we might not be including outliers that in the full proteomics would decrease or increase the correlation in absolute value, and making the matter worse the inputting by the mean would mean that we would need more outliershy samples to break this general effect perserved in the mean, do the following:

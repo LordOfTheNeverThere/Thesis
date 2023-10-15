@@ -43,37 +43,35 @@ if __name__ == '__main__':
     # print(f'fitting took {t.time() - start} seconds')
 
     
-    #dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-    #dummy.correctFDR(numOfCores=38)
-    #dummy.pValsHistogram('pValsHistogramCorumDR.png')
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
+    dummy.correctFDR(numOfCores=38)
+    dummy.pValsHistogram('pValsHistogramCorumDR.png')
 
-    #for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-        #dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}DR.png', col, extraFeatures = True)
-        #dummy.getTopTable(30, col, filepath = f'topTableCorum{col}DR.csv')
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        # dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}DR.png', col, extraFeatures = True)
+        dummy.getTopTable(10, col, filepath = f'topTableCorum{col}DR.csv')
     
-    #dummy.write()
+    dummy.write()
 
-    #dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-    #dummy.correctFDR(numOfCores=38)
-    #dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
+    dummy.correctFDR(numOfCores=38)
+    dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
 
-    #for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-        #dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}GeneDependency.png', col, extraFeatures = True)
-        #dummy.getTopTable(30, col, filepath = f'topTableCorum{col}GeneDependency.csv')
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}GeneDependency.png', col, extraFeatures = True)
+        dummy.getTopTable(30, col, filepath = f'topTableCorum{col}GeneDependency.csv')
     
-    #dummy.write()
+    dummy.write()
 
-
-
-    #dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
-    #dummy.correctFDR(numOfCores=15)
-    #dummy.pValsHistogram('pValsHistogramString900andBiogridDR.png')
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
+    dummy.correctFDR(numOfCores=15)
+    dummy.pValsHistogram('pValsHistogramString900andBiogridDR.png')
     
-    #for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-        #dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}DR.png', col, extraFeatures = True)
-        #dummy.getTopTable(30, col, filepath = f'topTableString900orBiogrid{col}DR.csv')
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        # dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}DR.png', col, extraFeatures = True)
+        dummy.getTopTable(10, col, filepath = f'topTableString900orBiogrid{col}DR.csv')
     
-    #dummy.write()
+    dummy.write()
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz')
     dummy.correctFDR(numOfCores=11)
@@ -81,7 +79,7 @@ if __name__ == '__main__':
     
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
         dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}GeneDependecy.png', col, extraFeatures = True)
-        #dummy.getTopTable(30, col, filepath = f'topTableString900orBiogrid{col}GeneDependency.csv')
+        dummy.getTopTable(30, col, filepath = f'topTableString900orBiogrid{col}GeneDependency.csv')
     
     dummy.write()
 

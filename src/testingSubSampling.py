@@ -7,9 +7,9 @@ import seaborn as sns
 import multiprocessing as mp
 from resources import CPUS, GeneDependency, DRPxPyInteractionPxModel, PyPxDrugInteractionModel, ResidualsLinearModel, ResiduesMatrix, read, PATH, ProteinsMatrix, PairwiseCorrMatrix
 
-def sampling(sampleNum: int, sampleList: list):
+def sampling(sampleNum: int, sampleList: list, meanMVSet: int):
     
-    iterationNum = 1000
+    iterationNum = 30
     proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75PVProteomics.pickle.gz')
     proteinsData =  proteinsData.data.loc[sampleList,:]
     aucData = {'auc':[], 'sampleNum':[], 'meanMVSet':[]}
@@ -24,7 +24,7 @@ def sampling(sampleNum: int, sampleList: list):
         auc = pairwiseCorr.aucCalculator(corum.name, 'Mean', 'p-value', True)
         aucData['auc'] = aucData['auc'] +  [auc]
         aucData['sampleNum'] = aucData['sampleNum'] + [sampleNum]
-        aucData['meanMVSet'] = aucData['meanMVSet'] + [round(sampledProteins.data.isna().sum(axis=1).mean())]
+        aucData['meanMVSet'] = aucData['meanMVSet'] + [meanMVSet]
         
     return aucData
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     pararelList = []
     for sampleSet in sets:
         for sampleNum in sampleNums:
-            pararelList.append((sampleNum, sampleSet))
+            pararelList.append((sampleNum, sampleSet, round(pv75MeanDf.loc[sampleSet,:].isna().sum(axis=1).mean())))
     
     with mp.Pool(1) as process:
         aucList = process.starmap(sampling, pararelList)

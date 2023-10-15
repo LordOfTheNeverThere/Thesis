@@ -2064,7 +2064,7 @@ def ppiWrapper(
         xSmall.append(pd.concat([M, interactor, interaction], axis=1))
         tested = ['interactionPValue','interactorPValue', 'XPValue']
         lmLarge =modelRegressor(fitIntercept,copyX, nJobs).fit(xLarge, Y)
-        # lmLargeLogLike = loglike(Y, lmLarge.predict(xLarge))
+        lmLargeLogLike = loglike(Y, lmLarge.predict(xLarge))
 
         coefs = lmLarge.coef_.tolist()[0]
         columns = ['X'] + M.columns.tolist() + ['interactor'] + ['interaction']
@@ -2074,11 +2074,10 @@ def ppiWrapper(
             x.columns = x.columns.astype(str)
             lmSmall = modelRegressor(fitIntercept,copyX, nJobs).fit(x, Y)
 
-            # # llr
-            # lmSmallLogLike = loglike(Y, lmSmall.predict(x))
-            # lmSmallResidualsSq = np.power(Y - lmSmall.predict(x), 2)
-            # lr = 2 * (lmLargeLogLike - lmSmallLogLike)
-            # LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
+            # llr
+            lmSmallLogLike = loglike(Y, lmSmall.predict(x))
+            lr = 2 * (lmLargeLogLike - lmSmallLogLike)
+            LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
 
             # Extra sum of squares test
             if fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
@@ -2087,7 +2086,7 @@ def ppiWrapper(
                 extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
 
             res[tested[index]] = extraPValue.tolist()
-            res[f'fdr{tested[index]}'] = list(multipletests(extraPValue, method="fdr_bh")[1])
+            res[f"{tested[index]}LLR"] = LogLikeliRatioPVal.tolist()
 
 
         res['Y'] = [Y.columns[0]]
@@ -2138,18 +2137,22 @@ def ppiWrapper(
         M = (M - M.mean()) / M.std()
 
         res = linearModel(Y, X, M, interactor, self.fitIntercept, self.copyX, self.nJobs)
-        tested = ['interactionPValue','interactorPValue', 'XPValue']
         
-        for pVal in tested:
-            res[f'fdr{pVal}'] = list(multipletests(res[pVal], method="fdr_bh")[1])
-
-
         if index == 0: # In the first iteration we create the dictionary
 
             dataDict = res
         else:
             for key in res: #Append values of each iteration in the dictionary per key
                 dataDict[key] = dataDict[key] + res[key]
+
+    testedESS = ['interactionPValue','interactorPValue', 'XPValue']
+    testedLLR = ['interactionPValueLLR','interactorPValueLLR', 'XPValueLLR']
+    #Calculate fdr correction for ppi
+    for pVal in testedESS:
+        dataDict[f'fdr{pVal}'] = list(multipletests(dataDict[pVal], method="fdr_bh")[1])
+    
+    for pVal in testedLLR:
+        dataDict[f'fdr{pVal}LLR'] = list(multipletests(dataDict[pVal], method="fdr_bh")[1])
     	
         
 
