@@ -2093,6 +2093,7 @@ def ppiWrapper(
         res['interactor'] = [interactor.columns[0]]
         res['n'] = [Y.shape[0]]
         res['interceptES'] = [lmLarge.intercept_[0]]
+        res['class'] = [self.classEncoder(res['XES'], res['interactorES'], res['interactionES'])]
 
         return res
 
@@ -2242,6 +2243,30 @@ class DRPxPyInteractionPxModel(MatrixData):
 
     #     return pValueDiff
 
+    @staticmethod
+    def classEncoder(betaPx, betaPy, betaPxPy)->int|None:
+
+
+        if betaPx > 0 and betaPxPy > 0 and betaPy < 0:
+            return 1
+        elif betaPx > 0 and betaPxPy > 0 and betaPy > 0:
+            return 2
+        elif betaPx < 0 and betaPxPy < 0 and betaPy > 0:
+            return 3
+        elif betaPx < 0 and betaPxPy < 0 and betaPy < 0:
+            return 4
+        elif betaPx > 0 and betaPxPy < 0 and betaPy < 0:
+            return 5
+        elif betaPx > 0 and betaPxPy < 0 and betaPy > 0:
+            return 6
+        elif betaPx < 0 and betaPxPy > 0 and betaPy > 0:
+            return 7
+        elif betaPx < 0 and betaPxPy > 0 and betaPy < 0:
+            return 8
+        else:
+            assert betaPx !=0 and betaPy !=0 and betaPxPy !=0, f"betaPx is {betaPx}, betaPy is {betaPy} and betaPxPy is {betaPxPy}, \n however an association was categorised and NaN so an error is present in the if elif statements"
+                
+            return None
 
     
     
@@ -2315,36 +2340,21 @@ class DRPxPyInteractionPxModel(MatrixData):
     def addBiologicalClasses(self):
         """Add the 8 possible classes to each association bringing biological meaning to the results
         """
-        def classEncoder(row)->int|None:
+        def getBetasForEncoder(row)->int|None:
 
-            betaPx = row['XPValueES']
-            betaPy = row['interactorPValueES']
-            betaPxPy = row['interactionPValueES']
+            betaPx = row['XES']
+            betaPy = row['interactorES']
+            betaPxPy = row['interactionES']
 
+            return self.classEncoder(betaPx, betaPy, betaPxPy)
 
-            if betaPx > 0 and betaPxPy > 0 and betaPy < 0:
-                return 1
-            elif betaPx > 0 and betaPxPy > 0 and betaPy > 0:
-                return 2
-            elif betaPx < 0 and betaPxPy < 0 and betaPy > 0:
-                return 3
-            elif betaPx < 0 and betaPxPy < 0 and betaPy < 0:
-                return 4
-            elif betaPx > 0 and betaPxPy < 0 and betaPy < 0:
-                return 5
-            elif betaPx > 0 and betaPxPy < 0 and betaPy > 0:
-                return 6
-            elif betaPx < 0 and betaPxPy > 0 and betaPy > 0:
-                return 7
-            elif betaPx < 0 and betaPxPy > 0 and betaPy < 0:
-                return 8
-            else:
-                assert betaPx !=0 and betaPy !=0 and betaPxPy !=0, f"betaPx is {betaPx}, betaPy is {betaPy} and betaPxPy is {betaPxPy}, \n however an association was categorised and NaN so an error is present in the if elif statements"
-                   
-                return None
             
         data = self.data.copy()
-        data['class'] = data.apply(classEncoder, axis=1)
+        data['class'] = data.apply(getBetasForEncoder, axis=1)
+
+        self.data = data
+
+        return data
 
 
 

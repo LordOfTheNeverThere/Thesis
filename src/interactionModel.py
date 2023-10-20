@@ -84,7 +84,8 @@ if __name__ == '__main__':
 
     
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-
+    dummy.addBiologicalClasses()
+    dummy.write()
     dummy.pValsHistogram('pValsHistogramCorumDR.png')
 
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
@@ -93,7 +94,8 @@ if __name__ == '__main__':
 
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-
+    dummy.addBiologicalClasses()
+    dummy.write()
     dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
 
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
@@ -102,7 +104,8 @@ if __name__ == '__main__':
     
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
-
+    dummy.addBiologicalClasses()
+    dummy.write()
     dummy.pValsHistogram('pValsHistogramString900andBiogridDR.png')
     
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
@@ -111,7 +114,8 @@ if __name__ == '__main__':
     
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz')
-
+    dummy.addBiologicalClasses()
+    dummy.write()
     dummy.pValsHistogram('pValsHistogramString900andBiogridGeneDependency.png')
     
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
