@@ -11,11 +11,20 @@ import time as t
 if __name__ == '__main__':
 
     # Pairwise Corrs
-
+    
+    #og
+    ogPearson = read(PATH + '/internal/pairwiseCorrs/OG/baseModelFiltered.pickle.gz')
+    ogPearson = read(PATH + '/internal/pairwiseCorrs/OG/baseModelPairwiseCorr.pickle.gz')
     #Mean
-    pv75Mean = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr75PV.pickle.gz')
-    pv80Mean = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr80PV.pickle.gz')
+    pv75MeanPearson = read(PATH + '/internal/pairwiseCorrs/Mean/pearsonPairCorr75PV.pickle.gz')
+    pv80MeanPearson = read(PATH + '/internal/pairwiseCorrs/Mean/pearsonPairCorr80PV.pickle.gz')
+    pv75MeanGLM = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr75PV.pickle.gz')
+    pv80MeanGLM = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr80PV.pickle.gz')
 
+    #Vae
+    vaePearson = read(PATH + '/internal/pairwiseCorrs/VAE/pearsonPairCorr.pickle.gz')
+    vaeGLM = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
+    
     #Proteomics
 
     ogProteomics = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')

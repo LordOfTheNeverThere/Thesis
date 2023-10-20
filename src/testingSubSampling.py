@@ -37,8 +37,12 @@ if __name__ == '__main__':
     pv75MeanDf = pv75MeanDf.dropna(axis=1, thresh=round(0.75*pv75MeanDf.shape[0]))
     # How many nans per sample are there?
     sampleNans =  pv75MeanDf.isna().sum(axis=1)
-    # sampleNans.hist(bins=100)
-    # plt.show()
+    #Plot the distribution of nans per sample using seabon
+    sns.set_theme(style="whitegrid")
+    sns.displot(sampleNans, kde=True)
+    plt.xlabel('Number of Missing Values')
+    plt.ylabel('Frequency')
+    plt.savefig("distributionOfNansInMean75PV.png", bbox_inches="tight")
     # create set of 300 with most mvs
     missingSet = list(sampleNans.sort_values(ascending=False).head(350).index)
     # create set of 300 with least mvs

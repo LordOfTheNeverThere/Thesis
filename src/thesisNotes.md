@@ -11,3 +11,8 @@
     5. ~~Do Methods~~Yup
        1. Do a chapter with dataset information technicalities, perhaps a table is in order, MV, size, type of variables
        2. Describe the various processes, not theretically, simply tell the storyo of what you did
+    6. Annexes
+       1. model biological interpretability
+       2. all models
+    7. Glossary
+    8. Acronyms

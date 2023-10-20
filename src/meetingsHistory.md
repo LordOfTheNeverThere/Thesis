@@ -233,7 +233,7 @@ Findings:
  4. ~~Add a biological meaning to it, by associating the sign of the beta of interaction term or combination of signs of other betas with change in Drug Response (Ideally create an association which is simple and holds up in all cases in the same manner)~~
  5. We have 8 possibilities in our models, see how many association we have for each of the eigth classes (after fdr cut off), then plot a volcano plot with this classes as hue, also do an heatmap
     1. In addition we can add a method that adds a new column in each association that says what class it belongs (Begin writting first, at leat a bit)
- 6. The 3 distributions of the three pValues of Model V has an artefact, there is suposed to be an uniform distribution, with an inflation on the small p-values. Professor said to look up the internet to find what is it? (After starting writting)
+ 6. ~~The 3 distributions of the three pValues of Model V has an artefact, there is suposed to be an uniform distribution, with an inflation on the small p-values. Professor said to look up the internet to find what is it? (After starting writting)~~
     1. After research you found out that something is wrong with your statistical test, maybe the p-value is being calculated on the wrong distro, revise the code, and then rerun the code, in this step you will need aproxametely 3 days, for the 3 models, seen in http://varianceexplained.org/statistics/interpreting-pvalue-histogram/
 
 6/10/23:

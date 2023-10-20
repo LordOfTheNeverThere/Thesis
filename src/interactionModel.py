@@ -29,10 +29,6 @@ if __name__ == '__main__':
     biogridString = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in biogridString}
 
 
-
-
-
-
     # #Cofounding Factors, use The samplesheet's growth properties or the 10 PC of the vaeProteomics dataframe    
     # growthProps = pd.get_dummies(samplesheet['growth_properties'])
     # growthProps = growthProps.rename(columns={'Semi-Adherent': 'SemiAdherent'})
@@ -43,89 +39,85 @@ if __name__ == '__main__':
     # pd.set_option('display.width', None)
     # pd.set_option('display.max_colwidth', -1)
 
-    dummy = DRPxPyInteractionPxModel(corum, ogProteomics, drugRes.data, pcFactors)
-    start = t.time()
-    fit = dummy.fit(numOfCores=38)
-    dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz'
-    dummy.write()
-    print(f'fitting took {t.time() - start} seconds')
-
-    dummy = DRPxPyInteractionPxModel(biogridString, ogProteomics, drugRes.data, pcFactors)
-    start = t.time()
-    fit = dummy.fit(numOfCores=38)
-    dummy.filepath = PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz'
-    dummy.write()
-    print(f'fitting took {t.time() - start} seconds')
-
-    geneDependency:GeneDependency = read(PATH + '/internal/geneInteractionModel/geneDependency.pickle.gz')
-
-    #Filter data to only include genes of interest
-    geneDependency.filterGenes() #Default outputs 3468 genes has having at least 0.25 of samples with some statistical significance (pValue < 0.025)
-    #Construct the interaction model
-    interactionModel = geneDependency.createInteractionModel(DRPxPyInteractionPxModel, corum, ogProteomics, pcFactors)
-    #Fit the interaction model
-    start = t.time()
-    fit = interactionModel.fit(numOfCores=38)
-    #Save the interaction model
-    interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz'
-    interactionModel.write()
-    end = t.time()
-    print(f'Time to fit model: {end - start}')
-
-
-    #Filter data to only include genes of interest
-    geneDependency.filterGenes() #Default outputs 3468 genes has having at least 0.25 of samples with some statistical significance (pValue < 0.025)
-    #Construct the interaction model
-    interactionModel = geneDependency.createInteractionModel(DRPxPyInteractionPxModel, biogridString, ogProteomics, pcFactors)
-    #Fit the interaction model
-    start = t.time()
-    fit = interactionModel.fit(numOfCores=38)
-    #Save the interaction model
-    interactionModel.filepath = PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz'
-    interactionModel.write()
-    end = t.time()
-    print(f'Time to fit model: {end - start}')
-
-    
-    # dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-    # dummy.correctFDR(numOfCores=38)
-    # dummy.pValsHistogram('pValsHistogramCorumDR.png')
-
-    # for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-    #     # dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}DR.png', col, extraFeatures = True)
-    #     dummy.getTopTable(10, col, filepath = f'topTableCorum{col}DR.csv')
-    
+    # dummy = DRPxPyInteractionPxModel(corum, ogProteomics, drugRes.data, pcFactors)
+    # start = t.time()
+    # fit = dummy.fit(numOfCores=38)
+    # dummy.filepath = PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz'
     # dummy.write()
+    # print(f'fitting took {t.time() - start} seconds')
 
-    # dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-    # dummy.correctFDR(numOfCores=38)
-    # dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
-
-    # for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-    #     dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}GeneDependency.png', col, extraFeatures = True)
-    #     dummy.getTopTable(30, col, filepath = f'topTableCorum{col}GeneDependency.csv')
-    
+    # dummy = DRPxPyInteractionPxModel(biogridString, ogProteomics, drugRes.data, pcFactors)
+    # start = t.time()
+    # fit = dummy.fit(numOfCores=38)
+    # dummy.filepath = PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz'
     # dummy.write()
+    # print(f'fitting took {t.time() - start} seconds')
 
-    # dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
-    # dummy.correctFDR(numOfCores=15)
-    # dummy.pValsHistogram('pValsHistogramString900andBiogridDR.png')
-    
-    # for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-    #     # dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}DR.png', col, extraFeatures = True)
-    #     dummy.getTopTable(10, col, filepath = f'topTableString900orBiogrid{col}DR.csv')
-    
-    # dummy.write()
+    # geneDependency:GeneDependency = read(PATH + '/internal/geneInteractionModel/geneDependency.pickle.gz')
 
-    # dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz')
-    # dummy.correctFDR(numOfCores=11)
-    # dummy.pValsHistogram('pValsHistogramString900andBiogridGeneDependency.png')
+    # #Filter data to only include genes of interest
+    # geneDependency.filterGenes() #Default outputs 3468 genes has having at least 0.25 of samples with some statistical significance (pValue < 0.025)
+    # #Construct the interaction model
+    # interactionModel = geneDependency.createInteractionModel(DRPxPyInteractionPxModel, corum, ogProteomics, pcFactors)
+    # #Fit the interaction model
+    # start = t.time()
+    # fit = interactionModel.fit(numOfCores=38)
+    # #Save the interaction model
+    # interactionModel.filepath = PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz'
+    # interactionModel.write()
+    # end = t.time()
+    # print(f'Time to fit model: {end - start}')
+
+
+    # #Filter data to only include genes of interest
+    # geneDependency.filterGenes() #Default outputs 3468 genes has having at least 0.25 of samples with some statistical significance (pValue < 0.025)
+    # #Construct the interaction model
+    # interactionModel = geneDependency.createInteractionModel(DRPxPyInteractionPxModel, biogridString, ogProteomics, pcFactors)
+    # #Fit the interaction model
+    # start = t.time()
+    # fit = interactionModel.fit(numOfCores=38)
+    # #Save the interaction model
+    # interactionModel.filepath = PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz'
+    # interactionModel.write()
+    # end = t.time()
+    # print(f'Time to fit model: {end - start}')
+
     
-    # for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-    #     dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}GeneDependecy.png', col, extraFeatures = True)
-    #     dummy.getTopTable(30, col, filepath = f'topTableString900orBiogrid{col}GeneDependency.csv')
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
+
+    dummy.pValsHistogram('pValsHistogramCorumDR.png')
+
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}DR.png', col, extraFeatures = True)
+        dummy.getTopTable(10, col, filepath = f'topTableCorum{col}DR.csv')
+
+
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
+
+    dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
+
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}GeneDependency.png', col, extraFeatures = True)
+        dummy.getTopTable(10, col, filepath = f'topTableCorum{col}GeneDependency.csv')
     
-    # dummy.write()
+
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
+
+    dummy.pValsHistogram('pValsHistogramString900andBiogridDR.png')
+    
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}DR.png', col, extraFeatures = True)
+        dummy.getTopTable(10, col, filepath = f'topTableString900orBiogrid{col}DR.csv')
+    
+
+    dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz')
+
+    dummy.pValsHistogram('pValsHistogramString900andBiogridGeneDependency.png')
+    
+    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
+        dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}GeneDependecy.png', col, extraFeatures = True)
+        dummy.getTopTable(10, col, filepath = f'topTableString900orBiogrid{col}GeneDependency.csv')
+    
 
 
 

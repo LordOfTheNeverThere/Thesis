@@ -441,8 +441,8 @@ class ProteinsMatrix(MatrixData):
             tuple[Any, Any]: the warped X to be used in the linear regression and the intercept, which is the mean of the variances of a sample across all gene symbols
         """        
         #invert it the covariance matrix
-        proteinData = proteinData.data
-        covMatrix = covMatrix.data
+        proteinData = proteinData.data # samples x proteins
+        covMatrix = covMatrix.data  # samples x proteins
         samplesCommon = proteinData.index.intersection(covMatrix.index)
         if len(samplesCommon) < len(proteinData.index):
             print(f"We have lost {len(proteinData.index) - len(samplesCommon)} samples ")
@@ -450,22 +450,22 @@ class ProteinsMatrix(MatrixData):
         proteinData = proteinData.loc[samplesCommon]
         covMatrix = covMatrix.loc[samplesCommon]
         
-        covMatrix = np.cov(covMatrix)
-        covMatrix = np.linalg.inv(covMatrix)
+        covMatrix = np.cov(covMatrix) # samples * samples
+        covMatrix = np.linalg.inv(covMatrix) # samples * samples
 
         # Decompose it with Cholesky, returning the lower triangular matrix of the positive definite matrix covMatrix, because cov(x1,x2) == cov(x2,x1)
-        cholsigmainvMean = np.linalg.cholesky(covMatrix)
+        cholsigmainvMean = np.linalg.cholesky(covMatrix) # samples * samples
 
 
         # Whittening transformation, we codify our data into a space where each the variance of each covariate is the same and equal to one, 
         # so we are kind like normalising it, in fact that's exactly what we are doing ~ N(0,I) As they call it warping...
-        warpedProteinsMean = proteinData.T.values @ cholsigmainvMean
+        warpedProteinsMean = proteinData.T.values @ cholsigmainvMean # proteins * samples x samples * samples = proteins * samples
 
         # The intercept is the sum of the choleski decomposition matrix, when the sum equals to one that sample is independent from all the others
-        warpedIntereceptMean = cholsigmainvMean.T.sum(axis=0)
+        warpedIntereceptMean = cholsigmainvMean.T.sum(axis=0) #samples
 
         if saveIndexes:
-            warpedProteinsMean = pd.DataFrame(warpedProteinsMean.T, columns=proteinData.columns, index=proteinData.index)
+            warpedProteinsMean = pd.DataFrame(warpedProteinsMean, index=proteinData.columns, columns=proteinData.index)
 
 
 
@@ -2281,8 +2281,8 @@ class DRPxPyInteractionPxModel(MatrixData):
         data = self.data.copy()
         data = data.loc[:, ['interactionPValue', 'interactorPValue', 'XPValue']]
         data = data.melt(var_name='pValType', value_name='pVal')
+        plt.figure(figsize=(40,20))
         grid = sns.FacetGrid(data, col="pValType")
-
         grid.map(sns.histplot, "pVal", bins=100, kde=True, kde_kws={'bw_adjust':0.8})
         #Make histograms more sofisticated
         grid.set_titles(col_template="{col_name}")
@@ -2311,6 +2311,41 @@ class DRPxPyInteractionPxModel(MatrixData):
         # Update data
         self.data = finalDf
         print(finalDf)
+
+    def addBiologicalClasses(self):
+        """Add the 8 possible classes to each association bringing biological meaning to the results
+        """
+        def classEncoder(row)->int|None:
+
+            betaPx = row['XPValueES']
+            betaPy = row['interactorPValueES']
+            betaPxPy = row['interactionPValueES']
+
+
+            if betaPx > 0 and betaPxPy > 0 and betaPy < 0:
+                return 1
+            elif betaPx > 0 and betaPxPy > 0 and betaPy > 0:
+                return 2
+            elif betaPx < 0 and betaPxPy < 0 and betaPy > 0:
+                return 3
+            elif betaPx < 0 and betaPxPy < 0 and betaPy < 0:
+                return 4
+            elif betaPx > 0 and betaPxPy < 0 and betaPy < 0:
+                return 5
+            elif betaPx > 0 and betaPxPy < 0 and betaPy > 0:
+                return 6
+            elif betaPx < 0 and betaPxPy > 0 and betaPy > 0:
+                return 7
+            elif betaPx < 0 and betaPxPy > 0 and betaPy < 0:
+                return 8
+            else:
+                assert betaPx !=0 and betaPy !=0 and betaPxPy !=0, f"betaPx is {betaPx}, betaPy is {betaPy} and betaPxPy is {betaPxPy}, \n however an association was categorised and NaN so an error is present in the if elif statements"
+                   
+                return None
+            
+        data = self.data.copy()
+        data['class'] = data.apply(classEncoder, axis=1)
+
 
 
 
