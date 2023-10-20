@@ -2264,7 +2264,7 @@ class DRPxPyInteractionPxModel(MatrixData):
         elif betaPx < 0 and betaPxPy > 0 and betaPy < 0:
             return 8
         else:
-            assert betaPx !=0 and betaPy !=0 and betaPxPy !=0, f"betaPx is {betaPx}, betaPy is {betaPy} and betaPxPy is {betaPxPy}, \n however an association was categorised and NaN so an error is present in the if elif statements"
+            assert betaPx == 0 and betaPy ==0 and betaPxPy ==0, f"betaPx is {betaPx}, betaPy is {betaPy} and betaPxPy is {betaPxPy}, \n however an association was categorised and NaN so an error is present in the if elif statements"
                 
             return None
 
@@ -2487,7 +2487,7 @@ class DRPxPyInteractionPxModel(MatrixData):
                 #7th feature (ppi)
                 hueVars['ppi'] = {'data': data['X'] + ';' + data['interactor'], 'varType': 'categorical'}
                 #8th feature (class)
-                hueVars['ppi'] = {'data': data['class'], 'varType': 'class'}
+                hueVars['class'] = {'data': data['class'], 'varType': 'class'}
 
                 for hueVar in hueVars: # Iterate over all the extra features, and used them as hue in the scatterPlots
 

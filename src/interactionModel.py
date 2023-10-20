@@ -91,7 +91,8 @@ if __name__ == '__main__':
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
         dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}DR.png', col, extraFeatures = True)
         dummy.getTopTable(10, col, filepath = f'topTableCorum{col}DR.csv')
-
+    
+    print("done")
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
     dummy.addBiologicalClasses()
@@ -102,6 +103,7 @@ if __name__ == '__main__':
         dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}GeneDependency.png', col, extraFeatures = True)
         dummy.getTopTable(10, col, filepath = f'topTableCorum{col}GeneDependency.csv')
     
+    print("done")
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
     dummy.addBiologicalClasses()
@@ -112,6 +114,7 @@ if __name__ == '__main__':
         dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}DR.png', col, extraFeatures = True)
         dummy.getTopTable(10, col, filepath = f'topTableString900orBiogrid{col}DR.csv')
     
+    print("done")
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz')
     dummy.addBiologicalClasses()
@@ -122,7 +125,7 @@ if __name__ == '__main__':
         dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}GeneDependecy.png', col, extraFeatures = True)
         dummy.getTopTable(10, col, filepath = f'topTableString900orBiogrid{col}GeneDependency.csv')
     
-
+    print("done")
 
 
 
