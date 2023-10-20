@@ -2486,6 +2486,8 @@ class DRPxPyInteractionPxModel(MatrixData):
                 hueVars['fdr'] = {'data': data[fdrCol], 'varType': 'numerical'}
                 #7th feature (ppi)
                 hueVars['ppi'] = {'data': data['X'] + ';' + data['interactor'], 'varType': 'categorical'}
+                #8th feature (class)
+                hueVars['ppi'] = {'data': data['class'], 'varType': 'class'}
 
                 for hueVar in hueVars: # Iterate over all the extra features, and used them as hue in the scatterPlots
 
@@ -2495,7 +2497,7 @@ class DRPxPyInteractionPxModel(MatrixData):
                         y=yValues,
                         hue=hueVars[hueVar]['data'],
                         palette= sns.color_palette("viridis", as_cmap=True) if hueVars[hueVar]['varType'] == 'numerical' else sns.color_palette("hls", len(hueVars[hueVar]['data'].unique())) ,  
-                        legend= hueVars[hueVar]['varType'] == 'numerical',       # Set the legend parameter to False
+                        legend= hueVars[hueVar]['varType'] == 'numerical' or hueVars[hueVar]['varType'] == 'class',       # Set the legend parameter to False
                         s=15,
                         alpha=0.8,
                         edgecolors="none",
