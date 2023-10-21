@@ -240,3 +240,10 @@ Findings:
 1. Regarding the subsampling artefact, in order to try to find out if it happens when we subsample a medium number of samples due to sampling we might not be including outliers that in the full proteomics would decrease or increase the correlation in absolute value, and making the matter worse the inputting by the mean would mean that we would need more outliershy samples to break this general effect perserved in the mean, do the following:
    1. Get two sets of samples, one with only samples with the lowest missing Values, other with highest missing value rate, within the selected few proteins of the inputted dataset.
    2. For each select two distant subsampling numbers, that share the characteristic of having higher auc than all the matrix of inputted proteomics
+
+20/10/23
+1.Do the top10 scatter plots, Py, Px, Drug Response, pick one of the figures for a main figure
+2. Understan if the gene essentiality seen with SOX1 is tissue type specific
+3. Do some schematics to explain some workflow, like the way the two sub sampling tests were made.
+4. Extended abstract é 80% copy paste, não necessita mais do que 1 dia at best
+5. Enviar 1st draft by monday
