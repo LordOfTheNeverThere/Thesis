@@ -768,8 +768,7 @@ class ProteinsMatrix(MatrixData):
 
     def plotPxPy3DimContinous(self, interactionName:str, ppi:str, interactor: pd.DataFrame, typeOfInteraction:str, filepath:str|None, **annotationArgs):
         """Scatter Plot with the protein expression of two proteins and the interactor data as third dim, in a continous manner, unlike plotPxPyDrug.
-        Additionally, the plot can be annotated with the arguments passed to the function. And the Interaction data will be represented with a colorbar and
-        and an overlaying Kernel Distribution Estimation, and with size.
+        Additionally, the plot can be annotated with the arguments passed to the function. And the Interaction data will be represented with a colorbar, and with size.
 
         Args:
             interactionName (str): name of the interaction present in the interactor Dataframe
@@ -2268,7 +2267,7 @@ class DRPxPyInteractionPxModel(MatrixData):
                 
             return None
 
-    
+
     
 
     def fit(self, numOfCores = CPUS)->pd.DataFrame:
@@ -2355,8 +2354,23 @@ class DRPxPyInteractionPxModel(MatrixData):
         self.data = data
 
         return data
+    
+            
+    def classCounter(self) -> dict:
+        """Counts the number of associations in each class
 
+        Returns:
+            dict: Dictionary with the number of associations in each class
+        """
 
+        self.classCounts = {classIndex:0 for classIndex in range(1,9)}
+        data = self.data.copy()
+        dataByClasses = data.groupby('class')
+
+        for dataByClass in dataByClasses:
+            self.classCounter[dataByClass[0]] = dataByClass[1].shape[0]
+
+        return self.classCounts
 
 
 
@@ -2531,7 +2545,18 @@ class DRPxPyInteractionPxModel(MatrixData):
                     plt.close()
         
 
-    def scatterTheTopVolcano(self, pValCol:str,filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, typeOfInteraction:str, falseDiscoveryRate:float=0.01, topNumber:int=2, threhsQuantile:float=0):
+    def scatterTheTopVolcano(
+            self, 
+            pValCol:str,
+            filepathMold:str, 
+            xDataframe:pd.DataFrame, 
+            yDataframe:pd.DataFrame, 
+            hueDataframe:pd.DataFrame, 
+            typeOfInteraction:str, 
+            falseDiscoveryRate:float=0.01, 
+            topNumber:int=2, 
+            axisDictator:dict={'X':'X', 'Y':'Y', 'hue':'interactor'},
+            subplot:bool=False):
         
         data = self.data.copy()
         fdrCol = f'fdr{pValCol}'
@@ -2545,18 +2570,110 @@ class DRPxPyInteractionPxModel(MatrixData):
         top = data.iloc[0:topNumber,:]
         #reseting index
         top = top.reset_index(drop=True)
-        #iterate samples
-        for index, row in top.iterrows():
 
-            pValue = row[pValCol]
-            effectSize = row[varCol]
-            drug = ['interactor']
-            anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
-            anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
-            filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
-            ppi = row['X'] + ';' + row['interactor']
+        if subplot:
+
+            sns.set(font_scale=2) # Increase font size of all labels in the subplot
+            fig, axs = plt.subplots(round(topNumber/2), 2, figsize=(round(topNumber/2)*10, round(topNumber/2)*10))
+            # Adjust spacing between subplots
+            plt.subplots_adjust(hspace=0.5, wspace=0.1)
+            #iterate samples    
+            for index, row in top.iterrows():
+
+                ax = axs.flat[index]
+                pValue = row[pValCol]
+                effectSize = row[varCol]
+                hue = row[axisDictator['hue']]
+                X = row[axisDictator['X']]
+                Y = row[axisDictator['Y']]
+                annotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e}'
+                annotation = {'text':annotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':20}
+
+
+                hueData = hueDataframe.loc[:,[hue]]
+                XData = xDataframe.loc[:,[X]]
+                YData = yDataframe.loc[:,[Y]]
+
+                samplesInCommon = list(set.intersection(set(hueData.index), set(XData.index), set(YData.index)))
+                hueData = hueData.loc[samplesInCommon]
+                XData = XData.loc[samplesInCommon]
+                YData = YData.loc[samplesInCommon]
+
+                plottingData = pd.concat([XData, YData], axis=1)
+                plottingData = pd.DataFrame(StandardScaler().fit_transform(plottingData) ,columns=plottingData.columns, index=plottingData.index)
+
+                #Add interactor
+                plottingData = plottingData.join(hueData, how = 'inner')
+
+                scatter = sns.scatterplot(data=plottingData, x=X, y=Y, hue=hue, size=hue, palette="viridis", alpha=1, edgecolor='none', s=15, ax=ax)
+                norm = matplotlib.colors.Normalize(vmin=hueData.min(), vmax=hueData.max())
+                # Add Colour Map
+                sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+                sm.set_array([])
+                scatter.get_legend().remove()
+                scatter.figure.colorbar(sm, label=hue, ax=ax)
+
+                ax.set_title(f'Protein expression \n with {typeOfInteraction}')
+                ax.set_xlabel(str(X))
+                ax.set_ylabel(str(Y))
+                ax.annotate(annotation['text'], xy=annotation['xy'], xycoords=annotation['xycoords'], fontsize=annotation['fontsize'])
+
+            fig.suptitle(f'Top {topNumber} associations', fontsize=32)
+
             
-            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, typeOfInteraction,filepath, **anotation)
+            filepath = filepathMold.split('.png')[0] + 'topCombined.png'
+            plt.savefig(filepath, bbox_inches="tight")
+
+
+
+        else:    
+            #iterate samples    
+            for index, row in top.iterrows():
+
+                pValue = row[pValCol]
+                effectSize = row[varCol]
+                hue = row[axisDictator['hue']]
+                X = row[axisDictator['X']]
+                Y = row[axisDictator['Y']]
+                annotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e}'
+                annotation = {'text':annotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
+
+
+                hueData = hueDataframe.loc[:,[hue]]
+                XData = xDataframe.loc[:,[X]]
+                YData = yDataframe.loc[:,[Y]]
+
+                samplesInCommon = list(set.intersection(set(hueData.index), set(XData.index), set(YData.index)))
+                hueData = hueData.loc[samplesInCommon]
+                XData = XData.loc[samplesInCommon]
+                YData = YData.loc[samplesInCommon]
+
+                plottingData = pd.concat([XData, YData], axis=1)
+                plottingData = pd.DataFrame(StandardScaler().fit_transform(plottingData) ,columns=plottingData.columns, index=plottingData.index)
+
+                #Add interactor
+                plottingData = plottingData.join(hueData, how = 'inner')
+
+                plt.figure(figsize=(10, 10))
+                scatter = sns.scatterplot(data=plottingData, x=X, y=Y, hue=hue, size=hue, palette="viridis", alpha=1, edgecolor='none', s=15)
+                norm = matplotlib.colors.Normalize(vmin=hueData.min(), vmax=hueData.max())
+                # Add Colour Map
+                sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+                sm.set_array([])
+                scatter.get_legend().remove()
+                scatter.figure.colorbar(sm, label=hue)
+
+                plt.title(f'Protein expression \n with {typeOfInteraction}')
+                plt.xlabel(str(X))
+                plt.ylabel(str(Y))
+                plt.annotate(annotation['text'], xy=annotation['xy'], xycoords=annotation['xycoords'], fontsize=annotation['fontsize'])
+                
+                filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
+
+                plt.savefig(filepath, bbox_inches="tight")
+
+            
+            
 
     def getTopTable(self, topNumber:int, pValCol:str, filepath:str, falseDiscoveryRate:float=0.01):
 
@@ -2711,7 +2828,7 @@ class DRPxPyInteractionPxModel(MatrixData):
             else:
                 filepath = None
             ppi = row['info']['Px'] + ';' + row['info']['Py']
-            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, **anotation)
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, False, **anotation)
 
 
 
@@ -3159,7 +3276,7 @@ class PyPxDrugInteractionModel(MatrixData):
             anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
             filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
             ppi = row['info']['Px'] + ';' + row['info']['Py']
-            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, typeOfInteraction,filepath, **anotation)
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, typeOfInteraction,filepath, False, **anotation)
 
     def triangulate(
             self, 
@@ -3296,4 +3413,4 @@ class PyPxDrugInteractionModel(MatrixData):
             else:
                 filepath = None
             ppi = row['info']['Px'] + ';' + row['info']['Py']
-            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, **anotation)
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, False, **anotation)

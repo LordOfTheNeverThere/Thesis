@@ -84,52 +84,41 @@ if __name__ == '__main__':
 
     
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-    dummy.addBiologicalClasses()
-    dummy.write()
-    dummy.pValsHistogram('pValsHistogramCorumDR.png')
+   
+    # dummy.pValsHistogram('pValsHistogramCorumDR.png')
 
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
         dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}DR.png', col, extraFeatures = True)
-        dummy.getTopTable(10, col, filepath = f'topTableCorum{col}DR.csv')
     
-    print("done")
+
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-    dummy.addBiologicalClasses()
-    dummy.write()
-    dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
+
+    # dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
 
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
         dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}GeneDependency.png', col, extraFeatures = True)
-        dummy.getTopTable(10, col, filepath = f'topTableCorum{col}GeneDependency.csv')
     
-    print("done")
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
-    dummy.addBiologicalClasses()
-    dummy.write()
-    dummy.pValsHistogram('pValsHistogramString900andBiogridDR.png')
+
+    # dummy.pValsHistogram('pValsHistogramString900andBiogridDR.png')
     
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
         dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}DR.png', col, extraFeatures = True)
-        dummy.getTopTable(10, col, filepath = f'topTableString900orBiogrid{col}DR.csv')
     
-    print("done")
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz')
-    dummy.addBiologicalClasses()
-    dummy.write()
-    dummy.pValsHistogram('pValsHistogramString900andBiogridGeneDependency.png')
+
+    # dummy.pValsHistogram('pValsHistogramString900andBiogridGeneDependency.png')
     
     for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
         dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}GeneDependecy.png', col, extraFeatures = True)
-        dummy.getTopTable(10, col, filepath = f'topTableString900orBiogrid{col}GeneDependency.csv')
     
-    print("done")
 
 
 
     # dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
     # drugRes.data = drugRes.data.T
-    # dummy.scatterTheTopVolcano('topVolcanoPlotScatter.png', ogProteomics, drugRes.data, topNumber=10)
+    # dummy.scatterTheTopVolcano('interactionPValue','topVolcanoPlotScatter.png', ogProteomics.data, ogProteomics.data, drugRes.data, 'Drug Response', topNumber=10, axisDictator={'X': 'X', 'Y':'interactor', 'hue':'Y'}, subplot=False)
 
