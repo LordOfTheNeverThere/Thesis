@@ -89,7 +89,7 @@ if __name__ == '__main__':
     dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
     dummy.write()
 
-    
+    print("done") 
 
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
     dummy.write()
 
-    
+    print("done")
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
     dummy.addPhenotypeChanges()
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
     dummy.write()
     
-    
+    print("done")
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz')
     dummy.addPhenotypeChanges()
@@ -114,6 +114,7 @@ if __name__ == '__main__':
     dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
     dummy.write()
     
+    print("done")
     
     #join by index dataframesList
     df = pd.concat(dataframesList, axis=1)
@@ -142,4 +143,3 @@ if __name__ == '__main__':
     # dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
     # drugRes.data = drugRes.data.T
     # dummy.scatterTheTopVolcano('interactionPValue','topVolcanoPlotScatterDRBiogridOrString900.png', ogProteomics.data, ogProteomics.data, drugRes.data, 'Drug Response', topNumber=10, axisDictator={'X': 'X', 'Y':'interactor', 'hue':'Y'}, subplot=True)
-
