@@ -9,7 +9,7 @@ from resources import CPUS, GeneDependency, DRPxPyInteractionPxModel, PyPxDrugIn
 
 def sampling(sampleNum: int, sampleList: list, meanMVSet: int):
     
-    iterationNum = 30
+    iterationNum = 100
     proteinsData: ProteinsMatrix = read(PATH + '/internal/proteomics/mean75PVProteomics.pickle.gz')
     proteinsData =  proteinsData.data.loc[sampleList,:]
     aucData = {'auc':[], 'sampleNum':[], 'meanMVSet':[]}
