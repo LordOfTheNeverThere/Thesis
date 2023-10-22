@@ -2267,6 +2267,15 @@ class DRPxPyInteractionPxModel(MatrixData):
                 
             return None
 
+    @staticmethod
+    def phenotypeResponse(category:int)->str:
+
+        if category in {1,2,5,6}:
+            return '+'
+        if category in {3,4,7,8}:
+            return '-'
+        else:
+            return None
 
     
 
@@ -2355,6 +2364,20 @@ class DRPxPyInteractionPxModel(MatrixData):
 
         return data
     
+    def addPhenotypeChanges(self):
+
+        def getPhenotype(row)->str:
+
+            category = row['class']
+
+            return self.phenotypeResponse(category)
+
+        data = self.data.copy()
+        data['phenotype'] = data.apply(getPhenotype, axis=1)
+
+        self.data = data
+
+        return data
             
     def classCounter(self) -> dict:
         """Counts the number of associations in each class
@@ -2368,10 +2391,25 @@ class DRPxPyInteractionPxModel(MatrixData):
         dataByClasses = data.groupby('class')
 
         for dataByClass in dataByClasses:
-            self.classCounter[dataByClass[0]] = dataByClass[1].shape[0]
+            self.classCounts[dataByClass[0]] = dataByClass[1].shape[0]
 
         return self.classCounts
+    
+    def phenotypeCounter(self) -> dict:
+        """Counts the number of associations in each phenotype change
 
+        Returns:
+            dict: Dictionary with the number of associations in each phenotype change
+        """
+
+        self.phenotypeCounts = {'+':0, '-':0}
+        data = self.data.copy()
+        dataByPhenotypes = data.groupby('phenotype')
+
+        for dataByPhenotype in dataByPhenotypes:
+            self.phenotypeCounts[dataByPhenotype[0]] = dataByPhenotype[1].shape[0]
+
+        return self.phenotypeCounts
 
 
     def resiCorr(self)->pd.DataFrame:

@@ -84,41 +84,62 @@ if __name__ == '__main__':
 
     
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-   
-    # dummy.pValsHistogram('pValsHistogramCorumDR.png')
+    dummy.addPhenotypeChanges()
+    dummy.phenotypeCounter()
+    dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
+    dummy.write()
 
-    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-        dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}DR.png', col, extraFeatures = True)
     
 
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
+    dummy.addPhenotypeChanges()
+    dummy.phenotypeCounter()
+    dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
+    dummy.write()
 
-    # dummy.pValsHistogram('pValsHistogramCorumGeneDependency.png')
-
-    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-        dummy.volcanoPlot(f'volcanoPlotModelVCorum{col}GeneDependency.png', col, extraFeatures = True)
     
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
-
-    # dummy.pValsHistogram('pValsHistogramString900andBiogridDR.png')
+    dummy.addPhenotypeChanges()
+    dummy.phenotypeCounter()
+    dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
+    dummy.write()
     
-    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-        dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}DR.png', col, extraFeatures = True)
     
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz')
-
-    # dummy.pValsHistogram('pValsHistogramString900andBiogridGeneDependency.png')
+    dummy.addPhenotypeChanges()
+    dummy.phenotypeCounter()
+    dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
+    dummy.write()
     
-    for col in ['interactionPValue', 'interactorPValue', 'XPValue']:
-        dummy.volcanoPlot(f'volcanoPlotModelVString900andBiogrid{col}GeneDependecy.png', col, extraFeatures = True)
     
+    #join by index dataframesList
+    df = pd.concat(dataframesList, axis=1)
+    df.to_csv(PATH + '/internal/interactionModel/interactionModelVCounts.csv')
+    import seaborn as sns
+    df = df.unstack().reset_index()
+    df.columns = ['model', 'phenotype', 'count']
+    # Set up Seaborn style
+    sns.set_style("whitegrid")
+    sns.set_palette("bright")
 
 
+    # Create the barplot
+    plt.figure(figsize=(10, 10))
+    ax = sns.barplot(data=df, x = 'model', y='count', hue='phenotype', palette="bright")
+    # Set the title and axis labels
+    ax.set_title("Class Counts by Interaction Model")
+    ax.set_xlabel("Interaction Model")
+    ax.set_ylabel("Class Count")
+
+    # Add a legend
+    ax.legend()
+    # Show the plot
+    plt.savefig('phenotypeDistributionPerModel.png')
 
     # dummy.triangulate(-0.06, 0.06, 35, 45, 'Drug Response', 100, 'test.png', True)
     # drugRes.data = drugRes.data.T
-    # dummy.scatterTheTopVolcano('interactionPValue','topVolcanoPlotScatter.png', ogProteomics.data, ogProteomics.data, drugRes.data, 'Drug Response', topNumber=10, axisDictator={'X': 'X', 'Y':'interactor', 'hue':'Y'}, subplot=False)
+    # dummy.scatterTheTopVolcano('interactionPValue','topVolcanoPlotScatterDRBiogridOrString900.png', ogProteomics.data, ogProteomics.data, drugRes.data, 'Drug Response', topNumber=10, axisDictator={'X': 'X', 'Y':'interactor', 'hue':'Y'}, subplot=True)
 

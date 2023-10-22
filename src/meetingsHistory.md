@@ -242,7 +242,7 @@ Findings:
    2. For each select two distant subsampling numbers, that share the characteristic of having higher auc than all the matrix of inputted proteomics
 
 20/10/23
-1.Do the top10 scatter plots, Py, Px, Drug Response, pick one of the figures for a main figure
+1. ~~Do the top10 scatter plots, Py, Px, Drug Response, pick one of the figures for a main figure~~
 2. Understan if the gene essentiality seen with SOX1 is tissue type specific
 3. Do some schematics to explain some workflow, like the way the two sub sampling tests were made.
 4. Extended abstract é 80% copy paste, não necessita mais do que 1 dia at best
