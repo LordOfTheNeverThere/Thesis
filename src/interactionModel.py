@@ -84,35 +84,23 @@ if __name__ == '__main__':
 
     
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/GLPPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-    dummy.addPhenotypeChanges()
-    dummy.phenotypeCounter()
-    dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
-    dummy.write()
+    dummy.volcanoPlot("", "pValCol", extraFeatures = True, subplot=True)
 
     print("done") 
 
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/GLSPValueVAEProteomicsCorum1FDRless0.01/interactionModelV.pickle.gz')
-    dummy.addPhenotypeChanges()
-    dummy.phenotypeCounter()
-    dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
-    dummy.write()
+    dummy.volcanoPlot("", "pValCol", extraFeatures = True, subplot=True)
 
     print("done")
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz')
-    dummy.addPhenotypeChanges()
-    dummy.phenotypeCounter()
-    dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
-    dummy.write()
+    dummy.volcanoPlot("", "pValCol", extraFeatures = True, subplot=True)
     
     print("done")
 
     dummy:DRPxPyInteractionPxModel = read(PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz')
-    dummy.addPhenotypeChanges()
-    dummy.phenotypeCounter()
-    dataframesList = [pd.DataFrame(dummy.phenotypeCounts, index=['DR with Corum']).T]
-    dummy.write()
+    dummy.volcanoPlot("", "pValCol", extraFeatures = True, subplot=True)
     
     print("done")
     
