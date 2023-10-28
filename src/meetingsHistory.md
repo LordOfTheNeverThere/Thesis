@@ -233,10 +233,17 @@ Findings:
  4. ~~Add a biological meaning to it, by associating the sign of the beta of interaction term or combination of signs of other betas with change in Drug Response (Ideally create an association which is simple and holds up in all cases in the same manner)~~
  5. We have 8 possibilities in our models, see how many association we have for each of the eigth classes (after fdr cut off), then plot a volcano plot with this classes as hue, also do an heatmap
     1. In addition we can add a method that adds a new column in each association that says what class it belongs (Begin writting first, at leat a bit)
- 6. The 3 distributions of the three pValues of Model V has an artefact, there is suposed to be an uniform distribution, with an inflation on the small p-values. Professor said to look up the internet to find what is it? (After starting writting)
+ 6. ~~The 3 distributions of the three pValues of Model V has an artefact, there is suposed to be an uniform distribution, with an inflation on the small p-values. Professor said to look up the internet to find what is it? (After starting writting)~~
     1. After research you found out that something is wrong with your statistical test, maybe the p-value is being calculated on the wrong distro, revise the code, and then rerun the code, in this step you will need aproxametely 3 days, for the 3 models, seen in http://varianceexplained.org/statistics/interpreting-pvalue-histogram/
 
 6/10/23:
 1. Regarding the subsampling artefact, in order to try to find out if it happens when we subsample a medium number of samples due to sampling we might not be including outliers that in the full proteomics would decrease or increase the correlation in absolute value, and making the matter worse the inputting by the mean would mean that we would need more outliershy samples to break this general effect perserved in the mean, do the following:
    1. Get two sets of samples, one with only samples with the lowest missing Values, other with highest missing value rate, within the selected few proteins of the inputted dataset.
    2. For each select two distant subsampling numbers, that share the characteristic of having higher auc than all the matrix of inputted proteomics
+
+20/10/23
+1. ~~Do the top10 scatter plots, Py, Px, Drug Response, pick one of the figures for a main figure~~
+2. Understan if the gene essentiality seen with SOX1 is tissue type specific
+3. Do some schematics to explain some workflow, like the way the two sub sampling tests were made.
+4. Extended abstract é 80% copy paste, não necessita mais do que 1 dia at best
+5. Enviar 1st draft by monday

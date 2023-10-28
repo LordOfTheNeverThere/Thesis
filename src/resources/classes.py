@@ -441,8 +441,8 @@ class ProteinsMatrix(MatrixData):
             tuple[Any, Any]: the warped X to be used in the linear regression and the intercept, which is the mean of the variances of a sample across all gene symbols
         """        
         #invert it the covariance matrix
-        proteinData = proteinData.data
-        covMatrix = covMatrix.data
+        proteinData = proteinData.data # samples x proteins
+        covMatrix = covMatrix.data  # samples x proteins
         samplesCommon = proteinData.index.intersection(covMatrix.index)
         if len(samplesCommon) < len(proteinData.index):
             print(f"We have lost {len(proteinData.index) - len(samplesCommon)} samples ")
@@ -450,22 +450,22 @@ class ProteinsMatrix(MatrixData):
         proteinData = proteinData.loc[samplesCommon]
         covMatrix = covMatrix.loc[samplesCommon]
         
-        covMatrix = np.cov(covMatrix)
-        covMatrix = np.linalg.inv(covMatrix)
+        covMatrix = np.cov(covMatrix) # samples * samples
+        covMatrix = np.linalg.inv(covMatrix) # samples * samples
 
         # Decompose it with Cholesky, returning the lower triangular matrix of the positive definite matrix covMatrix, because cov(x1,x2) == cov(x2,x1)
-        cholsigmainvMean = np.linalg.cholesky(covMatrix)
+        cholsigmainvMean = np.linalg.cholesky(covMatrix) # samples * samples
 
 
         # Whittening transformation, we codify our data into a space where each the variance of each covariate is the same and equal to one, 
         # so we are kind like normalising it, in fact that's exactly what we are doing ~ N(0,I) As they call it warping...
-        warpedProteinsMean = proteinData.T.values @ cholsigmainvMean
+        warpedProteinsMean = proteinData.T.values @ cholsigmainvMean # proteins * samples x samples * samples = proteins * samples
 
         # The intercept is the sum of the choleski decomposition matrix, when the sum equals to one that sample is independent from all the others
-        warpedIntereceptMean = cholsigmainvMean.T.sum(axis=0)
+        warpedIntereceptMean = cholsigmainvMean.T.sum(axis=0) #samples
 
         if saveIndexes:
-            warpedProteinsMean = pd.DataFrame(warpedProteinsMean.T, columns=proteinData.columns, index=proteinData.index)
+            warpedProteinsMean = pd.DataFrame(warpedProteinsMean, index=proteinData.columns, columns=proteinData.index)
 
 
 
@@ -768,8 +768,7 @@ class ProteinsMatrix(MatrixData):
 
     def plotPxPy3DimContinous(self, interactionName:str, ppi:str, interactor: pd.DataFrame, typeOfInteraction:str, filepath:str|None, **annotationArgs):
         """Scatter Plot with the protein expression of two proteins and the interactor data as third dim, in a continous manner, unlike plotPxPyDrug.
-        Additionally, the plot can be annotated with the arguments passed to the function. And the Interaction data will be represented with a colorbar and
-        and an overlaying Kernel Distribution Estimation, and with size.
+        Additionally, the plot can be annotated with the arguments passed to the function. And the Interaction data will be represented with a colorbar, and with size.
 
         Args:
             interactionName (str): name of the interaction present in the interactor Dataframe
@@ -2079,14 +2078,13 @@ def ppiWrapper(
             lr = 2 * (lmLargeLogLike - lmSmallLogLike)
             LogLikeliRatioPVal = chi2.sf(lr, X.shape[1])
 
-            # Extra sum of squares test
-            if fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
-                extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
-            else:    
-                extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
+            # # Extra sum of squares test
+            # if fitIntercept: # If the model has an intercept, then we need to add 1 to the number of covariates in the large and small models, because we are calculating an extra parameter, the intercept
+            #     extraPValue = extraSumSquares(xLarge.shape[1] + 1, M.shape[1] + 1, Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
+            # else:    
+            #     extraPValue = extraSumSquares(xLarge.shape[1], M.shape[1], Y, lmLarge.predict(xLarge), lmSmall.predict(x)) 
 
-            res[tested[index]] = extraPValue.tolist()
-            res[f"{tested[index]}LLR"] = LogLikeliRatioPVal.tolist()
+            res[tested[index]] = LogLikeliRatioPVal.tolist()
 
 
         res['Y'] = [Y.columns[0]]
@@ -2094,6 +2092,7 @@ def ppiWrapper(
         res['interactor'] = [interactor.columns[0]]
         res['n'] = [Y.shape[0]]
         res['interceptES'] = [lmLarge.intercept_[0]]
+        res['class'] = [self.classEncoder(res['XES'], res['interactorES'], res['interactionES'])]
 
         return res
 
@@ -2146,13 +2145,10 @@ def ppiWrapper(
                 dataDict[key] = dataDict[key] + res[key]
 
     testedESS = ['interactionPValue','interactorPValue', 'XPValue']
-    testedLLR = ['interactionPValueLLR','interactorPValueLLR', 'XPValueLLR']
     #Calculate fdr correction for ppi
     for pVal in testedESS:
         dataDict[f'fdr{pVal}'] = list(multipletests(dataDict[pVal], method="fdr_bh")[1])
-    
-    for pVal in testedLLR:
-        dataDict[f'fdr{pVal}LLR'] = list(multipletests(dataDict[pVal], method="fdr_bh")[1])
+
     	
         
 
@@ -2246,8 +2242,41 @@ class DRPxPyInteractionPxModel(MatrixData):
 
     #     return pValueDiff
 
+    @staticmethod
+    def classEncoder(betaPx, betaPy, betaPxPy)->int|None:
 
-    
+
+        if betaPx > 0 and betaPxPy > 0 and betaPy < 0:
+            return 1
+        elif betaPx > 0 and betaPxPy > 0 and betaPy > 0:
+            return 2
+        elif betaPx < 0 and betaPxPy < 0 and betaPy > 0:
+            return 3
+        elif betaPx < 0 and betaPxPy < 0 and betaPy < 0:
+            return 4
+        elif betaPx > 0 and betaPxPy < 0 and betaPy < 0:
+            return 5
+        elif betaPx > 0 and betaPxPy < 0 and betaPy > 0:
+            return 6
+        elif betaPx < 0 and betaPxPy > 0 and betaPy > 0:
+            return 7
+        elif betaPx < 0 and betaPxPy > 0 and betaPy < 0:
+            return 8
+        else:
+            assert betaPx == 0 and betaPy ==0 and betaPxPy ==0, f"betaPx is {betaPx}, betaPy is {betaPy} and betaPxPy is {betaPxPy}, \n however an association was categorised and NaN so an error is present in the if elif statements"
+                
+            return None
+
+    @staticmethod
+    def phenotypeResponse(category:int)->str:
+
+        if category in {1,2,5,6}:
+            return '+'
+        if category in {3,4,7,8}:
+            return '-'
+        else:
+            return None
+
     
 
     def fit(self, numOfCores = CPUS)->pd.DataFrame:
@@ -2285,8 +2314,8 @@ class DRPxPyInteractionPxModel(MatrixData):
         data = self.data.copy()
         data = data.loc[:, ['interactionPValue', 'interactorPValue', 'XPValue']]
         data = data.melt(var_name='pValType', value_name='pVal')
+        plt.figure(figsize=(40,20))
         grid = sns.FacetGrid(data, col="pValType")
-
         grid.map(sns.histplot, "pVal", bins=100, kde=True, kde_kws={'bw_adjust':0.8})
         #Make histograms more sofisticated
         grid.set_titles(col_template="{col_name}")
@@ -2316,7 +2345,71 @@ class DRPxPyInteractionPxModel(MatrixData):
         self.data = finalDf
         print(finalDf)
 
+    def addBiologicalClasses(self):
+        """Add the 8 possible classes to each association bringing biological meaning to the results
+        """
+        def getBetasForEncoder(row)->int|None:
 
+            betaPx = row['XES']
+            betaPy = row['interactorES']
+            betaPxPy = row['interactionES']
+
+            return self.classEncoder(betaPx, betaPy, betaPxPy)
+
+            
+        data = self.data.copy()
+        data['class'] = data.apply(getBetasForEncoder, axis=1)
+
+        self.data = data
+
+        return data
+    
+    def addPhenotypeChanges(self):
+
+        def getPhenotype(row)->str:
+
+            category = row['class']
+
+            return self.phenotypeResponse(category)
+
+        data = self.data.copy()
+        data['phenotype'] = data.apply(getPhenotype, axis=1)
+
+        self.data = data
+
+        return data
+            
+    def classCounter(self) -> dict:
+        """Counts the number of associations in each class
+
+        Returns:
+            dict: Dictionary with the number of associations in each class
+        """
+
+        self.classCounts = {classIndex:0 for classIndex in range(1,9)}
+        data = self.data.copy()
+        dataByClasses = data.groupby('class')
+
+        for dataByClass in dataByClasses:
+            self.classCounts[dataByClass[0]] = dataByClass[1].shape[0]
+
+        return self.classCounts
+    
+    def phenotypeCounter(self) -> dict:
+        """Counts the number of associations in each phenotype change
+
+        Returns:
+            dict: Dictionary with the number of associations in each phenotype change
+        """
+
+        self.phenotypeCounts = {'+':0, '-':0}
+        data = self.data.copy()
+        dataByPhenotypes = data.groupby('phenotype')
+
+        for dataByPhenotype in dataByPhenotypes:
+            self.phenotypeCounts[dataByPhenotype[0]] = dataByPhenotype[1].shape[0]
+
+        return self.phenotypeCounts
 
 
     def resiCorr(self)->pd.DataFrame:
@@ -2445,6 +2538,8 @@ class DRPxPyInteractionPxModel(MatrixData):
                 hueVars['fdr'] = {'data': data[fdrCol], 'varType': 'numerical'}
                 #7th feature (ppi)
                 hueVars['ppi'] = {'data': data['X'] + ';' + data['interactor'], 'varType': 'categorical'}
+                #8th feature (class)
+                hueVars['class'] = {'data': data['class'], 'varType': 'class'}
 
                 for hueVar in hueVars: # Iterate over all the extra features, and used them as hue in the scatterPlots
 
@@ -2454,7 +2549,7 @@ class DRPxPyInteractionPxModel(MatrixData):
                         y=yValues,
                         hue=hueVars[hueVar]['data'],
                         palette= sns.color_palette("viridis", as_cmap=True) if hueVars[hueVar]['varType'] == 'numerical' else sns.color_palette("hls", len(hueVars[hueVar]['data'].unique())) ,  
-                        legend= hueVars[hueVar]['varType'] == 'numerical',       # Set the legend parameter to False
+                        legend= hueVars[hueVar]['varType'] == 'numerical' or hueVars[hueVar]['varType'] == 'class',       # Set the legend parameter to False
                         s=15,
                         alpha=0.8,
                         edgecolors="none",
@@ -2488,7 +2583,18 @@ class DRPxPyInteractionPxModel(MatrixData):
                     plt.close()
         
 
-    def scatterTheTopVolcano(self, pValCol:str,filepathMold:str, proteomics:ProteinsMatrix, drugRes:DrugResponseMatrix, typeOfInteraction:str, falseDiscoveryRate:float=0.01, topNumber:int=2, threhsQuantile:float=0):
+    def scatterTheTopVolcano(
+            self, 
+            pValCol:str,
+            filepathMold:str, 
+            xDataframe:pd.DataFrame, 
+            yDataframe:pd.DataFrame, 
+            hueDataframe:pd.DataFrame, 
+            typeOfInteraction:str, 
+            falseDiscoveryRate:float=0.01, 
+            topNumber:int=2, 
+            axisDictator:dict={'X':'X', 'Y':'Y', 'hue':'interactor'},
+            subplot:bool=False):
         
         data = self.data.copy()
         fdrCol = f'fdr{pValCol}'
@@ -2502,18 +2608,110 @@ class DRPxPyInteractionPxModel(MatrixData):
         top = data.iloc[0:topNumber,:]
         #reseting index
         top = top.reset_index(drop=True)
-        #iterate samples
-        for index, row in top.iterrows():
 
-            pValue = row[pValCol]
-            effectSize = row[varCol]
-            drug = ['interactor']
-            anotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e} \ndrug: {drug} '
-            anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
-            filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
-            ppi = row['X'] + ';' + row['interactor']
+        if subplot:
+
+            sns.set(font_scale=2) # Increase font size of all labels in the subplot
+            fig, axs = plt.subplots(round(topNumber/2), 2, figsize=(round(topNumber/2)*10, round(topNumber/2)*10))
+            # Adjust spacing between subplots
+            plt.subplots_adjust(hspace=0.5, wspace=0.1)
+            #iterate samples    
+            for index, row in top.iterrows():
+
+                ax = axs.flat[index]
+                pValue = row[pValCol]
+                effectSize = row[varCol]
+                hue = row[axisDictator['hue']]
+                X = row[axisDictator['X']]
+                Y = row[axisDictator['Y']]
+                annotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e}'
+                annotation = {'text':annotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':20}
+
+
+                hueData = hueDataframe.loc[:,[hue]]
+                XData = xDataframe.loc[:,[X]]
+                YData = yDataframe.loc[:,[Y]]
+
+                samplesInCommon = list(set.intersection(set(hueData.index), set(XData.index), set(YData.index)))
+                hueData = hueData.loc[samplesInCommon]
+                XData = XData.loc[samplesInCommon]
+                YData = YData.loc[samplesInCommon]
+
+                plottingData = pd.concat([XData, YData], axis=1)
+                plottingData = pd.DataFrame(StandardScaler().fit_transform(plottingData) ,columns=plottingData.columns, index=plottingData.index)
+
+                #Add interactor
+                plottingData = plottingData.join(hueData, how = 'inner')
+
+                scatter = sns.scatterplot(data=plottingData, x=X, y=Y, hue=hue, size=hue, palette="viridis", alpha=1, edgecolor='none', s=15, ax=ax)
+                norm = matplotlib.colors.Normalize(vmin=hueData.min(), vmax=hueData.max())
+                # Add Colour Map
+                sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+                sm.set_array([])
+                scatter.get_legend().remove()
+                scatter.figure.colorbar(sm, label=hue, ax=ax)
+
+                ax.set_title(f'Protein expression \n with {typeOfInteraction}')
+                ax.set_xlabel(str(X))
+                ax.set_ylabel(str(Y))
+                ax.annotate(annotation['text'], xy=annotation['xy'], xycoords=annotation['xycoords'], fontsize=annotation['fontsize'])
+
+            fig.suptitle(f'Top {topNumber} associations', fontsize=32)
+
             
-            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, typeOfInteraction,filepath, **anotation)
+            filepath = filepathMold.split('.png')[0] + 'topCombined.png'
+            plt.savefig(filepath, bbox_inches="tight")
+
+
+
+        else:    
+            #iterate samples    
+            for index, row in top.iterrows():
+
+                pValue = row[pValCol]
+                effectSize = row[varCol]
+                hue = row[axisDictator['hue']]
+                X = row[axisDictator['X']]
+                Y = row[axisDictator['Y']]
+                annotation = f'p-value: {pValue:.2e}\nβ: {effectSize:.2e}'
+                annotation = {'text':annotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
+
+
+                hueData = hueDataframe.loc[:,[hue]]
+                XData = xDataframe.loc[:,[X]]
+                YData = yDataframe.loc[:,[Y]]
+
+                samplesInCommon = list(set.intersection(set(hueData.index), set(XData.index), set(YData.index)))
+                hueData = hueData.loc[samplesInCommon]
+                XData = XData.loc[samplesInCommon]
+                YData = YData.loc[samplesInCommon]
+
+                plottingData = pd.concat([XData, YData], axis=1)
+                plottingData = pd.DataFrame(StandardScaler().fit_transform(plottingData) ,columns=plottingData.columns, index=plottingData.index)
+
+                #Add interactor
+                plottingData = plottingData.join(hueData, how = 'inner')
+
+                plt.figure(figsize=(10, 10))
+                scatter = sns.scatterplot(data=plottingData, x=X, y=Y, hue=hue, size=hue, palette="viridis", alpha=1, edgecolor='none', s=15)
+                norm = matplotlib.colors.Normalize(vmin=hueData.min(), vmax=hueData.max())
+                # Add Colour Map
+                sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+                sm.set_array([])
+                scatter.get_legend().remove()
+                scatter.figure.colorbar(sm, label=hue)
+
+                plt.title(f'Protein expression \n with {typeOfInteraction}')
+                plt.xlabel(str(X))
+                plt.ylabel(str(Y))
+                plt.annotate(annotation['text'], xy=annotation['xy'], xycoords=annotation['xycoords'], fontsize=annotation['fontsize'])
+                
+                filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
+
+                plt.savefig(filepath, bbox_inches="tight")
+
+            
+            
 
     def getTopTable(self, topNumber:int, pValCol:str, filepath:str, falseDiscoveryRate:float=0.01):
 
@@ -2668,7 +2866,7 @@ class DRPxPyInteractionPxModel(MatrixData):
             else:
                 filepath = None
             ppi = row['info']['Px'] + ';' + row['info']['Py']
-            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, **anotation)
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, False, **anotation)
 
 
 
@@ -3116,7 +3314,7 @@ class PyPxDrugInteractionModel(MatrixData):
             anotation = {'text':anotation, 'xy':(0.1, 0.8), 'xycoords':'axes fraction', 'fontsize':10}
             filepath = filepathMold.split('.png')[0] + 'top'+ str(index) +'.png'
             ppi = row['info']['Px'] + ';' + row['info']['Py']
-            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, typeOfInteraction,filepath, **anotation)
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data, typeOfInteraction,filepath, False, **anotation)
 
     def triangulate(
             self, 
@@ -3253,4 +3451,4 @@ class PyPxDrugInteractionModel(MatrixData):
             else:
                 filepath = None
             ppi = row['info']['Px'] + ';' + row['info']['Py']
-            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, **anotation)
+            proteomics.plotPxPy3DimContinous(drug, ppi, drugRes.data.T, typeOfInteraction, filepath, False, **anotation)
