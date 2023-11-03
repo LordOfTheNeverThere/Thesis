@@ -15,7 +15,7 @@
        2. ~~Describe the various processes, not theretically, simply tell the storyo of what you did~~
     6. Annexes
        1. model biological interpretability
-       2. all models
+       2. ~~all models~~
        3. ~~All Volcano Plots~~
        4. ~~PValues Histograms~~
        5. ~~Top10 Scatter Plots~~
@@ -24,3 +24,4 @@
     9.  Add two schematical figures to make readers understan in a better way what was done (Understand where to put it, either in methods or results)
         1.  The auc global comparison test
         2.  The Sampling 
+    10. Use Y = B0 + X + e rather than ~
