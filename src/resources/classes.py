@@ -1170,6 +1170,45 @@ class PairwiseCorrMatrix(MatrixData):
             instance.aucsCalculator(instance.proteomicsType, instance.proxies, instance.ascendings, instance.filepath)
 
 
+    @classmethod
+    def glsVSPearsonAUC(cls, instances:Iterable[PairwiseCorrMatrix], glsInstances:list[bool], filepath:str):
+        """Plots the AUC of the recall curve for each PairwiseCorrMatrix object, and for each external PPI dataset, for both the GLS and Pearson's R methods, using either p-value or coefficient
+        All this in a sns.FacetGrid
+
+        Args:
+            instances (Iterable[PairwiseCorrMatrix]): List of PairwiseCorrMatrix objects
+            glsInstances (list[bool]): A list of booleans which state which of the instances have been calculated with GLS or not
+            filepath (str): Filepath to save the sns.FacetGrid
+        """
+        #verify that all instances have the proteomicsType attribute
+        for instance in instances:
+            assert hasattr(instance, 'proteomicsType'), 'All instances must have the proteomicsType attribute'
+
+        for index, inst in enumerate(instances):
+
+            aucData = pd.DataFrame(inst.aucs)
+            aucData = aucData.unstack().reset_index()
+            aucData.columns = ['metric', 'PPISet', 'auc']
+            aucData['proteomicsType'] = inst.proteomicsType 
+            aucData['method'] = 'GLM' if glsInstances[index] else "Pearson's R"
+
+        #Initiate FacetGrid
+        g = sns.FacetGrid(aucData, row = 'metric', col = 'proteomicsType', sharey=True, sharex=True, )
+        g.map_dataframe(sns.barplot, x='PPISet', y='auc', hue='method', palette='viridis', alpha=0.8, edgecolor='k', linewidth=1)
+        g.add_legend()
+        g.set_axis_labels('PPISet', 'AUC')
+        g.set_titles('{col_name} | {row_name}')
+        #rotate x labels 45º
+        for ax in g.axes.flat:
+            for label in ax.get_xticklabels():
+                label.set_rotation(45)
+
+        g.savefig(filepath)
+
+        
+
+
+
     
 class DrugResponseMatrix(MatrixData):
     """Class interface and methods for the drug response data"""
