@@ -12,99 +12,37 @@ from resources import GeneDependency, DRPxPyInteractionPxModel, PyPxDrugInteract
 if __name__ == '__main__':
 
 
-
-    # get gene dependecy data for effect size and its p-value
-
-    # effectSizes = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSize.csv', index_col=0)
-    # pValues = pd.read_csv(PATH + '/internal/geneInteractionModel/CRISPRGeneEffectSizePValue.csv', index_col=0)
-
-    # Create a Gene Dependency object
-    geneDependency:GeneDependency = read(PATH + '/internal/geneInteractionModel/geneDependency.pickle.gz')
-    # Load necessary data for interaction model
-    samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
-    vaeProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz') #used for PCA computation
-    ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz') #used for the interaction model class
-    drugRes = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz')
-    drugRes.data = drugRes.data.T
-
-           
-    # using only corum ppis that we were able to recall, with high confidence
-    vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
-    vaeGLSPairwise.data['fdr'] = multipletests(vaeGLSPairwise.data['p-value'], method='fdr_bh')[1]
-    ppisOfInterest = set(vaeGLSPairwise.data.query("(stringHighest == 1 | biogrid == 1) & fdr < 0.01").index)
-    ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
-
-    pca, pcFactors = vaeProteomics.PCA(factorsName='PC', numPC=5)
-
-    dummy = DRPxPyInteractionPxModel(ppisOfInterest, ogProteomics, drugRes.data, pcFactors)
-    start = t.time()
-    fit = dummy.fit(numOfCores = 38)
-    dummy.filepath = PATH + '/internal/interactionModel/String900orBiogrid/interactionModelV.pickle.gz'
-    dummy.write()
-    print(f'fitting took {t.time() - start} seconds')
-
-
-    #Filter data to only include genes of interest
-    geneDependency.filterGenes() #Default outputs 3468 genes has having at least 0.25 of samples with some statistical significance (pValue < 0.025)
-    #Construct the interaction model
-    interactionModel = geneDependency.createInteractionModel(DRPxPyInteractionPxModel,ppisOfInterest, ogProteomics, pcFactors, isDrugResSmall=True)
-    #Fit the interaction model
-    start = t.time()
-    fit = interactionModel.fit(numOfCores=38)
-    #Save the interaction model
-    interactionModel.filepath = PATH + '/internal/geneInteractionModel/String900orBiogrid/interactionModelV.pickle.gz'
-    interactionModel.write()
-    end = t.time()
-    print(f'Time to fit model: {end - start}')
-
+    vaev2 = pd.read_csv(PATH + '/internal/20231023_092657_imputed_proteomics.csv.gz', compression='gzip', index_col=0)
+    #create proteomics matrix
+    proteins = ProteinsMatrix(data = vaev2)
+    #save it 
+    proteins.write(PATH + '/internal/proteomics/proteomicsVAEv2.pickle.gz')
+    #create pairwise correlation matrix Using Pearson and GLM
+    proteins:ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAEv2.pickle.gz')
+    pearsonPairwiseVAEv2 = proteins.pearsonCorrelations('coef', 'VAEv2')
+    glmPairwiseVAEv2 = proteins.getGLSCorr("VAEv2")
+    #Add all ground truth
+    PairwiseCorrMatrix.addGroundTruths([pearsonPairwiseVAEv2, glmPairwiseVAEv2])
+    pearsonPairwiseVAEv2.aucsCalculator("VAEv2", ["p-value", "coef"], [True, False]) 
+    glmPairwiseVAEv2.aucsCalculator("VAEv2", ["p-value", "coef"], [True, False])
     
+    #load all pairwise correlation matrices
 
+    pearsonPairwiseVAEv2:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAEv2/pearsonPairCorr.pickle.gz')
+    glmPairwiseVAEv2:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAEv2/glsPairCorr.pickle.gz')
+        #og
+    ogPearson:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/OG/baseModelFiltered.pickle.gz')
+        #Mean
+    # pv75MeanPearson:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/pearsonPairCorr75PV.pickle.gz')
+    # pv80MeanPearson:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/pearsonPairCorr80PV.pickle.gz')
+    # pv75MeanGLM:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr75PV.pickle.gz')
+    # pv80MeanGLM:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/glsPairCorr80PV.pickle.gz')
+    #     #Vae
+    # vaePearson:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/pearsonPairCorr.pickle.gz')
+    # vaeGLM:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
 
-
-
-
-
-
-
-
-
-
-    # get data to run lienar model with TLS residuals and plot significant associations with proteomics data
-    # drugRes = read(PATH + '/internal/drugResponses/drugResponse.pickle.gz')
-    # samplesheet = pd.read_csv(PATH + '/internal/samplesheet.csv', index_col=0)
-    # ogProteomics: ProteinsMatrix = read(PATH + '/internal/proteomics/ogProteomics.pickle.gz')
-    # vaeProteomics:ProteinsMatrix= read(PATH + '/internal/proteomics/proteomicsVAE.pickle.gz')
-    # vaeGLSPairwise: PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
-
-
-
-    # ppisOfInterest = set(vaeGLSPairwise.data.query("pValue < 0.001 & corum == 1").copy().index)
-    # ppisOfInterest = {(ppi.split(';')[0], ppi.split(';')[1]) for ppi in ppisOfInterest}
-
-    
-    # model1 = UnbiasedResidualsLinModel(ppisOfInterest, vaeProteomics, drugRes, samplesheet['growth_properties'], standardisePx=True)
-    # fit = model1.twoFits()
-
-    # model1:UnbiasedResidualsLinModel = read(PATH + '/internal/unbiasedResiduals/GLSPValueLess0.001VAEProteomics/regressor.pickle.gz')
-    # model1.plotSignificantAssociation(ogProteomics, drugRes, 'unbiasedModelTest.png')
-
-    #Fit and test linear model for associations from VAE proteomics data's residuals
-    # residuals:ResiduesMatrix = read(PATH + '/internal/residuals/GLSPValueLess0.001VAEProteomics/residuals.pickle.gz')
-
-    # regressor = residuals.getLinearModel(drugRes, samplesheet)
-
-    # print(regressor.data.iloc[:, -10:-1].describe())
-    # regressor.plotSignificantAssociation(vaeProteomics, drugRes, 'pxpyTestingEffectSizeOfResidualsGLSPValueLess0.001VAEProteomics.png')
-    # regressor.write(PATH + '/internal/residuals/GLSPValueLess0.001VAEProteomics/regressionMalahanobis.pickle.gz')
-
-    #Fit and test linear model for associations from OG proteomics data's residuals
-
-    # pearsonResiduals = read(PATH + '/internal/residuals/pearsonPValueLess0.001OgProteomics/residuals.pickle.gz')
-
-    # pearsonrRegressor = pearsonResiduals.getLinearModel(drugRes, samplesheet)
-
-    # print(pearsonrRegressor.data['beta'].describe())
-    # pearsonrRegressor.plotSignificantAssociation(ogProteomics, drugRes, 'pxpyTestingEffectSizeOfResidualsPearsonPValueLess0.001OgProteomics.png')
-    # pearsonrRegressor.write(PATH + '/internal/residuals/pearsonPValueLess0.001OgProteomics/regressionMalahanobis.pickle.gz')
+    instances = [ogPearson, pearsonPairwiseVAEv2, glmPairwiseVAEv2]
+    #Compare all aucs
+    PairwiseCorrMatrix.glsVSPearsonAUC(instances, [0,0,1], "allAUCsBarPlotv2.png")
 
 

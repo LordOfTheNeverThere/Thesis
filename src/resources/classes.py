@@ -332,7 +332,7 @@ class ProteinsMatrix(MatrixData):
         """
         data = self.data.copy()
         permutationsColumns = list(combinations(data.columns, 2))
-        pairwiseCorr:dict = {'PPI':[],'proteinA': [],'proteinB': [], columnName: [], 'p-value':[], 'counts':[]}
+        pairwiseCorr:dict = {'PPI':[],'proteinA': [],'proteinB': [], columnName: [], 'p-value':[], 'fdr':{}, 'counts':[]}
         
         for (proteinAName, proteinBName) in permutationsColumns:
 
@@ -354,7 +354,10 @@ class ProteinsMatrix(MatrixData):
             pairwiseCorr[columnName].append(corr)
             pairwiseCorr['p-value'].append(pValue)
             pairwiseCorr['counts'].append(count)
-
+        #fdr correction using benjamin/hochberg method
+        pValues = pairwiseCorr['p-value']
+        _, correctedPVals, _, _ = multipletests(pValues, alpha=0.01, method='fdr_bh')
+        pairwiseCorr['fdr'] = correctedPVals
         index = pairwiseCorr.pop('PPI')
         pairwiseCorrelations = PairwiseCorrMatrix(proteomicsType, None, pd.DataFrame(pairwiseCorr, index=index), [columnName, 'p-value'], [False, True])
         assert pairwiseCorrelations.data.shape[0] > 0, 'No pairwise correlations were found, try lowering the thresholdInteraction, or adding more samples'
@@ -1073,9 +1076,9 @@ class PairwiseCorrMatrix(MatrixData):
             for yColumn in self.yColumn:
                 self.aucCalculator(yColumn, proteomicsType, proxyColumnList[aucIndex], ascendingList[aucIndex])
     
-        if filepath is not None:
-            self.write(filepath)
-        print(self)
+
+        self.write(filepath)
+
 
     @classmethod    
     def heatmap(cls, insts:list[PairwiseCorrMatrix], columns: list[str], bins:int, proteomics:ProteinsMatrix, filepath:str, title:str):
@@ -1183,6 +1186,7 @@ class PairwiseCorrMatrix(MatrixData):
         #verify that all instances have the proteomicsType attribute
         for instance in instances:
             assert hasattr(instance, 'proteomicsType'), 'All instances must have the proteomicsType attribute'
+            assert hasattr(instance, 'aucs'), 'All instances must have the aucs attribute'
 
         for index, inst in enumerate(instances):
 
