@@ -434,7 +434,7 @@ class ProteinsMatrix(MatrixData):
     
 
     @classmethod
-    def whitening(cls, proteinData:ProteinsMatrix, covMatrix:ProteinsMatrix, saveIndexes:bool= False) -> tuple[Any, Any]:
+    def whitening(cls, proteinData:pd.DataFrame, covData:pd.DataFrame, saveIndexes:bool= False) -> tuple[Any, Any]:
         """Whitten the proteinData, so that each covariate has the same variance, which is equal to one
 
         Args:
@@ -444,20 +444,27 @@ class ProteinsMatrix(MatrixData):
             tuple[Any, Any]: the warped X to be used in the linear regression and the intercept, which is the mean of the variances of a sample across all gene symbols
         """        
         #invert it the covariance matrix
-        proteinData = proteinData.data # samples x proteins
-        covMatrix = covMatrix.data  # samples x proteins
-        samplesCommon = proteinData.index.intersection(covMatrix.index)
-        if len(samplesCommon) < len(proteinData.index):
-            print(f"We have lost {len(proteinData.index) - len(samplesCommon)} samples ")
+        # proteinData  samples x proteins
+        # covMatrix  samples x samples
 
-        proteinData = proteinData.loc[samplesCommon]
-        covMatrix = covMatrix.loc[samplesCommon]
+        def is_symmetric(matrix):
+            # Check if the matrix is square
+            if matrix.shape[0] != matrix.shape[1]:
+                return False
+
+            # Compare the matrix with its transpose
+            return np.array_equal(matrix, matrix.T)
+
         
-        covMatrix = np.cov(covMatrix) # samples * samples
-        covMatrix = np.linalg.inv(covMatrix) # samples * samples
+        covData = np.linalg.inv(covData) # samples * samples
+
+        if not is_symmetric(covData):
+            #make it symmetric by replacing the lower triangular matrix with the upper triangular matrix
+            covData = np.triu(covData) + np.triu(covData, 1).T
+        
 
         # Decompose it with Cholesky, returning the lower triangular matrix of the positive definite matrix covMatrix, because cov(x1,x2) == cov(x2,x1)
-        cholsigmainvMean = np.linalg.cholesky(covMatrix) # samples * samples
+        cholsigmainvMean = np.linalg.cholesky(covData) # samples * samples
 
 
         # Whittening transformation, we codify our data into a space where each the variance of each covariate is the same and equal to one, 
@@ -530,12 +537,12 @@ class ProteinsMatrix(MatrixData):
             # calculate covariance matrix in order to see the covariace between samples, and notice tecidual patterns codified in the samples
             covMatrix = np.cov(dataForCov)
 
-
+        covData = pd.DataFrame(covMatrix, index=dataForCov.index, columns=dataForCov.index)
         proteinNames = proteinDataMean.columns.str.split(' ').str.get(0).to_numpy()
         proteinNames = [protein1 + ';' + protein2 for i, protein1 in enumerate(proteinNames)  for j, protein2 in enumerate(proteinNames) if j > i]
         proteinsA, proteinsB = [proteinPair.split(";")[0] for proteinPair in proteinNames], [proteinPair.split(";")[1] for proteinPair in proteinNames]
 
-        warpedProteinsMean, warpedIntereceptMean = ProteinsMatrix.whitening(self, self)
+        warpedProteinsMean, warpedIntereceptMean = ProteinsMatrix.whitening(proteinData, covData)
 
 
         def linear_regression(warped_screens, warped_intercept):
