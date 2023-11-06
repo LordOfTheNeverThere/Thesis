@@ -1195,6 +1195,8 @@ class PairwiseCorrMatrix(MatrixData):
             assert hasattr(instance, 'proteomicsType'), 'All instances must have the proteomicsType attribute'
             assert hasattr(instance, 'aucs'), 'All instances must have the aucs attribute'
 
+        #initialize aucData
+        aucDataTotal = pd.DataFrame()
         for index, inst in enumerate(instances):
 
             aucData = pd.DataFrame(inst.aucs)
@@ -1202,9 +1204,11 @@ class PairwiseCorrMatrix(MatrixData):
             aucData.columns = ['metric', 'PPISet', 'auc']
             aucData['proteomicsType'] = inst.proteomicsType 
             aucData['method'] = 'GLM' if glsInstances[index] else "Pearson's R"
+            #join with aucData
+            aucDataTotal = pd.concat([aucDataTotal, aucData])
 
         #Initiate FacetGrid
-        g = sns.FacetGrid(aucData, row = 'metric', col = 'proteomicsType', sharey=True, sharex=True, )
+        g = sns.FacetGrid(aucDataTotal, row = 'metric', col = 'proteomicsType', sharey=True, sharex=True, )
         g.map_dataframe(sns.barplot, x='PPISet', y='auc', hue='method', palette='viridis', alpha=0.8, edgecolor='k', linewidth=1)
         g.add_legend()
         g.set_axis_labels('PPISet', 'AUC')

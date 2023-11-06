@@ -28,9 +28,9 @@ if __name__ == '__main__':
     pearsonPairwiseVAEv2:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAEv2/pearsonPairCorr.pickle.gz')
     glmPairwiseVAEv2:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAEv2/glsPairCorr.pickle.gz')
     #Add all ground truth
-    PairwiseCorrMatrix.addGroundTruths([pearsonPairwiseVAEv2, glmPairwiseVAEv2])
-    pearsonPairwiseVAEv2.aucsCalculator("VAEv2", ["p-value", "coef"], [True, False]) 
-    glmPairwiseVAEv2.aucsCalculator("VAEv2", ["p-value", "coef"], [True, False])
+    # PairwiseCorrMatrix.addGroundTruths([pearsonPairwiseVAEv2, glmPairwiseVAEv2])
+    # pearsonPairwiseVAEv2.aucsCalculator("VAEv2", ["p-value", "coef"], [True, False]) 
+    # glmPairwiseVAEv2.aucsCalculator("VAEv2", ["p-value", "coef"], [True, False])
     
     #load all pairwise correlation matrices
 
