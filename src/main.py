@@ -18,23 +18,26 @@ if __name__ == '__main__':
     # #save it 
     # proteins.write(PATH + '/internal/proteomics/proteomicsVAEv2.pickle.gz')
     #create pairwise correlation matrix Using Pearson and GLM
-    proteins:ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAEv2.pickle.gz')
-    pearsonPairwiseVAEv2 = proteins.pearsonCorrelations('coef', 'VAEv2')
-    glmPairwiseVAEv2 = proteins.getGLSCorr("VAEv2")
-    #save them
-    pearsonPairwiseVAEv2.write(PATH + '/internal/pairwiseCorrs/VAEv2/pearsonPairCorr.pickle.gz')
-    glmPairwiseVAEv2.write(PATH + '/internal/pairwiseCorrs/VAEv2/glsPairCorr.pickle.gz')
-    # #Add all ground truth
-    # PairwiseCorrMatrix.addGroundTruths([pearsonPairwiseVAEv2, glmPairwiseVAEv2])
-    # pearsonPairwiseVAEv2.aucsCalculator("VAEv2", ["p-value", "coef"], [True, False]) 
-    # glmPairwiseVAEv2.aucsCalculator("VAEv2", ["p-value", "coef"], [True, False])
+    # proteins:ProteinsMatrix = read(PATH + '/internal/proteomics/proteomicsVAEv2.pickle.gz')
+    # pearsonPairwiseVAEv2 = proteins.pearsonCorrelations('coef', 'VAEv2')
+    # glmPairwiseVAEv2 = proteins.getGLSCorr("VAEv2")
+    # #save them
+    # pearsonPairwiseVAEv2.write(PATH + '/internal/pairwiseCorrs/VAEv2/pearsonPairCorr.pickle.gz')
+    # glmPairwiseVAEv2.write(PATH + '/internal/pairwiseCorrs/VAEv2/glsPairCorr.pickle.gz')
+    # load them
+    pearsonPairwiseVAEv2:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAEv2/pearsonPairCorr.pickle.gz')
+    glmPairwiseVAEv2:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAEv2/glsPairCorr.pickle.gz')
+    #Add all ground truth
+    PairwiseCorrMatrix.addGroundTruths([pearsonPairwiseVAEv2, glmPairwiseVAEv2])
+    pearsonPairwiseVAEv2.aucsCalculator("VAEv2", ["p-value", "coef"], [True, False]) 
+    glmPairwiseVAEv2.aucsCalculator("VAEv2", ["p-value", "coef"], [True, False])
     
-    # #load all pairwise correlation matrices
+    #load all pairwise correlation matrices
 
     # pearsonPairwiseVAEv2:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAEv2/pearsonPairCorr.pickle.gz')
     # glmPairwiseVAEv2:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAEv2/glsPairCorr.pickle.gz')
     #     #og
-    # ogPearson:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/OG/baseModelFiltered.pickle.gz')
+    ogPearson:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/OG/baseModelFiltered.pickle.gz')
     #     #Mean
     # # pv75MeanPearson:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/pearsonPairCorr75PV.pickle.gz')
     # # pv80MeanPearson:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/Mean/pearsonPairCorr80PV.pickle.gz')
@@ -44,8 +47,8 @@ if __name__ == '__main__':
     # # vaePearson:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/pearsonPairCorr.pickle.gz')
     # # vaeGLM:PairwiseCorrMatrix = read(PATH + '/internal/pairwiseCorrs/VAE/glsPairCorr.pickle.gz')
 
-    # instances = [ogPearson, pearsonPairwiseVAEv2, glmPairwiseVAEv2]
-    # #Compare all aucs
-    # PairwiseCorrMatrix.glsVSPearsonAUC(instances, [0,0,1], "allAUCsBarPlotv2.png")
+    instances = [ogPearson, pearsonPairwiseVAEv2, glmPairwiseVAEv2]
+    #Compare all aucs
+    PairwiseCorrMatrix.glsVSPearsonAUC(instances, [0,0,1], "allAUCsBarPlotv2.png")
 
 

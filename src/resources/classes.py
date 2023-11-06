@@ -1013,7 +1013,7 @@ class PairwiseCorrMatrix(MatrixData):
         Args:
             insts (Iterable[PairwiseCorrMatrix]): An iterable of PairwiseCorrMatrix objects
         """
-        from .utils import read
+
 
         #get all ppis
         corum:ppiDataset = read(PATH + '/external/ppiDataset/corum.pickle.gz')
