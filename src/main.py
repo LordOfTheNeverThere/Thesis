@@ -49,6 +49,8 @@ if __name__ == '__main__':
 
     instances = [ogPearson, pearsonPairwiseVAEv2, glmPairwiseVAEv2]
     #Compare all aucs
-    PairwiseCorrMatrix.glsVSPearsonAUC(instances, [0,0,1], "allAUCsBarPlotv2.png")
+    aucData = PairwiseCorrMatrix.glsVSPearsonAUC(instances, [0,0,1], "allAUCsBarPlotv2.png")
+
+    aucData.to_csv('allAUCs.csv', index=False)
 
 

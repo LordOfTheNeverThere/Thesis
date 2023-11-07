@@ -1220,6 +1220,8 @@ class PairwiseCorrMatrix(MatrixData):
 
         g.savefig(filepath)
 
+        return aucDataTotal
+
         
 
 
