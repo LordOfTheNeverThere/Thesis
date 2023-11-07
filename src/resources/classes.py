@@ -1212,7 +1212,7 @@ class PairwiseCorrMatrix(MatrixData):
         g.map_dataframe(sns.barplot, x='PPISet', y='auc', hue='proteomicsType', palette='viridis', alpha=0.8, edgecolor='k', linewidth=1)
         g.add_legend()
         g.set_axis_labels('PPISet', 'AUC')
-        g.set_titles('{col_name} | {row_name}')
+        g.set_titles('{col_name}')
         #rotate x labels 45º
         for ax in g.axes.flat:
             for label in ax.get_xticklabels():
