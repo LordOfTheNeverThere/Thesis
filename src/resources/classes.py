@@ -1208,7 +1208,8 @@ class PairwiseCorrMatrix(MatrixData):
             aucDataTotal = pd.concat([aucDataTotal, aucData])
 
         #Initiate FacetGrid
-        g = sns.FacetGrid(aucDataTotal, col = 'method', sharey=True, sharex=True, )
+        aucData = aucDataTotal.drop(columns=['metric'])
+        g = sns.FacetGrid(aucData, col='method', sharey=True, sharex=True)
         g.map_dataframe(sns.barplot, x='PPISet', y='auc', hue='proteomicsType', palette='viridis', alpha=0.8, edgecolor='k', linewidth=1)
         g.add_legend()
         g.set_axis_labels('PPISet', 'AUC')
