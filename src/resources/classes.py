@@ -1181,7 +1181,7 @@ class PairwiseCorrMatrix(MatrixData):
 
 
     @classmethod
-    def glsVSPearsonAUC(cls, instances:Iterable[PairwiseCorrMatrix], glsInstances:list[bool], filepath:str):
+    def glsVSPearsonAUC(cls, instances:Iterable[PairwiseCorrMatrix], glsInstances:list[bool], filepath:str, shortcutFile:str = ""):
         """Plots the AUC of the recall curve for each PairwiseCorrMatrix object, and for each external PPI dataset, for both the GLS and Pearson's R methods, using either p-value or coefficient
         All this in a sns.FacetGrid
 
@@ -1190,27 +1190,35 @@ class PairwiseCorrMatrix(MatrixData):
             glsInstances (list[bool]): A list of booleans which state which of the instances have been calculated with GLS or not
             filepath (str): Filepath to save the sns.FacetGrid
         """
-        #verify that all instances have the proteomicsType attribute
-        for instance in instances:
-            assert hasattr(instance, 'proteomicsType'), 'All instances must have the proteomicsType attribute'
-            assert hasattr(instance, 'aucs'), 'All instances must have the aucs attribute'
+        #verify that all instances have the proteomicsType attribute~
 
-        #initialize aucData
-        aucDataTotal = pd.DataFrame()
-        for index, inst in enumerate(instances):
+        if shortcutFile == "":
+            for instance in instances:
+                assert hasattr(instance, 'proteomicsType'), 'All instances must have the proteomicsType attribute'
+                assert hasattr(instance, 'aucs'), 'All instances must have the aucs attribute'
 
-            aucData = pd.DataFrame(inst.aucs)
-            aucData = aucData.unstack().reset_index()
-            aucData.columns = ['metric', 'PPISet', 'auc']
-            aucData['proteomicsType'] = inst.proteomicsType 
-            aucData['method'] = 'GLM' if glsInstances[index] else "Pearson's R"
-            #join with aucData
-            aucDataTotal = pd.concat([aucDataTotal, aucData])
+            #initialize aucData
+            aucDataTotal = pd.DataFrame()
+            for index, inst in enumerate(instances):
+
+                aucData = pd.DataFrame(inst.aucs)
+                aucData = aucData.unstack().reset_index()
+                aucData.columns = ['metric', 'PPISet', 'auc']
+                aucData['proteomicsType'] = inst.proteomicsType 
+                aucData['method'] = 'GLM' if glsInstances[index] else "Pearson's R"
+                #join with aucData
+                aucDataTotal = pd.concat([aucDataTotal, aucData])
+        else:
+            aucDataTotal = pd.read_csv(shortcutFile)
 
         #Initiate FacetGrid
-        aucData = aucDataTotal.drop(columns=['metric'])
+        aucData = aucDataTotal.loc[aucDataTotal['metric'] == "p-value",:]
+        palette = sns.color_palette(
+            "viridis", n_colors=aucData['proteomicsType'].nunique())
+        color_dict = dict(zip(aucData['proteomicsType'].unique(), palette))
         g = sns.FacetGrid(aucData, col='method', sharey=True, sharex=True)
-        g.map_dataframe(sns.barplot, x='PPISet', y='auc', hue='proteomicsType', palette='viridis', alpha=0.8, edgecolor='k', linewidth=1)
+        g.map_dataframe(sns.barplot, x='PPISet', hue='proteomicsType', y='auc',
+                        palette=color_dict, alpha=0.8, edgecolor='k', linewidth=1)
         g.add_legend()
         g.set_axis_labels('PPISet', 'AUC')
         g.set_titles('{col_name}')
